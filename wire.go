@@ -1,10 +1,15 @@
 package wl
 
 import (
+	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"math"
+	"net"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 var byteOrder binary.ByteOrder = binary.LittleEndian
@@ -17,34 +22,49 @@ func init() {
 	}
 }
 
+func read(r io.Reader, v any) error {
+	return binary.Read(r, byteOrder, v)
+}
+
+func write(w io.Writer, v any) error {
+	return binary.Write(w, byteOrder, v)
+}
+
 type MsgReader struct {
 	sender uint32
 	op     uint16
 	size   uint16
-
-	r io.Reader
+	data   bytes.Reader
+	oob    bytes.Reader
 }
 
-func NewMsgReader(r io.Reader) (*MsgReader, error) {
-	mr := MsgReader{
-		r: r,
-	}
+func NewMsgReader(c *net.UnixConn) (*MsgReader, error) {
+	var mr MsgReader
 
-	sender, err := mr.Uint()
+	var oob bytes.Buffer
+	r := unixTee{c: c, oob: &oob}
+
+	err := read(r, &mr.sender)
 	if err != nil {
 		return nil, err
 	}
-	mr.sender = sender
 
-	so, err := mr.Uint()
+	var so uint32
+	err = read(r, &so)
 	if err != nil {
 		return nil, err
 	}
-	size := so >> 16
-	op := so & 0xFFFF
-	mr.op = uint16(op)
-	mr.size = uint16(size)
-	mr.r = &io.LimitedReader{R: r, N: int64(size) - 8} // TODO: golang/go#51115
+	mr.size = uint16(so >> 16)
+	mr.op = uint16(so & 0xFFFF)
+
+	data := bytes.NewBuffer(make([]byte, 0, mr.size))
+	_, err = io.CopyN(data, r, int64(mr.size)-8)
+	if err != nil {
+		return nil, err
+	}
+
+	mr.data.Reset(data.Bytes())
+	mr.oob.Reset(oob.Bytes())
 
 	return &mr, nil
 }
@@ -61,22 +81,18 @@ func (r MsgReader) Size() uint16 {
 	return r.size
 }
 
-func (r *MsgReader) read(v any) error {
-	return binary.Read(r.r, byteOrder, v)
-}
-
 func (r *MsgReader) Int() (v int32, err error) {
-	err = r.read(&v)
+	err = read(&r.data, &v)
 	return v, err
 }
 
 func (r *MsgReader) Uint() (v uint32, err error) {
-	err = r.read(&v)
+	err = read(&r.data, &v)
 	return v, err
 }
 
 func (r *MsgReader) Fixed() (v Fixed, err error) {
-	err = r.read(&v)
+	err = read(&r.data, &v)
 	return v, err
 }
 
@@ -88,7 +104,7 @@ func (r *MsgReader) String() (v string, err error) {
 	pad := length % (32 / 8)
 
 	buf := make([]byte, length+pad)
-	_, err = io.ReadFull(r.r, buf)
+	_, err = io.ReadFull(&r.data, buf)
 	if err != nil {
 		return v, err
 	}
@@ -111,6 +127,10 @@ func (r *MsgReader) NewID() (v NewID, err error) {
 }
 
 func (r *MsgReader) Array() {
+	panic("Not implemented.")
+}
+
+func (r *MsgReader) Fd() (int, error) {
 	panic("Not implemented.")
 }
 
@@ -144,4 +164,16 @@ func (f Fixed) Float() float64 {
 type NewID struct {
 	Interface string
 	Version   uint32
+}
+
+type unixTee struct {
+	c   *net.UnixConn
+	oob io.Writer
+}
+
+func (t unixTee) Read(buf []byte) (int, error) {
+	oob := make([]byte, unix.CmsgSpace(len(buf))) // TODO: How big should this be?
+	n, oobn, _, _, err := t.c.ReadMsgUnix(buf, oob)
+	_, ooberr := t.oob.Write(oob[:oobn])
+	return n, errors.Join(err, ooberr)
 }
