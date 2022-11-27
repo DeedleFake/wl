@@ -12,7 +12,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
 )
 
@@ -46,6 +45,7 @@ type MessageBuffer struct {
 	data    bytes.Reader
 	fds     []int
 	fdindex int
+	err     error
 }
 
 // ReadMessage reads message data from the socket into a buffer.
@@ -109,76 +109,96 @@ func (r MessageBuffer) Size() uint16 {
 	return r.size
 }
 
-// Decode decodes a single value from a buffered message. val must be
-// a pointer to one of the following types:
-//
-// - int32
-// - uint32
-// - Fixed
-// - string
-// - NewID
-// - *os.File
-// - a slice of any of the above types
-//
-// Slices are decoded recursively, so a slice of slices of one of the
-// other types listed is also valid.
-func Decode(buf *MessageBuffer, val any) error {
-	switch val := any(val).(type) {
-	case *int32, *uint32, *Fixed:
-		return read(&buf.data, val)
+func (r MessageBuffer) Err() error {
+	return r.err
+}
 
-	case *string:
-		var length uint32
-		err := read(&buf.data, &length)
-		if err != nil {
-			return err
-		}
-		pad := length % (32 / 8)
-
-		var str strings.Builder
-		str.Grow(int(length + pad))
-		_, err = io.CopyN(&str, &buf.data, int64(length+pad))
-		if err != nil {
-			return err
-		}
-		if str.String()[length-1] != 0 {
-			return errors.New("string is not null-terminated")
-		}
-
-		*val = str.String()[:length-1]
-		return nil
-
-	case *[]byte:
-		var length uint32
-		err := read(&buf.data, &length)
-		if err != nil {
-			return err
-		}
-		pad := length % (32 / 8)
-
-		if len(*val) < int(length+pad) {
-			*val = slices.Grow(*val, len(*val)-int(length+pad))[:length+pad]
-		}
-		_, err = io.ReadFull(&buf.data, *val)
-		if err != nil {
-			return err
-		}
-
-		*val = (*val)[:length]
-		return nil
-
-	case **os.File:
-		if buf.fdindex >= len(buf.fds) {
-			return errors.New("no more file descriptors")
-		}
-
-		*val = os.NewFile(uintptr(buf.fds[buf.fdindex]), "")
-		buf.fdindex++
-		return nil
-
-	default:
-		panic(fmt.Errorf("unexpected type: %T", val))
+func (r *MessageBuffer) ReadInt() (v int32) {
+	if r.err != nil {
+		return
 	}
+
+	r.err = read(&r.data, &v)
+	return v
+}
+
+func (r *MessageBuffer) ReadUint() (v uint32) {
+	if r.err != nil {
+		return
+	}
+
+	r.err = read(&r.data, &v)
+	return v
+}
+
+func (r *MessageBuffer) ReadFixed() (v Fixed) {
+	if r.err != nil {
+		return
+	}
+
+	r.err = read(&r.data, &v)
+	return v
+}
+
+func (r *MessageBuffer) ReadString() string {
+	if r.err != nil {
+		return ""
+	}
+
+	length := r.ReadUint()
+	if r.err != nil {
+		return ""
+	}
+	pad := length % (32 / 8)
+
+	var str strings.Builder
+	str.Grow(int(length + pad))
+	_, r.err = io.CopyN(&str, &r.data, int64(length+pad))
+	if r.err != nil {
+		return ""
+	}
+	v := str.String()
+	if v[length] != 0 {
+		r.err = errors.New("string is not null-terminated")
+		return ""
+	}
+
+	return v[:length-1]
+}
+
+func (r *MessageBuffer) ReadArray() []byte {
+	if r.err != nil {
+		return nil
+	}
+
+	length := r.ReadUint()
+	if r.err != nil {
+		return nil
+	}
+	pad := length % (32 / 8)
+
+	buf := make([]byte, length+pad)
+	_, r.err = io.ReadFull(&r.data, buf)
+	if r.err != nil {
+		return nil
+	}
+
+	return buf[:length]
+}
+
+func (r *MessageBuffer) ReadFile() *os.File {
+	if r.err != nil {
+		return nil
+	}
+
+	if r.fdindex >= len(r.fds) {
+		r.err = errors.New("no more file descriptors")
+		return nil
+	}
+
+	f := os.NewFile(uintptr(r.fds[r.fdindex]), "")
+	r.fdindex++
+	return f
 }
 
 // TODO: Fix this and add some tests for it. It's quite likely that
@@ -206,11 +226,6 @@ func (f Fixed) Float() float64 {
 	i := f.Int()
 	frac := f.Frac()
 	return float64(i) + math.Abs(float64(frac)*math.Exp2(-8))
-}
-
-type NewID struct {
-	Interface string
-	Version   uint32
 }
 
 // unixTee reads from c, but also reads out-of-band data
