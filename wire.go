@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// byteOrder is the host byte order.
 var byteOrder binary.ByteOrder = binary.LittleEndian
 
 func init() {
@@ -26,14 +27,18 @@ func init() {
 	}
 }
 
+// read calls binary.Read() with the host byte order.
 func read(r io.Reader, v any) error {
 	return binary.Read(r, byteOrder, v)
 }
 
+// write calls binary.Write() with the host byte order.
 func write(w io.Writer, v any) error {
 	return binary.Write(w, byteOrder, v)
 }
 
+// MessageBuffer holds message data that has been read from the socket
+// but not yet decoded.
 type MessageBuffer struct {
 	sender  uint32
 	op      uint16
@@ -43,6 +48,7 @@ type MessageBuffer struct {
 	fdindex int
 }
 
+// ReadMessage reads message data from the socket into a buffer.
 func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
 	var mr MessageBuffer
 
@@ -88,18 +94,34 @@ func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
 	return &mr, nil
 }
 
+// Sender is the object ID of the sender of the message.
 func (r MessageBuffer) Sender() uint32 {
 	return r.sender
 }
 
+// Op is the opcode of the message.
 func (r MessageBuffer) Op() uint16 {
 	return r.op
 }
 
+// Size is the total size of the message, including the 8 byte header.
 func (r MessageBuffer) Size() uint16 {
 	return r.size
 }
 
+// Decode decodes a single value from a buffered message. val must be
+// a pointer to one of the following types:
+//
+// - int32
+// - uint32
+// - Fixed
+// - string
+// - NewID
+// - *os.File
+// - a slice of any of the above types
+//
+// Slices are decoded recursively, so a slice of slices of one of the
+// other types listed is also valid.
 func Decode(buf *MessageBuffer, val any) error {
 	switch val := any(val).(type) {
 	case *int32, *uint32, *Fixed:
@@ -213,6 +235,8 @@ type NewID struct {
 	Version   uint32
 }
 
+// unixTee reads from c, but also reads out-of-band data
+// simultaneously, writing it into oob.
 type unixTee struct {
 	c   *net.UnixConn
 	oob io.Writer
