@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net"
+	"os"
+	"reflect"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -30,29 +34,30 @@ func write(w io.Writer, v any) error {
 	return binary.Write(w, byteOrder, v)
 }
 
-type MsgReader struct {
-	sender uint32
-	op     uint16
-	size   uint16
-	data   bytes.Reader
-	oob    bytes.Reader
+type MessageBuffer struct {
+	sender  uint32
+	op      uint16
+	size    uint16
+	data    bytes.Reader
+	fds     []int
+	fdindex int
 }
 
-func NewMsgReader(c *net.UnixConn) (*MsgReader, error) {
-	var mr MsgReader
+func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
+	var mr MessageBuffer
 
 	var oob bytes.Buffer
 	r := unixTee{c: c, oob: &oob}
 
 	err := read(r, &mr.sender)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read message sender: %w", err)
 	}
 
 	var so uint32
 	err = read(r, &so)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read message size and opcode: %w", err)
 	}
 	mr.size = uint16(so >> 16)
 	mr.op = uint16(so & 0xFFFF)
@@ -60,78 +65,120 @@ func NewMsgReader(c *net.UnixConn) (*MsgReader, error) {
 	data := bytes.NewBuffer(make([]byte, 0, mr.size))
 	_, err = io.CopyN(data, r, int64(mr.size)-8)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("copy data to buffer: %w", err)
+	}
+
+	cmsgs, err := unix.ParseSocketControlMessage(oob.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("parse socket control messages: %w", err)
+	}
+	for _, cmsg := range cmsgs {
+		fds, err := unix.ParseUnixRights(&cmsg)
+		if err != nil {
+			if errors.Is(err, unix.EINVAL) {
+				continue
+			}
+			return nil, fmt.Errorf("parse unix control message: %w", err)
+		}
+		mr.fds = append(mr.fds, fds...)
 	}
 
 	mr.data.Reset(data.Bytes())
-	mr.oob.Reset(oob.Bytes())
 
 	return &mr, nil
 }
 
-func (r MsgReader) Sender() uint32 {
+func (r MessageBuffer) Sender() uint32 {
 	return r.sender
 }
 
-func (r MsgReader) Op() uint16 {
+func (r MessageBuffer) Op() uint16 {
 	return r.op
 }
 
-func (r MsgReader) Size() uint16 {
+func (r MessageBuffer) Size() uint16 {
 	return r.size
 }
 
-func (r *MsgReader) Int() (v int32, err error) {
-	err = read(&r.data, &v)
-	return v, err
-}
+func Decode(buf *MessageBuffer, val any) error {
+	switch val := any(val).(type) {
+	case *int32, *uint32, *Fixed:
+		return read(&buf.data, val)
 
-func (r *MsgReader) Uint() (v uint32, err error) {
-	err = read(&r.data, &v)
-	return v, err
-}
+	case *string:
+		var length uint32
+		err := read(&buf.data, &length)
+		if err != nil {
+			return err
+		}
+		pad := length % (32 / 8)
 
-func (r *MsgReader) Fixed() (v Fixed, err error) {
-	err = read(&r.data, &v)
-	return v, err
-}
+		var str strings.Builder
+		str.Grow(int(length + pad))
+		_, err = io.CopyN(&str, &buf.data, int64(length+pad))
+		if err != nil {
+			return err
+		}
+		if str.String()[length-1] != 0 {
+			return errors.New("string is not null-terminated")
+		}
 
-func (r *MsgReader) String() (v string, err error) {
-	length, err := r.Uint()
-	if err != nil {
-		return v, err
+		*val = str.String()[:length-1]
+		return nil
+
+	case *NewID:
+		var inter string
+		err := Decode(buf, &inter)
+		if err != nil {
+			return err
+		}
+
+		var version uint32
+		err = read(&buf.data, &version)
+		if err != nil {
+			return err
+		}
+
+		*val = NewID{Interface: inter, Version: version}
+		return nil
+
+	case **os.File:
+		if buf.fdindex >= len(buf.fds) {
+			return errors.New("no more file descriptors")
+		}
+
+		*val = os.NewFile(uintptr(buf.fds[buf.fdindex]), "")
+		buf.fdindex++
+		return nil
+
+	default:
+		v := reflect.Indirect(reflect.ValueOf(val))
+		switch v.Kind() {
+		case reflect.Slice:
+			var length uint32
+			err := read(&buf.data, &length)
+			if err != nil {
+				return err
+			}
+			// Wait, why padding? All elements are already padded, so no
+			// array should require any padding, should it? Is this is a
+			// mistake in the documentation?
+			//pad := length % (32 / (8 * size(v.Type().Elem()))
+
+			s := reflect.MakeSlice(v.Type(), int(length), int(length))
+			for i := 0; i < s.Len(); i++ {
+				err = Decode(buf, s.Index(i).Addr().Interface())
+				if err != nil {
+					return err
+				}
+			}
+
+			v.Set(s)
+			return nil
+		}
+
+		panic(fmt.Errorf("unexpected type: %T", val))
 	}
-	pad := length % (32 / 8)
-
-	buf := make([]byte, length+pad)
-	_, err = io.ReadFull(&r.data, buf)
-	if err != nil {
-		return v, err
-	}
-
-	return unsafe.String(&buf[0], length-1), nil
-}
-
-func (r *MsgReader) NewID() (v NewID, err error) {
-	name, err := r.String()
-	if err != nil {
-		return v, err
-	}
-
-	version, err := r.Uint()
-	if err != nil {
-		return v, err
-	}
-
-	return NewID{Interface: name, Version: version}, nil
-}
-
-func (r *MsgReader) Array() {
-	panic("Not implemented.")
-}
-
-func (r *MsgReader) Fd() (int, error) {
-	panic("Not implemented.")
 }
 
 // TODO: Fix this and add some tests for it. It's quite likely that
