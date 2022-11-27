@@ -24,14 +24,19 @@ func init() {
 	}
 }
 
-// read calls binary.Read() with the host byte order.
-func read(r io.Reader, v any) error {
-	return binary.Read(r, byteOrder, v)
+func readu(r io.Reader) (uint32, error) {
+	var data [4]byte
+	_, err := io.ReadFull(r, data[:])
+	if err != nil {
+		return 0, err
+	}
+
+	return byteOrder.Uint32(data[:]), nil
 }
 
-// write calls binary.Write() with the host byte order.
-func write(w io.Writer, v any) error {
-	return binary.Write(w, byteOrder, v)
+func readi(r io.Reader) (int32, error) {
+	u, err := readu(r)
+	return *(*int32)(unsafe.Pointer(&u)), err
 }
 
 // unixTee reads from c, but also reads out-of-band data

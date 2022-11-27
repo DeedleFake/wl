@@ -31,13 +31,13 @@ func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
 	var oob bytes.Buffer
 	r := unixTee{c: c, oob: &oob}
 
-	err := read(r, &mr.sender)
+	sender, err := readu(r)
 	if err != nil {
 		return nil, fmt.Errorf("read message sender: %w", err)
 	}
+	mr.sender = sender
 
-	var so uint32
-	err = read(r, &so)
+	so, err := readu(r)
 	if err != nil {
 		return nil, fmt.Errorf("read message size and opcode: %w", err)
 	}
@@ -94,7 +94,7 @@ func (r *MessageBuffer) ReadInt() (v int32) {
 		return
 	}
 
-	r.err = read(&r.data, &v)
+	v, r.err = readi(&r.data)
 	return v
 }
 
@@ -103,7 +103,7 @@ func (r *MessageBuffer) ReadUint() (v uint32) {
 		return
 	}
 
-	r.err = read(&r.data, &v)
+	v, r.err = readu(&r.data)
 	return v
 }
 
@@ -112,8 +112,9 @@ func (r *MessageBuffer) ReadFixed() (v Fixed) {
 		return
 	}
 
-	r.err = read(&r.data, &v)
-	return v
+	f, err := readi(&r.data)
+	r.err = err
+	return Fixed(f)
 }
 
 func (r *MessageBuffer) ReadString() string {
