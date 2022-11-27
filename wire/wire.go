@@ -1,4 +1,6 @@
-package wl
+// Package wire defines types helpful for dealing with the Wayland
+// wire protocol. It is primarly intended for usage by generated code.
+package wire
 
 import (
 	"bytes"
