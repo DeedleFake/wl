@@ -2,6 +2,8 @@
 // protocol-specification XML file.
 package protocol
 
+import "strconv"
+
 type Protocol struct {
 	Name      string `xml:"name,attr"`
 	Copyright string `xml:"copyright"`
@@ -50,5 +52,10 @@ type Enum struct {
 type Entry struct {
 	Name    string `xml:"name,attr"`
 	Summary string `xml:"summary,attr"`
-	Value   int    `xml:"value,attr"`
+	Value   string `xml:"value,attr"`
+}
+
+func (e Entry) Int() (int, error) {
+	v, err := strconv.ParseInt(e.Value, 0, 0)
+	return int(v), err
 }
