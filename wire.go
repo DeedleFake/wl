@@ -9,10 +9,10 @@ import (
 	"math"
 	"net"
 	"os"
-	"reflect"
 	"strings"
 	"unsafe"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
 )
 
@@ -148,20 +148,23 @@ func Decode(buf *MessageBuffer, val any) error {
 		*val = str.String()[:length-1]
 		return nil
 
-	case *NewID:
-		var inter string
-		err := Decode(buf, &inter)
+	case *[]byte:
+		var length uint32
+		err := read(&buf.data, &length)
+		if err != nil {
+			return err
+		}
+		pad := length % (32 / 8)
+
+		if len(*val) < int(length+pad) {
+			*val = slices.Grow(*val, len(*val)-int(length+pad))[:length+pad]
+		}
+		_, err = io.ReadFull(&buf.data, *val)
 		if err != nil {
 			return err
 		}
 
-		var version uint32
-		err = read(&buf.data, &version)
-		if err != nil {
-			return err
-		}
-
-		*val = NewID{Interface: inter, Version: version}
+		*val = (*val)[:length]
 		return nil
 
 	case **os.File:
@@ -174,31 +177,6 @@ func Decode(buf *MessageBuffer, val any) error {
 		return nil
 
 	default:
-		v := reflect.Indirect(reflect.ValueOf(val))
-		switch v.Kind() {
-		case reflect.Slice:
-			var length uint32
-			err := read(&buf.data, &length)
-			if err != nil {
-				return err
-			}
-			// Wait, why padding? All elements are already padded, so no
-			// array should require any padding, should it? Is this is a
-			// mistake in the documentation?
-			//pad := length % (32 / (8 * size(v.Type().Elem()))
-
-			s := reflect.MakeSlice(v.Type(), int(length), int(length))
-			for i := 0; i < s.Len(); i++ {
-				err = Decode(buf, s.Index(i).Addr().Interface())
-				if err != nil {
-					return err
-				}
-			}
-
-			v.Set(s)
-			return nil
-		}
-
 		panic(fmt.Errorf("unexpected type: %T", val))
 	}
 }
