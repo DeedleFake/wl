@@ -24,19 +24,25 @@ func init() {
 	}
 }
 
-func readu(r io.Reader) (uint32, error) {
+func read[T ~int32 | ~uint32](r io.Reader) (T, error) {
 	var data [4]byte
 	_, err := io.ReadFull(r, data[:])
 	if err != nil {
 		return 0, err
 	}
 
-	return byteOrder.Uint32(data[:]), nil
+	v := byteOrder.Uint32(data[:])
+	return *(*T)(unsafe.Pointer(&v)), nil
 }
 
-func readi(r io.Reader) (int32, error) {
-	u, err := readu(r)
-	return *(*int32)(unsafe.Pointer(&u)), err
+func write[T ~int32 | ~uint32](w io.Writer, v T) error {
+	var data [4]byte
+	byteOrder.PutUint32(data[:], *(*uint32)(unsafe.Pointer(&v)))
+	n, err := w.Write(data[:])
+	if (err == nil) && (n < len(data)) {
+		return io.ErrShortWrite
+	}
+	return err
 }
 
 // unixTee reads from c, but also reads out-of-band data
