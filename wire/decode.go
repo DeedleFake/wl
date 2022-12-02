@@ -86,6 +86,12 @@ func (r MessageBuffer) Size() uint16 {
 }
 
 func (r MessageBuffer) Err() error {
+	if errors.Is(r.err, io.EOF) {
+		if r.data.Size() < int64(r.size)-8 {
+			return io.ErrUnexpectedEOF
+		}
+		return nil
+	}
 	return r.err
 }
 
@@ -133,7 +139,7 @@ func (r *MessageBuffer) ReadString() string {
 	if r.err != nil {
 		return ""
 	}
-	pad := length % (32 / 8)
+	pad := padding(length)
 
 	var str strings.Builder
 	str.Grow(int(length + pad))
@@ -159,7 +165,7 @@ func (r *MessageBuffer) ReadArray() []byte {
 	if r.err != nil {
 		return nil
 	}
-	pad := length % (32 / 8)
+	pad := padding(length)
 
 	buf := make([]byte, length+pad)
 	_, r.err = io.ReadFull(&r.data, buf)

@@ -25,6 +25,10 @@ func init() {
 	}
 }
 
+func padding(length uint32) uint32 {
+	return 4 - (length % (32 / 8))
+}
+
 func read[T ~int32 | ~uint32](r io.Reader) (T, error) {
 	var data [4]byte
 	_, err := io.ReadFull(r, data[:])
