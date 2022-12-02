@@ -3,6 +3,9 @@
 package {{.Package}}
 
 import (
+	{{range .ExtraImports -}}
+		{{. | printf "%q"}}
+	{{end -}}
 	"deedles.dev/wl/wire"
 )
 
@@ -13,7 +16,7 @@ import (
 
 	type {{$name}}Listener interface {
 		{{range $listeners}}
-			{{- .Name | camel | export}}()
+			{{- .Name | camel | export}}({{range .Args}}{{.Type | goType}}, {{end}})
 		{{end}}
 	}
 
@@ -26,7 +29,7 @@ import (
 		{{- range $op, $method := $listeners}}
 			case {{$op}}:
 				{{range $method.Args -}}
-					{{.Name}} := msg.Read{{.Type | camel | export}}()
+					{{.Name}} := msg.Read{{.Type | typeFuncSuffix}}()
 				{{end -}}
 				if err := msg.Err(); err != nil {
 					return err
@@ -39,6 +42,10 @@ import (
 		{{end -}}
 		}
 
-		return wire.UnknownOpError{Msg: msg}
+		return wire.UnknownOpError{
+			Interface: {{.Name | printf "%q"}},
+			Type: {{if $.IsClient -}} "event" {{- else -}} "request" {{- end}},
+			Op: msg.Op(),
+		}
 	}
 {{end}}

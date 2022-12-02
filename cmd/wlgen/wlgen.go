@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"go/format"
 	"log"
 	"os"
@@ -98,6 +99,42 @@ var (
 			}
 			return i.Events
 		},
+		"typeFuncSuffix": func(name string) (string, error) {
+			switch name {
+			case "uint", "object", "new_id":
+				return "Uint", nil
+			case "int":
+				return "Int", nil
+			case "fixed":
+				return "Fixed", nil
+			case "fd":
+				return "File", nil
+			case "string":
+				return "String", nil
+			case "array":
+				return "Array", nil
+			default:
+				return "", fmt.Errorf("unknown type: %q", name)
+			}
+		},
+		"goType": func(name string) (string, error) {
+			switch name {
+			case "uint", "object", "new_id":
+				return "uint32", nil
+			case "int":
+				return "int32", nil
+			case "fixed":
+				return "wire.Fixed", nil
+			case "fd":
+				return "*os.File", nil
+			case "string":
+				return "string", nil
+			case "array":
+				return "[]byte", nil
+			default:
+				return "", fmt.Errorf("unknown type: %q", name)
+			}
+		},
 	}
 )
 
@@ -114,10 +151,11 @@ func loadXML(path string) (proto protocol.Protocol, err error) {
 }
 
 type TemplateContext struct {
-	Protocol protocol.Protocol
-	Package  string
-	Prefix   string
-	IsClient bool
+	Protocol     protocol.Protocol
+	Package      string
+	Prefix       string
+	IsClient     bool
+	ExtraImports []string
 }
 
 func main() {
@@ -137,12 +175,34 @@ func main() {
 		log.Fatalf("load XML: %v", err)
 	}
 
+	var extraImports []string
+extraImportsLoop:
+	for _, i := range proto.Interfaces {
+		for _, req := range i.Requests {
+			for _, arg := range req.Args {
+				if arg.Type == "fd" {
+					extraImports = append(extraImports, "os")
+					break extraImportsLoop
+				}
+			}
+		}
+		for _, ev := range i.Events {
+			for _, arg := range ev.Args {
+				if arg.Type == "fd" {
+					extraImports = append(extraImports, "os")
+					break extraImportsLoop
+				}
+			}
+		}
+	}
+
 	var buf bytes.Buffer
 	err = tmpl.ExecuteTemplate(&buf, "main.tmpl", TemplateContext{
-		Protocol: proto,
-		Package:  *pkg,
-		Prefix:   *prefix,
-		IsClient: *client,
+		Protocol:     proto,
+		Package:      *pkg,
+		Prefix:       *prefix,
+		IsClient:     *client,
+		ExtraImports: extraImports,
 	})
 	if err != nil {
 		log.Fatalf("execute template: %v", err)
