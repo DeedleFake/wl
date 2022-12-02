@@ -16,6 +16,7 @@ import (
 
 	type {{$name}}Object struct {
 		id uint32
+		delete func()
 		listener interface {
 			{{range $listeners}}
 				{{- .Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
@@ -51,6 +52,12 @@ import (
 
 	func (obj *{{$name}}Object) SetID(id uint32) {
 		obj.id = id
+	}
+
+	func (obj {{$name}}Object) Delete() {
+		if obj.delete != nil {
+			obj.delete()
+		}
 	}
 
 	{{range $op, $method := $senders}}
