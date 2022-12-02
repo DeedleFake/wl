@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+const (
+	displayName    = "wl_display"
+	displayVersion = 1
+)
+
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
 type displayObject struct {
@@ -135,6 +140,11 @@ const (
 	displayErrorImplementation displayError = 3
 )
 
+const (
+	registryName    = "wl_registry"
+	registryVersion = 1
+)
+
 // The singleton global registry object.  The server has a number of
 // global objects that are available to all clients.  These objects
 // typically represent an actual object in the server (for example,
@@ -238,6 +248,11 @@ func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder 
 	return &builder
 }
 
+const (
+	callbackName    = "wl_callback"
+	callbackVersion = 1
+)
+
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
 type callbackObject struct {
@@ -278,6 +293,11 @@ func (obj callbackObject) Delete() {
 		obj.delete()
 	}
 }
+
+const (
+	compositorName    = "wl_compositor"
+	compositorVersion = 4
+)
 
 // A compositor.  This object is a singleton global.  The
 // compositor is in charge of combining the contents of multiple
@@ -331,6 +351,11 @@ func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 
 	return &builder
 }
+
+const (
+	shmPoolName    = "wl_shm_pool"
+	shmPoolVersion = 1
+)
 
 // The wl_shm_pool object encapsulates a piece of memory shared
 // between the compositor and client.  Through the wl_shm_pool
@@ -420,6 +445,11 @@ func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
 
 	return &builder
 }
+
+const (
+	shmName    = "wl_shm"
+	shmVersion = 1
+)
 
 // A singleton global object that provides support for shared
 // memory.
@@ -816,6 +846,11 @@ const (
 	shmFormatQ401 shmFormat = 825242705
 )
 
+const (
+	bufferName    = "wl_buffer"
+	bufferVersion = 1
+)
+
 // A buffer provides the content for a wl_surface. Buffers are
 // created through factory interfaces such as wl_drm, wl_shm or
 // similar. It has a width and a height and can be attached to a
@@ -880,6 +915,11 @@ func (obj bufferObject) Destroy() *wire.MessageBuilder {
 
 	return &builder
 }
+
+const (
+	dataOfferName    = "wl_data_offer"
+	dataOfferVersion = 3
+)
 
 // A wl_data_offer represents a piece of data offered for transfer
 // by another client (the source client).  It is used by the
@@ -1134,6 +1174,11 @@ const (
 	dataOfferErrorInvalidOffer dataOfferError = 3
 )
 
+const (
+	dataSourceName    = "wl_data_source"
+	dataSourceVersion = 3
+)
+
 // The wl_data_source object is the source side of a wl_data_offer.
 // It is created by the source client in a data transfer and
 // provides a way to describe the offered data and a way to respond
@@ -1352,6 +1397,11 @@ const (
 
 	// source doesn't accept this request
 	dataSourceErrorInvalidSource dataSourceError = 1
+)
+
+const (
+	dataDeviceName    = "wl_data_device"
+	dataDeviceVersion = 3
 )
 
 // There is one wl_data_device per seat which can be obtained
@@ -1580,6 +1630,11 @@ const (
 	dataDeviceErrorRole dataDeviceError = 0
 )
 
+const (
+	dataDeviceManagerName    = "wl_data_device_manager"
+	dataDeviceManagerVersion = 3
+)
+
 // The wl_data_device_manager is a singleton global object that
 // provides access to inter-client data transfer mechanisms such as
 // copy-and-paste and drag-and-drop.  These mechanisms are tied to
@@ -1680,6 +1735,11 @@ const (
 	dataDeviceManagerDndActionAsk dataDeviceManagerDndAction = 4
 )
 
+const (
+	shellName    = "wl_shell"
+	shellVersion = 1
+)
+
 // This interface is implemented by servers that provide
 // desktop-style user interfaces.
 //
@@ -1736,6 +1796,11 @@ type shellError int32
 const (
 	// given wl_surface has another role
 	shellErrorRole shellError = 0
+)
+
+const (
+	shellSurfaceName    = "wl_shell_surface"
+	shellSurfaceVersion = 1
 )
 
 // An interface that may be implemented by a wl_surface, for
@@ -2121,6 +2186,11 @@ const (
 
 	// no upscaling, center on output and add black borders to compensate size mismatch
 	shellSurfaceFullscreenMethodFill shellSurfaceFullscreenMethod = 3
+)
+
+const (
+	surfaceName    = "wl_surface"
+	surfaceVersion = 4
 )
 
 // A surface is a rectangular area that may be displayed on zero
@@ -2603,6 +2673,11 @@ const (
 	surfaceErrorInvalidSize surfaceError = 2
 )
 
+const (
+	seatName    = "wl_seat"
+	seatVersion = 7
+)
+
 // A seat is a group of keyboards, pointer and touch devices. This
 // object is published as a global during start up, or when such a
 // device is hot plugged.  A seat typically has a pointer and
@@ -2773,6 +2848,11 @@ type seatError int32
 const (
 	// get_pointer, get_keyboard or get_touch called on seat without the matching capability
 	seatErrorMissingCapability seatError = 0
+)
+
+const (
+	pointerName    = "wl_pointer"
+	pointerVersion = 7
 )
 
 // The wl_pointer interface represents one or more input devices,
@@ -3204,6 +3284,11 @@ const (
 	pointerAxisSourceWheelTilt pointerAxisSource = 3
 )
 
+const (
+	keyboardName    = "wl_keyboard"
+	keyboardVersion = 7
+)
+
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
 type keyboardObject struct {
@@ -3401,6 +3486,11 @@ const (
 
 	// key is pressed
 	keyboardKeyStatePressed keyboardKeyState = 1
+)
+
+const (
+	touchName    = "wl_touch"
+	touchVersion = 7
 )
 
 // The wl_touch interface represents a touchscreen
@@ -3619,6 +3709,11 @@ func (obj touchObject) Release() *wire.MessageBuilder {
 
 	return &builder
 }
+
+const (
+	outputName    = "wl_output"
+	outputVersion = 3
+)
 
 // An output describes part of the compositor geometry.  The
 // compositor works in the 'compositor coordinate system' and an
@@ -3869,6 +3964,11 @@ const (
 	outputModePreferred outputMode = 2
 )
 
+const (
+	regionName    = "wl_region"
+	regionVersion = 1
+)
+
 // A region object describes an area.
 //
 // Region objects are used to describe the opaque and input
@@ -3938,6 +4038,11 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 
 	return &builder
 }
+
+const (
+	subcompositorName    = "wl_subcompositor"
+	subcompositorVersion = 1
+)
 
 // The global interface exposing sub-surface compositing capabilities.
 // A wl_surface, that has sub-surfaces associated, is called the
@@ -4029,6 +4134,11 @@ type subcompositorError int32
 const (
 	// the to-be sub-surface is invalid
 	subcompositorErrorBadSurface subcompositorError = 0
+)
+
+const (
+	subsurfaceName    = "wl_subsurface"
+	subsurfaceVersion = 1
 )
 
 // An additional interface to a wl_surface object, which has been

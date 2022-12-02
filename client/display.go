@@ -142,6 +142,7 @@ func (display *Display) GetRegistry() *Registry {
 	registry.obj.listener = registryListener{registry: &registry}
 	display.AddObject(&registry.obj)
 	display.Enqueue(display.obj.GetRegistry(registry.obj.id))
+	display.registry = &registry
 	return &registry
 }
 
