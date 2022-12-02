@@ -28,14 +28,14 @@ import (
 		{{- range $op, $method := $listeners}}
 			case {{$op}}:
 				{{range $method.Args -}}
-					{{.Name}} := msg.Read{{. | typeFuncSuffix}}()
+					{{.Name | camel | unexport | unkeyword}} := msg.Read{{. | typeFuncSuffix}}()
 				{{end -}}
 				if err := msg.Err(); err != nil {
 					return err
 				}
 				obj.listener.{{.Name | camel | export}}(
 					{{range $method.Args -}}
-						{{.Name}},
+						{{.Name | camel | unexport | unkeyword}},
 					{{end -}}
 				)
 		{{end -}}
