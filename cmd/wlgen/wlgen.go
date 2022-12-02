@@ -88,6 +88,14 @@ var (
 		"trimPrefix": func(prefix, v string) string {
 			return strings.TrimPrefix(v, prefix)
 		},
+		"trimSpace": strings.TrimSpace,
+		"trimLines": func(v string) string {
+			lines := strings.Split(v, "\n")
+			for i := range lines {
+				lines[i] = strings.TrimSpace(lines[i])
+			}
+			return strings.Join(lines, "\n")
+		},
 		"listeners": func(isClient bool, i protocol.Interface) []protocol.Op {
 			if isClient {
 				return i.Events
@@ -151,6 +159,19 @@ var (
 				return "_" + v
 			}
 			return v
+		},
+		"comment": func(v string) string {
+			if len(v) == 0 {
+				return ""
+			}
+
+			var sb strings.Builder
+			for _, line := range strings.Split(v, "\n") {
+				sb.WriteString("// ")
+				sb.WriteString(line)
+				sb.WriteByte('\n')
+			}
+			return sb.String()
 		},
 	}
 )
