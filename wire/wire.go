@@ -85,3 +85,10 @@ func (f Fixed) Float() float64 {
 	frac := f.Frac()
 	return float64(i) + math.Abs(float64(frac)*math.Exp2(-8))
 }
+
+// Object represents a Wayland protocol object.
+type Object interface {
+	// Dispatch pertforms the operation requested by the message in the
+	// buffer.
+	Dispatch(msg *MessageBuffer) error
+}

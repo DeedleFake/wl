@@ -1,4 +1,4 @@
-package wl
+package wire
 
 import (
 	"fmt"
