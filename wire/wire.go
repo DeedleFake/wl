@@ -101,13 +101,17 @@ type NewID struct {
 
 // Object represents a Wayland protocol object.
 type Object interface {
-	// SetID is used by the object ID tracking system to tell the object
-	// what its own ID should be.
+	// SetID is used by the object ID management system to tell the
+	// object what its own ID should be.
 	SetID(id uint32)
 
 	// Dispatch pertforms the operation requested by the message in the
 	// buffer.
 	Dispatch(msg *MessageBuffer) error
+
+	// Delete is called by the object ID management system when an
+	// object is deleted.
+	Delete()
 }
 
 // UnknownOpError is returned by Object.Dispatch if it is given a
