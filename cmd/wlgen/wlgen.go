@@ -100,9 +100,14 @@ var (
 			}
 			return i.Events
 		},
-		"typeFuncSuffix": func(name string) (string, error) {
-			switch name {
-			case "uint", "object", "new_id":
+		"typeFuncSuffix": func(arg protocol.Arg) (string, error) {
+			switch arg.Type {
+			case "uint", "object":
+				return "Uint", nil
+			case "new_id":
+				if arg.Interface == "" {
+					return "NewID", nil
+				}
 				return "Uint", nil
 			case "int":
 				return "Int", nil
@@ -115,12 +120,17 @@ var (
 			case "array":
 				return "Array", nil
 			default:
-				return "", fmt.Errorf("unknown type: %q", name)
+				return "", fmt.Errorf("unknown type: %q", arg.Type)
 			}
 		},
-		"goType": func(name string) (string, error) {
-			switch name {
-			case "uint", "object", "new_id":
+		"goType": func(arg protocol.Arg) (string, error) {
+			switch arg.Type {
+			case "uint", "object":
+				return "uint32", nil
+			case "new_id":
+				if arg.Interface == "" {
+					return "wire.NewID", nil
+				}
 				return "uint32", nil
 			case "int":
 				return "int32", nil
@@ -133,7 +143,7 @@ var (
 			case "array":
 				return "[]byte", nil
 			default:
-				return "", fmt.Errorf("unknown type: %q", name)
+				return "", fmt.Errorf("unknown type: %q", arg.Type)
 			}
 		},
 		"unkeyword": func(v string) string {

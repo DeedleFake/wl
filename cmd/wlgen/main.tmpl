@@ -18,7 +18,7 @@ import (
 		id uint32
 		listener interface {
 			{{range $listeners}}
-				{{- .Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{.Type | goType}}, {{end}})
+				{{- .Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
 			{{end}}
 		}
 	}
@@ -28,7 +28,7 @@ import (
 		{{- range $op, $method := $listeners}}
 			case {{$op}}:
 				{{range $method.Args -}}
-					{{.Name}} := msg.Read{{.Type | typeFuncSuffix}}()
+					{{.Name}} := msg.Read{{. | typeFuncSuffix}}()
 				{{end -}}
 				if err := msg.Err(); err != nil {
 					return err
@@ -49,14 +49,14 @@ import (
 	}
 
 	{{range $op, $method := $senders}}
-		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{.Type | goType}}, {{end}}) *wire.MessageBuilder {
+		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
 			builder := wire.MessageBuilder{
 				Sender: obj.id,
 				Op: {{$op}},
 			}
 
 			{{range $method.Args -}}
-				builder.Write{{.Type | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
+				builder.Write{{. | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
 			{{end}}
 
 			return &builder
