@@ -87,6 +87,14 @@ func (f Fixed) Float() float64 {
 	return float64(i) + math.Abs(float64(frac)*math.Exp2(-8))
 }
 
+// NewID represents the Wayland new_id type when it doesn't have a
+// pre-defined interface.
+type NewID struct {
+	Interface string
+	Version   uint32
+	ID        uint32
+}
+
 // Object represents a Wayland protocol object.
 type Object interface {
 	// Dispatch pertforms the operation requested by the message in the

@@ -107,6 +107,14 @@ func (r *MessageBuffer) ReadUint() (v uint32) {
 	return v
 }
 
+func (r *MessageBuffer) ReadNewID() NewID {
+	return NewID{
+		Interface: r.ReadString(),
+		Version:   r.ReadUint(),
+		ID:        r.ReadUint(),
+	}
+}
+
 func (r *MessageBuffer) ReadFixed() (v Fixed) {
 	if r.err != nil {
 		return

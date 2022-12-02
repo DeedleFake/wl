@@ -29,6 +29,12 @@ func (mb *MessageBuilder) WriteUint(v uint32) {
 	write(&mb.data, v)
 }
 
+func (mb *MessageBuilder) WriteNewID(v NewID) {
+	mb.WriteString(v.Interface)
+	mb.WriteUint(v.Version)
+	mb.WriteUint(v.ID)
+}
+
 func (mb *MessageBuilder) WriteFixed(v Fixed) {
 	write(&mb.data, v)
 }
