@@ -8,7 +8,6 @@ import (
 )
 
 type displayObject struct {
-	id       uint32
 	listener interface {
 		Error(objectId uint32, code uint32, message string)
 		DeleteId(id uint32)
@@ -47,9 +46,9 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
+func (obj displayObject) Sync(sender uint32, callback uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -58,9 +57,9 @@ func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj displayObject) GetRegistry(registry uint32) *wire.MessageBuilder {
+func (obj displayObject) GetRegistry(sender uint32, registry uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -79,7 +78,6 @@ const (
 )
 
 type registryObject struct {
-	id       uint32
 	listener interface {
 		Global(name uint32, _interface string, version uint32)
 		GlobalRemove(name uint32)
@@ -118,9 +116,9 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
+func (obj registryObject) Bind(sender uint32, name uint32, id wire.NewID) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -131,7 +129,6 @@ func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder 
 }
 
 type callbackObject struct {
-	id       uint32
 	listener interface {
 		Done(callbackData uint32)
 	}
@@ -157,7 +154,6 @@ func (obj callbackObject) Dispatch(msg *wire.MessageBuffer) error {
 }
 
 type compositorObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -173,9 +169,9 @@ func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
+func (obj compositorObject) CreateSurface(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -184,9 +180,9 @@ func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
+func (obj compositorObject) CreateRegion(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -196,7 +192,6 @@ func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 }
 
 type shmPoolObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -212,9 +207,9 @@ func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, height int32, stride int32, format uint32) *wire.MessageBuilder {
+func (obj shmPoolObject) CreateBuffer(sender uint32, id uint32, offset int32, width int32, height int32, stride int32, format uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -228,18 +223,18 @@ func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, heig
 	return &builder
 }
 
-func (obj shmPoolObject) Destroy() *wire.MessageBuilder {
+func (obj shmPoolObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
 	return &builder
 }
 
-func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
+func (obj shmPoolObject) Resize(sender uint32, size int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -249,7 +244,6 @@ func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
 }
 
 type shmObject struct {
-	id       uint32
 	listener interface {
 		Format(format uint32)
 	}
@@ -274,9 +268,9 @@ func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shmObject) CreatePool(id uint32, fd *os.File, size int32) *wire.MessageBuilder {
+func (obj shmObject) CreatePool(sender uint32, id uint32, fd *os.File, size int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -405,7 +399,6 @@ const (
 )
 
 type bufferObject struct {
-	id       uint32
 	listener interface {
 		Release()
 	}
@@ -427,9 +420,9 @@ func (obj bufferObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj bufferObject) Destroy() *wire.MessageBuilder {
+func (obj bufferObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -437,7 +430,6 @@ func (obj bufferObject) Destroy() *wire.MessageBuilder {
 }
 
 type dataOfferObject struct {
-	id       uint32
 	listener interface {
 		Offer(mimeType string)
 		SourceActions(sourceActions uint32)
@@ -482,9 +474,9 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageBuilder {
+func (obj dataOfferObject) Accept(sender uint32, serial uint32, mimeType string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -494,9 +486,9 @@ func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageB
 	return &builder
 }
 
-func (obj dataOfferObject) Receive(mimeType string, fd *os.File) *wire.MessageBuilder {
+func (obj dataOfferObject) Receive(sender uint32, mimeType string, fd *os.File) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -506,27 +498,27 @@ func (obj dataOfferObject) Receive(mimeType string, fd *os.File) *wire.MessageBu
 	return &builder
 }
 
-func (obj dataOfferObject) Destroy() *wire.MessageBuilder {
+func (obj dataOfferObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
 	return &builder
 }
 
-func (obj dataOfferObject) Finish() *wire.MessageBuilder {
+func (obj dataOfferObject) Finish(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     3,
 	}
 
 	return &builder
 }
 
-func (obj dataOfferObject) SetActions(dndActions uint32, preferredAction uint32) *wire.MessageBuilder {
+func (obj dataOfferObject) SetActions(sender uint32, dndActions uint32, preferredAction uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     4,
 	}
 
@@ -546,7 +538,6 @@ const (
 )
 
 type dataSourceObject struct {
-	id       uint32
 	listener interface {
 		Target(mimeType string)
 		Send(mimeType string, fd *os.File)
@@ -614,9 +605,9 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
+func (obj dataSourceObject) Offer(sender uint32, mimeType string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -625,18 +616,18 @@ func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj dataSourceObject) Destroy() *wire.MessageBuilder {
+func (obj dataSourceObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
 	return &builder
 }
 
-func (obj dataSourceObject) SetActions(dndActions uint32) *wire.MessageBuilder {
+func (obj dataSourceObject) SetActions(sender uint32, dndActions uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -653,7 +644,6 @@ const (
 )
 
 type dataDeviceObject struct {
-	id       uint32
 	listener interface {
 		DataOffer(id uint32)
 		Enter(serial uint32, surface uint32, x wire.Fixed, y wire.Fixed, id uint32)
@@ -734,9 +724,9 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32, serial uint32) *wire.MessageBuilder {
+func (obj dataDeviceObject) StartDrag(sender uint32, source uint32, origin uint32, icon uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -748,9 +738,9 @@ func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32,
 	return &builder
 }
 
-func (obj dataDeviceObject) SetSelection(source uint32, serial uint32) *wire.MessageBuilder {
+func (obj dataDeviceObject) SetSelection(sender uint32, source uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -760,9 +750,9 @@ func (obj dataDeviceObject) SetSelection(source uint32, serial uint32) *wire.Mes
 	return &builder
 }
 
-func (obj dataDeviceObject) Release() *wire.MessageBuilder {
+func (obj dataDeviceObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -776,7 +766,6 @@ const (
 )
 
 type dataDeviceManagerObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -792,9 +781,9 @@ func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
+func (obj dataDeviceManagerObject) CreateDataSource(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -803,9 +792,9 @@ func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuil
 	return &builder
 }
 
-func (obj dataDeviceManagerObject) GetDataDevice(id uint32, seat uint32) *wire.MessageBuilder {
+func (obj dataDeviceManagerObject) GetDataDevice(sender uint32, id uint32, seat uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -825,7 +814,6 @@ const (
 )
 
 type shellObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -841,9 +829,9 @@ func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shellObject) GetShellSurface(id uint32, surface uint32) *wire.MessageBuilder {
+func (obj shellObject) GetShellSurface(sender uint32, id uint32, surface uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -860,7 +848,6 @@ const (
 )
 
 type shellSurfaceObject struct {
-	id       uint32
 	listener interface {
 		Ping(serial uint32)
 		Configure(edges uint32, width int32, height int32)
@@ -906,9 +893,9 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) Pong(sender uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -917,9 +904,9 @@ func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) Move(sender uint32, seat uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -929,9 +916,9 @@ func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuil
 	return &builder
 }
 
-func (obj shellSurfaceObject) Resize(seat uint32, serial uint32, edges uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) Resize(sender uint32, seat uint32, serial uint32, edges uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -942,18 +929,18 @@ func (obj shellSurfaceObject) Resize(seat uint32, serial uint32, edges uint32) *
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetToplevel() *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetToplevel(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     3,
 	}
 
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetTransient(sender uint32, parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     4,
 	}
 
@@ -965,9 +952,9 @@ func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flag
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, output uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetFullscreen(sender uint32, method uint32, framerate uint32, output uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     5,
 	}
 
@@ -978,9 +965,9 @@ func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, out
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetPopup(sender uint32, seat uint32, serial uint32, parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     6,
 	}
 
@@ -994,9 +981,9 @@ func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetMaximized(sender uint32, output uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     7,
 	}
 
@@ -1005,9 +992,9 @@ func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetTitle(sender uint32, title string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     8,
 	}
 
@@ -1016,9 +1003,9 @@ func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj shellSurfaceObject) SetClass(class string) *wire.MessageBuilder {
+func (obj shellSurfaceObject) SetClass(sender uint32, class string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     9,
 	}
 
@@ -1057,7 +1044,6 @@ const (
 )
 
 type surfaceObject struct {
-	id       uint32
 	listener interface {
 		Enter(output uint32)
 		Leave(output uint32)
@@ -1092,18 +1078,18 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj surfaceObject) Destroy() *wire.MessageBuilder {
+func (obj surfaceObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
 	return &builder
 }
 
-func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBuilder {
+func (obj surfaceObject) Attach(sender uint32, buffer uint32, x int32, y int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1114,9 +1100,9 @@ func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBu
 	return &builder
 }
 
-func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
+func (obj surfaceObject) Damage(sender uint32, x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -1128,9 +1114,9 @@ func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wi
 	return &builder
 }
 
-func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
+func (obj surfaceObject) Frame(sender uint32, callback uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     3,
 	}
 
@@ -1139,9 +1125,9 @@ func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
+func (obj surfaceObject) SetOpaqueRegion(sender uint32, region uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     4,
 	}
 
@@ -1150,9 +1136,9 @@ func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
+func (obj surfaceObject) SetInputRegion(sender uint32, region uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     5,
 	}
 
@@ -1161,18 +1147,18 @@ func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj surfaceObject) Commit() *wire.MessageBuilder {
+func (obj surfaceObject) Commit(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     6,
 	}
 
 	return &builder
 }
 
-func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilder {
+func (obj surfaceObject) SetBufferTransform(sender uint32, transform int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     7,
 	}
 
@@ -1181,9 +1167,9 @@ func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilde
 	return &builder
 }
 
-func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
+func (obj surfaceObject) SetBufferScale(sender uint32, scale int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     8,
 	}
 
@@ -1192,9 +1178,9 @@ func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj surfaceObject) DamageBuffer(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
+func (obj surfaceObject) DamageBuffer(sender uint32, x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     9,
 	}
 
@@ -1215,7 +1201,6 @@ const (
 )
 
 type seatObject struct {
-	id       uint32
 	listener interface {
 		Capabilities(capabilities uint32)
 		Name(name string)
@@ -1250,9 +1235,9 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
+func (obj seatObject) GetPointer(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -1261,9 +1246,9 @@ func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
+func (obj seatObject) GetKeyboard(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1272,9 +1257,9 @@ func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj seatObject) GetTouch(id uint32) *wire.MessageBuilder {
+func (obj seatObject) GetTouch(sender uint32, id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -1283,9 +1268,9 @@ func (obj seatObject) GetTouch(id uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj seatObject) Release() *wire.MessageBuilder {
+func (obj seatObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     3,
 	}
 
@@ -1307,7 +1292,6 @@ const (
 )
 
 type pointerObject struct {
-	id       uint32
 	listener interface {
 		Enter(serial uint32, surface uint32, surfaceX wire.Fixed, surfaceY wire.Fixed)
 		Leave(serial uint32, surface uint32)
@@ -1435,9 +1419,9 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32, hotspotY int32) *wire.MessageBuilder {
+func (obj pointerObject) SetCursor(sender uint32, serial uint32, surface uint32, hotspotX int32, hotspotY int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -1449,9 +1433,9 @@ func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32
 	return &builder
 }
 
-func (obj pointerObject) Release() *wire.MessageBuilder {
+func (obj pointerObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1488,7 +1472,6 @@ const (
 )
 
 type keyboardObject struct {
-	id       uint32
 	listener interface {
 		Keymap(format uint32, fd *os.File, size uint32)
 		Enter(serial uint32, surface uint32, keys []byte)
@@ -1589,9 +1572,9 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj keyboardObject) Release() *wire.MessageBuilder {
+func (obj keyboardObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -1613,7 +1596,6 @@ const (
 )
 
 type touchObject struct {
-	id       uint32
 	listener interface {
 		Down(serial uint32, time uint32, surface uint32, id int32, x wire.Fixed, y wire.Fixed)
 		Up(serial uint32, time uint32, id int32)
@@ -1718,9 +1700,9 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj touchObject) Release() *wire.MessageBuilder {
+func (obj touchObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -1728,7 +1710,6 @@ func (obj touchObject) Release() *wire.MessageBuilder {
 }
 
 type outputObject struct {
-	id       uint32
 	listener interface {
 		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel int32, make string, model string, transform int32)
 		Mode(flags uint32, width int32, height int32, refresh int32)
@@ -1800,9 +1781,9 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj outputObject) Release() *wire.MessageBuilder {
+func (obj outputObject) Release(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
@@ -1841,7 +1822,6 @@ const (
 )
 
 type regionObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -1857,18 +1837,18 @@ func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj regionObject) Destroy() *wire.MessageBuilder {
+func (obj regionObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
 	return &builder
 }
 
-func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
+func (obj regionObject) Add(sender uint32, x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1880,9 +1860,9 @@ func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.M
 	return &builder
 }
 
-func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
+func (obj regionObject) Subtract(sender uint32, x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -1895,7 +1875,6 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 }
 
 type subcompositorObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -1911,18 +1890,18 @@ func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
+func (obj subcompositorObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
 	return &builder
 }
 
-func (obj subcompositorObject) GetSubsurface(id uint32, surface uint32, parent uint32) *wire.MessageBuilder {
+func (obj subcompositorObject) GetSubsurface(sender uint32, id uint32, surface uint32, parent uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1940,7 +1919,6 @@ const (
 )
 
 type subsurfaceObject struct {
-	id       uint32
 	listener interface {
 	}
 }
@@ -1956,18 +1934,18 @@ func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
+func (obj subsurfaceObject) Destroy(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     0,
 	}
 
 	return &builder
 }
 
-func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
+func (obj subsurfaceObject) SetPosition(sender uint32, x int32, y int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     1,
 	}
 
@@ -1977,9 +1955,9 @@ func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj subsurfaceObject) PlaceAbove(sibling uint32) *wire.MessageBuilder {
+func (obj subsurfaceObject) PlaceAbove(sender uint32, sibling uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     2,
 	}
 
@@ -1988,9 +1966,9 @@ func (obj subsurfaceObject) PlaceAbove(sibling uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
+func (obj subsurfaceObject) PlaceBelow(sender uint32, sibling uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     3,
 	}
 
@@ -1999,18 +1977,18 @@ func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-func (obj subsurfaceObject) SetSync() *wire.MessageBuilder {
+func (obj subsurfaceObject) SetSync(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     4,
 	}
 
 	return &builder
 }
 
-func (obj subsurfaceObject) SetDesync() *wire.MessageBuilder {
+func (obj subsurfaceObject) SetDesync(sender uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender: obj.id,
+		Sender: sender,
 		Op:     5,
 	}
 
