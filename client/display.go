@@ -2,7 +2,6 @@ package wl
 
 import (
 	"errors"
-	"log"
 	"net"
 	"sync"
 
@@ -20,7 +19,7 @@ type Display struct {
 	nextID   uint32
 	registry *Registry
 	queue    chan []func() error
-	enqueue  chan *wire.MessageBuilder
+	enqueue  chan func() error
 }
 
 func ConnectDisplay(c *net.UnixConn) *Display {
@@ -30,36 +29,18 @@ func ConnectDisplay(c *net.UnixConn) *Display {
 		objects: make(map[uint32]wire.Object),
 		nextID:  1,
 		queue:   make(chan []func() error),
-		enqueue: make(chan *wire.MessageBuilder),
+		enqueue: make(chan func() error),
 	}
 	display.AddObject(&display.obj)
 	display.obj.listener = displayListener{display: &display}
+
+	go display.runQueue()
 	go display.listen()
 
 	return &display
 }
 
-func (display *Display) listen() {
-	listen := make(chan *wire.MessageBuffer, 1)
-	go func() {
-		for {
-			msg, err := wire.ReadMessage(display.conn)
-			if err != nil {
-				if errors.Is(err, net.ErrClosed) {
-					return
-				}
-				log.Printf("read message: %v", err)
-				continue
-			}
-
-			select {
-			case <-display.done:
-				return
-			case listen <- msg:
-			}
-		}
-	}()
-
+func (display *Display) runQueue() {
 	var queue []func() error
 	var qc chan []func() error
 	for {
@@ -71,13 +52,33 @@ func (display *Display) listen() {
 			queue = nil
 			qc = nil
 
-		case msg := <-display.enqueue:
-			queue = append(queue, func() error { return msg.Build(display.conn) })
+		case ev := <-display.enqueue:
+			queue = append(queue, ev)
 			qc = display.queue
+		}
+	}
+}
 
-		case msg := <-listen:
-			queue = append(queue, func() error { return display.dispatch(msg) })
-			qc = display.queue
+func (display *Display) listen() {
+	for {
+		msg, err := wire.ReadMessage(display.conn)
+		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				return
+			}
+
+			select {
+			case <-display.done:
+				return
+			case display.enqueue <- func() error { return err }:
+				continue
+			}
+		}
+
+		select {
+		case <-display.done:
+			return
+		case display.enqueue <- func() error { return display.dispatch(msg) }:
 		}
 	}
 }
@@ -105,7 +106,7 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 }
 
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	display.enqueue <- msg
+	display.enqueue <- func() error { return msg.Build(display.conn) }
 }
 
 func (display *Display) RoundTrip() error {
