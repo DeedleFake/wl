@@ -283,10 +283,8 @@ func (obj callbackObject) Delete() {
 // compositor is in charge of combining the contents of multiple
 // surfaces into one displayable output.
 type compositorObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -342,10 +340,8 @@ func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
 type shmPoolObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -1595,10 +1591,8 @@ const (
 // functioning properly. See wl_data_source.set_actions,
 // wl_data_offer.accept and wl_data_offer.finish for details.
 type dataDeviceManagerObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -1695,10 +1689,8 @@ const (
 // Note! This protocol is deprecated and not intended for production use.
 // For desktop-style user interfaces, use xdg_shell.
 type shellObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -3882,10 +3874,8 @@ const (
 // Region objects are used to describe the opaque and input
 // regions of a surface.
 type regionObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -3969,10 +3959,8 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 // objects. This should allow the compositor to pass YUV video buffer
 // processing to dedicated overlay hardware when possible.
 type subcompositorObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
@@ -4093,10 +4081,8 @@ const (
 // If the parent wl_surface object is destroyed, the sub-surface is
 // unmapped.
 type subsurfaceObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
-	}
+	id     uint32
+	delete func()
 }
 
 func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {

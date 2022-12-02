@@ -18,13 +18,15 @@ import (
 	type {{$name}}Object struct {
 		id uint32
 		delete func()
-		listener interface {
-			{{range $listeners -}}
-				{{.Description.Full | trimSpace | trimLines | comment -}}
-				{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
+		{{if ne (len $listeners) 0 -}}
+			listener interface {
+				{{range $listeners -}}
+					{{.Description.Full | trimSpace | trimLines | comment -}}
+					{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
 
-			{{end}}
-		}
+				{{end}}
+			}
+		{{end}}
 	}
 
 	func (obj {{$name}}Object) Dispatch(msg *wire.MessageBuffer) error {
