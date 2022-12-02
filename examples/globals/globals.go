@@ -14,6 +14,9 @@ func main() {
 	}
 	display := wl.ConnectDisplay(c)
 	defer display.Close()
+	display.Error = func(id, code uint32, msg string) {
+		log.Printf("error: id: %v, code: %v, msg: %q", id, code, msg)
+	}
 
 	registry := display.GetRegistry()
 	registry.Global = func(name uint32, inter string, version uint32) {
