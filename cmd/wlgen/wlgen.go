@@ -86,6 +86,18 @@ var (
 		"trimPrefix": func(prefix, v string) string {
 			return strings.TrimPrefix(v, prefix)
 		},
+		"listeners": func(isClient bool, i protocol.Interface) []protocol.Op {
+			if isClient {
+				return i.Events
+			}
+			return i.Requests
+		},
+		"senders": func(isClient bool, i protocol.Interface) []protocol.Op {
+			if isClient {
+				return i.Requests
+			}
+			return i.Events
+		},
 	}
 )
 
@@ -105,6 +117,7 @@ type TemplateContext struct {
 	Protocol protocol.Protocol
 	Package  string
 	Prefix   string
+	IsClient bool
 }
 
 func main() {
@@ -112,6 +125,7 @@ func main() {
 	out := flag.String("out", "", "output file (default <xml file>.go)")
 	pkg := flag.String("pkg", "wl", "output package name")
 	prefix := flag.String("prefix", "wl_", "interface prefix name to strip")
+	client := flag.Bool("client", false, "generate code for client usage instead of server")
 	flag.Parse()
 
 	if *out == "" {
@@ -128,6 +142,7 @@ func main() {
 		Protocol: proto,
 		Package:  *pkg,
 		Prefix:   *prefix,
+		IsClient: *client,
 	})
 	if err != nil {
 		log.Fatalf("execute template: %v", err)

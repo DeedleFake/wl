@@ -2,10 +2,43 @@
 
 package {{.Package}}
 
+import (
+	"deedles.dev/wl/wire"
+)
+
 {{range .Protocol.Interfaces}}
-	type {{.Name | trimPrefix $.Prefix | camel | unexport}}Listener interface {
-		{{range .Requests}}
+	{{- $name := .Name | trimPrefix $.Prefix | camel | unexport -}}
+	{{- $listeners := listeners $.IsClient . -}}
+	{{- $senders := senders $.IsClient . -}}
+
+	type {{$name}}Listener interface {
+		{{range $listeners}}
 			{{- .Name | camel | export}}()
 		{{end}}
+	}
+
+	type {{$name}}Object struct {
+		listener {{$name}}Listener
+	}
+
+	func (obj {{$name}}Object) Dispatch(msg *wire.MessageBuffer) error {
+		switch msg.Op() {
+		{{- range $op, $method := $listeners}}
+			case {{$op}}:
+				{{range $method.Args -}}
+					{{.Name}} := msg.Read{{.Type | camel | export}}()
+				{{end -}}
+				if err := msg.Err(); err != nil {
+					return err
+				}
+				obj.listener.{{.Name | camel | export}}(
+					{{range $method.Args -}}
+						{{.Name}},
+					{{end -}}
+				)
+		{{end -}}
+		}
+
+		return wire.UnknownOpError{Msg: msg}
 	}
 {{end}}
