@@ -19,17 +19,18 @@ type Display struct {
 	objects  map[uint32]wire.Object
 	nextID   uint32
 	registry *Registry
-	incoming chan []*wire.MessageBuffer
-	mq       []*wire.MessageBuilder
+	queue    chan []func() error
+	enqueue  chan *wire.MessageBuilder
 }
 
 func ConnectDisplay(c *net.UnixConn) *Display {
 	display := Display{
-		done:     make(chan struct{}),
-		conn:     c,
-		objects:  make(map[uint32]wire.Object),
-		nextID:   1,
-		incoming: make(chan []*wire.MessageBuffer),
+		done:    make(chan struct{}),
+		conn:    c,
+		objects: make(map[uint32]wire.Object),
+		nextID:  1,
+		queue:   make(chan []func() error),
+		enqueue: make(chan *wire.MessageBuilder),
 	}
 	display.AddObject(&display.obj)
 	display.obj.listener = displayListener{display: &display}
@@ -59,20 +60,24 @@ func (display *Display) listen() {
 		}
 	}()
 
-	var queue []*wire.MessageBuffer
-	var incoming chan []*wire.MessageBuffer
+	var queue []func() error
+	var qc chan []func() error
 	for {
 		select {
 		case <-display.done:
 			return
 
-		case incoming <- queue:
+		case qc <- queue:
 			queue = nil
-			incoming = nil
+			qc = nil
+
+		case msg := <-display.enqueue:
+			queue = append(queue, func() error { return msg.Build(display.conn) })
+			qc = display.queue
 
 		case msg := <-listen:
-			queue = append(queue, msg)
-			incoming = display.incoming
+			queue = append(queue, func() error { return display.dispatch(msg) })
+			qc = display.queue
 		}
 	}
 }
@@ -90,8 +95,17 @@ func (display *Display) AddObject(obj wire.Object) {
 	obj.SetID(id)
 }
 
+func (display *Display) dispatch(msg *wire.MessageBuffer) error {
+	obj := display.objects[msg.Sender()]
+	if obj == nil {
+		return UnknownSenderIDError{Msg: msg}
+	}
+
+	return obj.Dispatch(msg)
+}
+
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	display.mq = append(display.mq, msg)
+	display.enqueue <- msg
 }
 
 func (display *Display) RoundTrip() error {
@@ -100,37 +114,20 @@ func (display *Display) RoundTrip() error {
 
 	var errs []error
 
-	for _, msg := range display.mq {
-		err := msg.Build(display.conn)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	display.mq = display.mq[:0]
-
-incomingLoop:
 	for {
 		select {
 		case <-done:
-			break incomingLoop
+			return errors.Join(errs...)
 
-		case queue := <-display.incoming:
-			for _, msg := range queue {
-				obj := display.objects[msg.Sender()]
-				if obj == nil {
-					errs = append(errs, UnknownSenderIDError{Msg: msg})
-					continue
-				}
-
-				err := obj.Dispatch(msg)
+		case queue := <-display.queue:
+			for _, ev := range queue {
+				err := ev()
 				if err != nil {
 					errs = append(errs, err)
 				}
 			}
 		}
 	}
-
-	return errors.Join(errs...)
 }
 
 func (display *Display) GetRegistry() *Registry {
