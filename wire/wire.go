@@ -5,6 +5,7 @@ package wire
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net"
@@ -91,4 +92,16 @@ type Object interface {
 	// Dispatch pertforms the operation requested by the message in the
 	// buffer.
 	Dispatch(msg *MessageBuffer) error
+}
+
+// UnknownOpError is returned by Object.Dispatch if it is given a
+// message with an invalid opcode.
+type UnknownOpError struct {
+	Interface string
+	Type      string
+	Op        uint16
+}
+
+func (err UnknownOpError) Error() string {
+	return fmt.Sprintf("unknown %v opcode for %v: %v", err.Type, err.Interface, err.Op)
 }
