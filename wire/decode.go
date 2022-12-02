@@ -142,7 +142,7 @@ func (r *MessageBuffer) ReadString() string {
 		return ""
 	}
 	v := str.String()
-	if v[length] != 0 {
+	if v[length-1] != 0 {
 		r.err = errors.New("string is not null-terminated")
 		return ""
 	}
