@@ -9,6 +9,7 @@ import (
 
 type displayObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Error(objectId uint32, code uint32, message string)
 		DeleteId(id uint32)
@@ -29,6 +30,7 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 			code,
 			message,
 		)
+		return nil
 
 	case 1:
 		id := msg.ReadUint()
@@ -38,6 +40,7 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.DeleteId(
 			id,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -49,6 +52,12 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *displayObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj displayObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
@@ -84,6 +93,7 @@ const (
 
 type registryObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Global(name uint32, _interface string, version uint32)
 		GlobalRemove(name uint32)
@@ -104,6 +114,7 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 			_interface,
 			version,
 		)
+		return nil
 
 	case 1:
 		name := msg.ReadUint()
@@ -113,6 +124,7 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.GlobalRemove(
 			name,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -124,6 +136,12 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *registryObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj registryObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
@@ -140,6 +158,7 @@ func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder 
 
 type callbackObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Done(callbackData uint32)
 	}
@@ -155,6 +174,7 @@ func (obj callbackObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Done(
 			callbackData,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -168,8 +188,15 @@ func (obj *callbackObject) SetID(id uint32) {
 	obj.id = id
 }
 
+func (obj callbackObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
+}
+
 type compositorObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -187,6 +214,12 @@ func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *compositorObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj compositorObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
@@ -213,6 +246,7 @@ func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 
 type shmPoolObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -230,6 +264,12 @@ func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *shmPoolObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj shmPoolObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, height int32, stride int32, format uint32) *wire.MessageBuilder {
@@ -270,6 +310,7 @@ func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
 
 type shmObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Format(format uint32)
 	}
@@ -285,6 +326,7 @@ func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Format(
 			format,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -296,6 +338,12 @@ func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *shmObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj shmObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj shmObject) CreatePool(id uint32, fd *os.File, size int32) *wire.MessageBuilder {
@@ -430,6 +478,7 @@ const (
 
 type bufferObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Release()
 	}
@@ -442,6 +491,7 @@ func (obj bufferObject) Dispatch(msg *wire.MessageBuffer) error {
 			return err
 		}
 		obj.listener.Release()
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -455,6 +505,12 @@ func (obj *bufferObject) SetID(id uint32) {
 	obj.id = id
 }
 
+func (obj bufferObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
+}
+
 func (obj bufferObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: obj.id,
@@ -466,6 +522,7 @@ func (obj bufferObject) Destroy() *wire.MessageBuilder {
 
 type dataOfferObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Offer(mimeType string)
 		SourceActions(sourceActions uint32)
@@ -483,6 +540,7 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Offer(
 			mimeType,
 		)
+		return nil
 
 	case 1:
 		sourceActions := msg.ReadUint()
@@ -492,6 +550,7 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.SourceActions(
 			sourceActions,
 		)
+		return nil
 
 	case 2:
 		dndAction := msg.ReadUint()
@@ -501,6 +560,7 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Action(
 			dndAction,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -512,6 +572,12 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *dataOfferObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj dataOfferObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageBuilder {
@@ -579,6 +645,7 @@ const (
 
 type dataSourceObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Target(mimeType string)
 		Send(mimeType string, fd *os.File)
@@ -599,6 +666,7 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Target(
 			mimeType,
 		)
+		return nil
 
 	case 1:
 		mimeType := msg.ReadString()
@@ -610,24 +678,28 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 			mimeType,
 			fd,
 		)
+		return nil
 
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Cancelled()
+		return nil
 
 	case 3:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.DndDropPerformed()
+		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.DndFinished()
+		return nil
 
 	case 5:
 		dndAction := msg.ReadUint()
@@ -637,6 +709,7 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Action(
 			dndAction,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -648,6 +721,12 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *dataSourceObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj dataSourceObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
@@ -690,6 +769,7 @@ const (
 
 type dataDeviceObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		DataOffer(id uint32)
 		Enter(serial uint32, surface uint32, x wire.Fixed, y wire.Fixed, id uint32)
@@ -710,6 +790,7 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.DataOffer(
 			id,
 		)
+		return nil
 
 	case 1:
 		serial := msg.ReadUint()
@@ -727,12 +808,14 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 			y,
 			id,
 		)
+		return nil
 
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Leave()
+		return nil
 
 	case 3:
 		time := msg.ReadUint()
@@ -746,12 +829,14 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 			x,
 			y,
 		)
+		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Drop()
+		return nil
 
 	case 5:
 		id := msg.ReadUint()
@@ -761,6 +846,7 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Selection(
 			id,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -772,6 +858,12 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *dataDeviceObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj dataDeviceObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32, serial uint32) *wire.MessageBuilder {
@@ -817,6 +909,7 @@ const (
 
 type dataDeviceManagerObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -834,6 +927,12 @@ func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *dataDeviceManagerObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj dataDeviceManagerObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
@@ -870,6 +969,7 @@ const (
 
 type shellObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -887,6 +987,12 @@ func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *shellObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj shellObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj shellObject) GetShellSurface(id uint32, surface uint32) *wire.MessageBuilder {
@@ -909,6 +1015,7 @@ const (
 
 type shellSurfaceObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Ping(serial uint32)
 		Configure(edges uint32, width int32, height int32)
@@ -926,6 +1033,7 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Ping(
 			serial,
 		)
+		return nil
 
 	case 1:
 		edges := msg.ReadUint()
@@ -939,12 +1047,14 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 			width,
 			height,
 		)
+		return nil
 
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.PopupDone()
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -956,6 +1066,12 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *shellSurfaceObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj shellSurfaceObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
@@ -1110,6 +1226,7 @@ const (
 
 type surfaceObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Enter(output uint32)
 		Leave(output uint32)
@@ -1126,6 +1243,7 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Enter(
 			output,
 		)
+		return nil
 
 	case 1:
 		output := msg.ReadUint()
@@ -1135,6 +1253,7 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Leave(
 			output,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1146,6 +1265,12 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *surfaceObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj surfaceObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj surfaceObject) Destroy() *wire.MessageBuilder {
@@ -1272,6 +1397,7 @@ const (
 
 type seatObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Capabilities(capabilities uint32)
 		Name(name string)
@@ -1288,6 +1414,7 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Capabilities(
 			capabilities,
 		)
+		return nil
 
 	case 1:
 		name := msg.ReadString()
@@ -1297,6 +1424,7 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Name(
 			name,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1308,6 +1436,12 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *seatObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj seatObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
@@ -1368,6 +1502,7 @@ const (
 
 type pointerObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Enter(serial uint32, surface uint32, surfaceX wire.Fixed, surfaceY wire.Fixed)
 		Leave(serial uint32, surface uint32)
@@ -1397,6 +1532,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			surfaceX,
 			surfaceY,
 		)
+		return nil
 
 	case 1:
 		serial := msg.ReadUint()
@@ -1408,6 +1544,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			serial,
 			surface,
 		)
+		return nil
 
 	case 2:
 		time := msg.ReadUint()
@@ -1421,6 +1558,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			surfaceX,
 			surfaceY,
 		)
+		return nil
 
 	case 3:
 		serial := msg.ReadUint()
@@ -1436,6 +1574,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			button,
 			state,
 		)
+		return nil
 
 	case 4:
 		time := msg.ReadUint()
@@ -1449,12 +1588,14 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			axis,
 			value,
 		)
+		return nil
 
 	case 5:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Frame()
+		return nil
 
 	case 6:
 		axisSource := msg.ReadUint()
@@ -1464,6 +1605,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.AxisSource(
 			axisSource,
 		)
+		return nil
 
 	case 7:
 		time := msg.ReadUint()
@@ -1475,6 +1617,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			time,
 			axis,
 		)
+		return nil
 
 	case 8:
 		axis := msg.ReadUint()
@@ -1486,6 +1629,7 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 			axis,
 			discrete,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1497,6 +1641,12 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *pointerObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj pointerObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32, hotspotY int32) *wire.MessageBuilder {
@@ -1553,6 +1703,7 @@ const (
 
 type keyboardObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Keymap(format uint32, fd *os.File, size uint32)
 		Enter(serial uint32, surface uint32, keys []byte)
@@ -1577,6 +1728,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			fd,
 			size,
 		)
+		return nil
 
 	case 1:
 		serial := msg.ReadUint()
@@ -1590,6 +1742,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			surface,
 			keys,
 		)
+		return nil
 
 	case 2:
 		serial := msg.ReadUint()
@@ -1601,6 +1754,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			serial,
 			surface,
 		)
+		return nil
 
 	case 3:
 		serial := msg.ReadUint()
@@ -1616,6 +1770,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			key,
 			state,
 		)
+		return nil
 
 	case 4:
 		serial := msg.ReadUint()
@@ -1633,6 +1788,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			modsLocked,
 			group,
 		)
+		return nil
 
 	case 5:
 		rate := msg.ReadInt()
@@ -1644,6 +1800,7 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 			rate,
 			delay,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1655,6 +1812,12 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *keyboardObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj keyboardObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj keyboardObject) Release() *wire.MessageBuilder {
@@ -1682,6 +1845,7 @@ const (
 
 type touchObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Down(serial uint32, time uint32, surface uint32, id int32, x wire.Fixed, y wire.Fixed)
 		Up(serial uint32, time uint32, id int32)
@@ -1713,6 +1877,7 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 			x,
 			y,
 		)
+		return nil
 
 	case 1:
 		serial := msg.ReadUint()
@@ -1726,6 +1891,7 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 			time,
 			id,
 		)
+		return nil
 
 	case 2:
 		time := msg.ReadUint()
@@ -1741,18 +1907,21 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 			x,
 			y,
 		)
+		return nil
 
 	case 3:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Frame()
+		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Cancel()
+		return nil
 
 	case 5:
 		id := msg.ReadInt()
@@ -1766,6 +1935,7 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 			major,
 			minor,
 		)
+		return nil
 
 	case 6:
 		id := msg.ReadInt()
@@ -1777,6 +1947,7 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 			id,
 			orientation,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1790,6 +1961,12 @@ func (obj *touchObject) SetID(id uint32) {
 	obj.id = id
 }
 
+func (obj touchObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
+}
+
 func (obj touchObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: obj.id,
@@ -1801,6 +1978,7 @@ func (obj touchObject) Release() *wire.MessageBuilder {
 
 type outputObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel int32, make string, model string, transform int32)
 		Mode(flags uint32, width int32, height int32, refresh int32)
@@ -1833,6 +2011,7 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 			model,
 			transform,
 		)
+		return nil
 
 	case 1:
 		flags := msg.ReadUint()
@@ -1848,12 +2027,14 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 			height,
 			refresh,
 		)
+		return nil
 
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
 		}
 		obj.listener.Done()
+		return nil
 
 	case 3:
 		factor := msg.ReadInt()
@@ -1863,6 +2044,7 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 		obj.listener.Scale(
 			factor,
 		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -1874,6 +2056,12 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *outputObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj outputObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj outputObject) Release() *wire.MessageBuilder {
@@ -1918,6 +2106,7 @@ const (
 
 type regionObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -1935,6 +2124,12 @@ func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *regionObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj regionObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj regionObject) Destroy() *wire.MessageBuilder {
@@ -1976,6 +2171,7 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 
 type subcompositorObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -1993,6 +2189,12 @@ func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *subcompositorObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj subcompositorObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
@@ -2025,6 +2227,7 @@ const (
 
 type subsurfaceObject struct {
 	id       uint32
+	delete   func()
 	listener interface {
 	}
 }
@@ -2042,6 +2245,12 @@ func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 
 func (obj *subsurfaceObject) SetID(id uint32) {
 	obj.id = id
+}
+
+func (obj subsurfaceObject) Delete() {
+	if obj.delete != nil {
+		obj.delete()
+	}
 }
 
 func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
