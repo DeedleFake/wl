@@ -138,7 +138,10 @@ func (display *Display) GetRegistry() *Registry {
 		return display.registry
 	}
 
-	registry := Registry{display: display}
+	registry := Registry{
+		display: display,
+		globals: make(map[uint32]Interface),
+	}
 	registry.obj.listener = registryListener{registry: &registry}
 	display.AddObject(&registry.obj)
 	display.Enqueue(display.obj.GetRegistry(registry.obj.id))

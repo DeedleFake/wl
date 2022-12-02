@@ -1,11 +1,16 @@
 package wl
 
-type Registry struct {
-	Global       func(name uint32, inter string, version uint32)
-	GlobalRemove func(name uint32)
+import "golang.org/x/exp/maps"
 
+type Registry struct {
 	obj     registryObject
 	display *Display
+
+	globals map[uint32]Interface
+}
+
+func (registry *Registry) Globals() map[uint32]Interface {
+	return maps.Clone(registry.globals)
 }
 
 type registryListener struct {
@@ -13,13 +18,9 @@ type registryListener struct {
 }
 
 func (lis registryListener) Global(name uint32, inter string, version uint32) {
-	if lis.registry.Global != nil {
-		lis.registry.Global(name, inter, version)
-	}
+	lis.registry.globals[name] = Interface{Name: inter, Version: version}
 }
 
 func (lis registryListener) GlobalRemove(name uint32) {
-	if lis.registry.GlobalRemove != nil {
-		lis.registry.GlobalRemove(name)
-	}
+	delete(lis.registry.globals, name)
 }
