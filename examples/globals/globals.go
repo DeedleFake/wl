@@ -4,15 +4,13 @@ import (
 	"log"
 
 	wl "deedles.dev/wl/client"
-	"deedles.dev/wl/wire"
 )
 
 func main() {
-	c, err := wire.Dial()
+	display, err := wl.DialDisplay()
 	if err != nil {
-		log.Fatalf("dial socket: %v", err)
+		log.Fatalf("dial display: %v", err)
 	}
-	display := wl.ConnectDisplay(c)
 	defer display.Close()
 	display.Error = func(id, code uint32, msg string) {
 		log.Printf("error: id: %v, code: %v, msg: %q", id, code, msg)
