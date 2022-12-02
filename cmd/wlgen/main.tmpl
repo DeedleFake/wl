@@ -14,14 +14,12 @@ import (
 	{{- $listeners := listeners $.IsClient . -}}
 	{{- $senders := senders $.IsClient . -}}
 
-	type {{$name}}Listener interface {
-		{{range $listeners}}
-			{{- .Name | camel | export}}({{range .Args}}{{.Type | goType}}, {{end}})
-		{{end}}
-	}
-
 	type {{$name}}Object struct {
-		listener {{$name}}Listener
+		listener interface {
+			{{range $listeners}}
+				{{- .Name | camel | export}}({{range .Args}}{{.Type | goType}}, {{end}})
+			{{end}}
+		}
 	}
 
 	func (obj {{$name}}Object) Dispatch(msg *wire.MessageBuffer) error {
