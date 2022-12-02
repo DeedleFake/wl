@@ -15,6 +15,7 @@ import (
 	{{- $senders := senders $.IsClient . -}}
 
 	type {{$name}}Object struct {
+		id uint32
 		listener interface {
 			{{range $listeners}}
 				{{- .Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
@@ -47,10 +48,14 @@ import (
 		}
 	}
 
+	func (obj *{{$name}}Object) SetID(id uint32) {
+		obj.id = id
+	}
+
 	{{range $op, $method := $senders}}
-		func (obj {{$name}}Object) {{$method.Name | camel | export}}(sender uint32, {{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
+		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
 			builder := wire.MessageBuilder{
-				Sender: sender,
+				Sender: obj.id,
 				Op: {{$op}},
 			}
 
