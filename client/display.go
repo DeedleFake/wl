@@ -22,6 +22,14 @@ type Display struct {
 	enqueue  chan func() error
 }
 
+func DialDisplay() (*Display, error) {
+	socket, err := wire.Dial()
+	if err != nil {
+		return nil, err
+	}
+	return ConnectDisplay(socket), nil
+}
+
 func ConnectDisplay(c *net.UnixConn) *Display {
 	display := Display{
 		done:    make(chan struct{}),
