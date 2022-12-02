@@ -48,7 +48,7 @@ import (
 		}
 	}
 
-	{{range $op, $method := $senders -}}
+	{{range $op, $method := $senders}}
 		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{.Type | goType}}, {{end}}) *wire.MessageBuilder {
 			builder := wire.MessageBuilder{
 				Sender: obj.id,
@@ -61,5 +61,16 @@ import (
 
 			return &builder
 		}
+	{{end}}
+
+	{{range $enum := .Enums}}
+		{{- $enumName := printf "%s%s" ($name | export) (.Name | camel | export) | unexport -}}
+		type {{$enumName}} int32
+
+		const (
+			{{range .Entries -}}
+				{{$enumName}}{{.Name | camel | export}} {{$enumName}} = {{.Int}}
+			{{end}}
+		)
 	{{end}}
 {{end}}
