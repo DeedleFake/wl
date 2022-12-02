@@ -38,6 +38,7 @@ import (
 						{{.Name | camel | unexport | unkeyword}},
 					{{end -}}
 				)
+				return nil
 		{{end -}}
 		}
 
