@@ -14,6 +14,11 @@ import (
 	{{- $listeners := listeners $.IsClient . -}}
 	{{- $senders := senders $.IsClient . -}}
 
+	const (
+		{{$name}}Name = {{.Name | printf "%q"}}
+		{{$name}}Version = {{.Version}}
+	)
+
 	{{.Description.Full | trimSpace | trimLines | comment -}}
 	type {{$name}}Object struct {
 		id uint32
