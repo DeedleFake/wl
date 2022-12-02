@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"go/format"
+	"go/token"
 	"log"
 	"os"
 	"strings"
@@ -135,6 +136,12 @@ var (
 				return "", fmt.Errorf("unknown type: %q", name)
 			}
 		},
+		"unkeyword": func(v string) string {
+			if token.IsKeyword(v) {
+				return "_" + v
+			}
+			return v
+		},
 	}
 )
 
@@ -208,9 +215,11 @@ extraImportsLoop:
 		log.Fatalf("execute template: %v", err)
 	}
 
-	data, err := format.Source(buf.Bytes())
+	unfmt := buf.Bytes()
+	data, err := format.Source(unfmt)
 	if err != nil {
-		log.Fatalf("format output: %v", err)
+		log.Printf("format output: %v", err)
+		data = unfmt
 	}
 
 	file, err := os.Create(*out)
