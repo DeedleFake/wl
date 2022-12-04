@@ -26,7 +26,11 @@ func init() {
 }
 
 func padding(length uint32) uint32 {
-	return 4 - (length % (32 / 8))
+	pad := 4 - (length % (32 / 8))
+	if pad == 4 {
+		return 0
+	}
+	return pad
 }
 
 func read[T ~int32 | ~uint32](r io.Reader) (T, error) {
