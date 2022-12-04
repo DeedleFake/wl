@@ -1,5 +1,7 @@
 package wl
 
+import "os"
+
 type Shm struct {
 	Format func(uint32)
 
@@ -20,6 +22,14 @@ func BindShm(display *Display, name uint32) *Shm {
 	registry.Bind(name, shmInterface, shmVersion, shm.obj.id)
 
 	return &shm
+}
+
+func (shm *Shm) CreatePool(file *os.File, size int32) *ShmPool {
+	pool := ShmPool{display: shm.display}
+	shm.display.AddObject(&pool.obj)
+	shm.display.Enqueue(shm.obj.CreatePool(pool.obj.id, file, size))
+
+	return &pool
 }
 
 type shmListener struct {
