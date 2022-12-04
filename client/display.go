@@ -16,9 +16,9 @@ type Display struct {
 	done     chan struct{}
 	close    sync.Once
 	conn     *net.UnixConn
+	registry *Registry
 	objects  map[uint32]wire.Object
 	nextID   uint32
-	registry *Registry
 	queue    *cq.Queue[func() error]
 }
 
@@ -99,14 +99,13 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 		return UnknownSenderIDError{Msg: msg}
 	}
 
+	debug("dispatch: %T(%v) -> %v", obj, obj.(wire.Identifier).ID(), msg.Op())
 	return obj.Dispatch(msg)
 }
 
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	display.queue.Add() <- func() error {
-		debug("%v(%v) -> %v(%v)\n", msg.Interface, msg.Sender, msg.Method, msg.Op)
-		return msg.Build(display.conn)
-	}
+	debug("enqueue: %v", msg)
+	display.queue.Add() <- func() error { return msg.Build(display.conn) }
 }
 
 func (display *Display) flush(queue []func() error) (errs []error) {
@@ -156,6 +155,7 @@ func (display *Display) GetRegistry() *Registry {
 	registry.obj.listener = registryListener{registry: &registry}
 	display.AddObject(&registry.obj)
 	display.Enqueue(display.obj.GetRegistry(registry.obj.id))
+
 	display.registry = &registry
 	return &registry
 }

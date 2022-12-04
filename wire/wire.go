@@ -118,6 +118,11 @@ type Object interface {
 	Delete()
 }
 
+// Identifier is a type that is capable of reporting its own ID.
+type Identifier interface {
+	ID() uint32
+}
+
 // UnknownOpError is returned by Object.Dispatch if it is given a
 // message with an invalid opcode.
 type UnknownOpError struct {

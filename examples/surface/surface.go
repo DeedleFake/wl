@@ -86,6 +86,21 @@ func (state *state) init() error {
 	return nil
 }
 
+func (state *state) run(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		err := state.display.Flush()
+		if err != nil {
+			log.Printf("flush: %v", err)
+		}
+	}
+}
+
 func (state *state) global(name uint32, inter wl.Interface) {
 	switch {
 	case wl.IsCompositor(inter):
@@ -140,21 +155,6 @@ func (state *state) configure() {
 	buf := state.drawFrame()
 	state.surface.Attach(buf, 0, 0)
 	state.surface.Commit()
-}
-
-func (state *state) run(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		err := state.display.Flush()
-		if err != nil {
-			log.Printf("flush: %v", err)
-		}
-	}
 }
 
 func main() {

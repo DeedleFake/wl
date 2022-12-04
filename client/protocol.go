@@ -97,10 +97,10 @@ func (obj displayObject) Delete() {
 // The callback_data passed in the callback is the event serial.
 func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_display",
-		Method:    "sync",
+		Sender: &obj,
+		Op:     0,
+		Method: "sync",
+		Args:   []any{callback},
 	}
 
 	builder.WriteUint(callback)
@@ -119,10 +119,10 @@ func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
 // possible to avoid wasting memory.
 func (obj displayObject) GetRegistry(registry uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_display",
-		Method:    "get_registry",
+		Sender: &obj,
+		Op:     1,
+		Method: "get_registry",
+		Args:   []any{registry},
 	}
 
 	builder.WriteUint(registry)
@@ -250,10 +250,10 @@ func (obj registryObject) Delete() {
 // specified name as the identifier.
 func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_registry",
-		Method:    "bind",
+		Sender: &obj,
+		Op:     0,
+		Method: "bind",
+		Args:   []any{name, id},
 	}
 
 	builder.WriteUint(name)
@@ -353,10 +353,10 @@ func (obj compositorObject) Delete() {
 // Ask the compositor to create a new surface.
 func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_compositor",
-		Method:    "create_surface",
+		Sender: &obj,
+		Op:     0,
+		Method: "create_surface",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -367,10 +367,10 @@ func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
 // Ask the compositor to create a new region.
 func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_compositor",
-		Method:    "create_region",
+		Sender: &obj,
+		Op:     1,
+		Method: "create_region",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -433,10 +433,10 @@ func (obj shmPoolObject) Delete() {
 // a buffer from it.
 func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, height int32, stride int32, format uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_shm_pool",
-		Method:    "create_buffer",
+		Sender: &obj,
+		Op:     0,
+		Method: "create_buffer",
+		Args:   []any{id, offset, width, height, stride, format},
 	}
 
 	builder.WriteUint(id)
@@ -456,10 +456,10 @@ func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, heig
 // are gone.
 func (obj shmPoolObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_shm_pool",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     1,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -471,10 +471,10 @@ func (obj shmPoolObject) Destroy() *wire.MessageBuilder {
 // used to make the pool bigger.
 func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_shm_pool",
-		Method:    "resize",
+		Sender: &obj,
+		Op:     2,
+		Method: "resize",
+		Args:   []any{size},
 	}
 
 	builder.WriteInt(size)
@@ -548,10 +548,10 @@ func (obj shmObject) Delete() {
 // descriptor, to use as backing memory for the pool.
 func (obj shmObject) CreatePool(id uint32, fd *os.File, size int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_shm",
-		Method:    "create_pool",
+		Sender: &obj,
+		Op:     0,
+		Method: "create_pool",
+		Args:   []any{id, fd, size},
 	}
 
 	builder.WriteUint(id)
@@ -955,10 +955,10 @@ func (obj bufferObject) Delete() {
 // For possible side-effects to a surface, see wl_surface.attach.
 func (obj bufferObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_buffer",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     0,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -1097,10 +1097,10 @@ func (obj dataOfferObject) Delete() {
 // conjunction with wl_data_source.action for feedback.
 func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_data_offer",
-		Method:    "accept",
+		Sender: &obj,
+		Op:     0,
+		Method: "accept",
+		Args:   []any{serial, mimeType},
 	}
 
 	builder.WriteUint(serial)
@@ -1126,10 +1126,10 @@ func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageB
 // determine acceptance.
 func (obj dataOfferObject) Receive(mimeType string, fd *os.File) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_data_offer",
-		Method:    "receive",
+		Sender: &obj,
+		Op:     1,
+		Method: "receive",
+		Args:   []any{mimeType, fd},
 	}
 
 	builder.WriteString(mimeType)
@@ -1141,10 +1141,10 @@ func (obj dataOfferObject) Receive(mimeType string, fd *os.File) *wire.MessageBu
 // Destroy the data offer.
 func (obj dataOfferObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_data_offer",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     2,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -1166,10 +1166,10 @@ func (obj dataOfferObject) Destroy() *wire.MessageBuilder {
 // operation, the invalid_finish protocol error is raised.
 func (obj dataOfferObject) Finish() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        3,
-		Interface: "wl_data_offer",
-		Method:    "finish",
+		Sender: &obj,
+		Op:     3,
+		Method: "finish",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -1208,10 +1208,10 @@ func (obj dataOfferObject) Finish() *wire.MessageBuilder {
 // will be raised otherwise.
 func (obj dataOfferObject) SetActions(dndActions uint32, preferredAction uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        4,
-		Interface: "wl_data_offer",
-		Method:    "set_actions",
+		Sender: &obj,
+		Op:     4,
+		Method: "set_actions",
+		Args:   []any{dndActions, preferredAction},
 	}
 
 	builder.WriteUint(dndActions)
@@ -1412,10 +1412,10 @@ func (obj dataSourceObject) Delete() {
 // multiple types.
 func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_data_source",
-		Method:    "offer",
+		Sender: &obj,
+		Op:     0,
+		Method: "offer",
+		Args:   []any{mimeType},
 	}
 
 	builder.WriteString(mimeType)
@@ -1426,10 +1426,10 @@ func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
 // Destroy the data source.
 func (obj dataSourceObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_data_source",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     1,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -1450,10 +1450,10 @@ func (obj dataSourceObject) Destroy() *wire.MessageBuilder {
 // for drag-and-drop will raise a protocol error.
 func (obj dataSourceObject) SetActions(dndActions uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_data_source",
-		Method:    "set_actions",
+		Sender: &obj,
+		Op:     2,
+		Method: "set_actions",
+		Args:   []any{dndActions},
 	}
 
 	builder.WriteUint(dndActions)
@@ -1661,10 +1661,10 @@ func (obj dataDeviceObject) Delete() {
 // undefined, and the wl_surface is unmapped.
 func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_data_device",
-		Method:    "start_drag",
+		Sender: &obj,
+		Op:     0,
+		Method: "start_drag",
+		Args:   []any{source, origin, icon, serial},
 	}
 
 	builder.WriteUint(source)
@@ -1681,10 +1681,10 @@ func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32,
 // To unset the selection, set the source to NULL.
 func (obj dataDeviceObject) SetSelection(source uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_data_device",
-		Method:    "set_selection",
+		Sender: &obj,
+		Op:     1,
+		Method: "set_selection",
+		Args:   []any{source, serial},
 	}
 
 	builder.WriteUint(source)
@@ -1696,10 +1696,10 @@ func (obj dataDeviceObject) SetSelection(source uint32, serial uint32) *wire.Mes
 // This request destroys the data device.
 func (obj dataDeviceObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_data_device",
-		Method:    "release",
+		Sender: &obj,
+		Op:     2,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -1760,10 +1760,10 @@ func (obj dataDeviceManagerObject) Delete() {
 // Create a new data source.
 func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_data_device_manager",
-		Method:    "create_data_source",
+		Sender: &obj,
+		Op:     0,
+		Method: "create_data_source",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -1774,10 +1774,10 @@ func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuil
 // Create a new data device for a given seat.
 func (obj dataDeviceManagerObject) GetDataDevice(id uint32, seat uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_data_device_manager",
-		Method:    "get_data_device",
+		Sender: &obj,
+		Op:     1,
+		Method: "get_data_device",
+		Args:   []any{id, seat},
 	}
 
 	builder.WriteUint(id)
@@ -1875,10 +1875,10 @@ func (obj shellObject) Delete() {
 // Only one shell surface can be associated with a given surface.
 func (obj shellObject) GetShellSurface(id uint32, surface uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_shell",
-		Method:    "get_shell_surface",
+		Sender: &obj,
+		Op:     0,
+		Method: "get_shell_surface",
+		Args:   []any{id, surface},
 	}
 
 	builder.WriteUint(id)
@@ -2003,10 +2003,10 @@ func (obj shellSurfaceObject) Delete() {
 // the client may be deemed unresponsive.
 func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_shell_surface",
-		Method:    "pong",
+		Sender: &obj,
+		Op:     0,
+		Method: "pong",
+		Args:   []any{serial},
 	}
 
 	builder.WriteUint(serial)
@@ -2021,10 +2021,10 @@ func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
 // the surface (e.g. fullscreen or maximized).
 func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_shell_surface",
-		Method:    "move",
+		Sender: &obj,
+		Op:     1,
+		Method: "move",
+		Args:   []any{seat, serial},
 	}
 
 	builder.WriteUint(seat)
@@ -2040,10 +2040,10 @@ func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuil
 // the surface (e.g. fullscreen or maximized).
 func (obj shellSurfaceObject) Resize(seat uint32, serial uint32, edges uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_shell_surface",
-		Method:    "resize",
+		Sender: &obj,
+		Op:     2,
+		Method: "resize",
+		Args:   []any{seat, serial, edges},
 	}
 
 	builder.WriteUint(seat)
@@ -2058,10 +2058,10 @@ func (obj shellSurfaceObject) Resize(seat uint32, serial uint32, edges uint32) *
 // A toplevel surface is not fullscreen, maximized or transient.
 func (obj shellSurfaceObject) SetToplevel() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        3,
-		Interface: "wl_shell_surface",
-		Method:    "set_toplevel",
+		Sender: &obj,
+		Op:     3,
+		Method: "set_toplevel",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -2076,10 +2076,10 @@ func (obj shellSurfaceObject) SetToplevel() *wire.MessageBuilder {
 // The flags argument controls details of the transient behaviour.
 func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        4,
-		Interface: "wl_shell_surface",
-		Method:    "set_transient",
+		Sender: &obj,
+		Op:     4,
+		Method: "set_transient",
+		Args:   []any{parent, x, y, flags},
 	}
 
 	builder.WriteUint(parent)
@@ -2125,10 +2125,10 @@ func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flag
 // be made fullscreen.
 func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, output uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        5,
-		Interface: "wl_shell_surface",
-		Method:    "set_fullscreen",
+		Sender: &obj,
+		Op:     5,
+		Method: "set_fullscreen",
+		Args:   []any{method, framerate, output},
 	}
 
 	builder.WriteUint(method)
@@ -2159,10 +2159,10 @@ func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, out
 // parent surface, in surface-local coordinates.
 func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        6,
-		Interface: "wl_shell_surface",
-		Method:    "set_popup",
+		Sender: &obj,
+		Op:     6,
+		Method: "set_popup",
+		Args:   []any{seat, serial, parent, x, y, flags},
 	}
 
 	builder.WriteUint(seat)
@@ -2195,10 +2195,10 @@ func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32
 // The details depend on the compositor implementation.
 func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        7,
-		Interface: "wl_shell_surface",
-		Method:    "set_maximized",
+		Sender: &obj,
+		Op:     7,
+		Method: "set_maximized",
+		Args:   []any{output},
 	}
 
 	builder.WriteUint(output)
@@ -2215,10 +2215,10 @@ func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
 // The string must be encoded in UTF-8.
 func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        8,
-		Interface: "wl_shell_surface",
-		Method:    "set_title",
+		Sender: &obj,
+		Op:     8,
+		Method: "set_title",
+		Args:   []any{title},
 	}
 
 	builder.WriteString(title)
@@ -2234,10 +2234,10 @@ func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
 // the application's .desktop file as the class.
 func (obj shellSurfaceObject) SetClass(class string) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        9,
-		Interface: "wl_shell_surface",
-		Method:    "set_class",
+		Sender: &obj,
+		Op:     9,
+		Method: "set_class",
+		Args:   []any{class},
 	}
 
 	builder.WriteString(class)
@@ -2425,10 +2425,10 @@ func (obj surfaceObject) Delete() {
 // Deletes the surface and invalidates its object ID.
 func (obj surfaceObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_surface",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     0,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -2482,10 +2482,10 @@ func (obj surfaceObject) Destroy() *wire.MessageBuilder {
 // following wl_surface.commit will remove the surface content.
 func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_surface",
-		Method:    "attach",
+		Sender: &obj,
+		Op:     1,
+		Method: "attach",
+		Args:   []any{buffer, x, y},
 	}
 
 	builder.WriteUint(buffer)
@@ -2518,10 +2518,10 @@ func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBu
 // instead of surface coordinates.
 func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_surface",
-		Method:    "damage",
+		Sender: &obj,
+		Op:     2,
+		Method: "damage",
+		Args:   []any{x, y, width, height},
 	}
 
 	builder.WriteInt(x)
@@ -2566,10 +2566,10 @@ func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wi
 // milliseconds, with an undefined base.
 func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        3,
-		Interface: "wl_surface",
-		Method:    "frame",
+		Sender: &obj,
+		Op:     3,
+		Method: "frame",
+		Args:   []any{callback},
 	}
 
 	builder.WriteUint(callback)
@@ -2603,10 +2603,10 @@ func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
 // region to be set to empty.
 func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        4,
-		Interface: "wl_surface",
-		Method:    "set_opaque_region",
+		Sender: &obj,
+		Op:     4,
+		Method: "set_opaque_region",
+		Args:   []any{region},
 	}
 
 	builder.WriteUint(region)
@@ -2638,10 +2638,10 @@ func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
 // to infinite.
 func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        5,
-		Interface: "wl_surface",
-		Method:    "set_input_region",
+		Sender: &obj,
+		Op:     5,
+		Method: "set_input_region",
+		Args:   []any{region},
 	}
 
 	builder.WriteUint(region)
@@ -2668,10 +2668,10 @@ func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
 // Other interfaces may add further double-buffered surface state.
 func (obj surfaceObject) Commit() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        6,
-		Interface: "wl_surface",
-		Method:    "commit",
+		Sender: &obj,
+		Op:     6,
+		Method: "commit",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -2708,10 +2708,10 @@ func (obj surfaceObject) Commit() *wire.MessageBuilder {
 // is raised.
 func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        7,
-		Interface: "wl_surface",
-		Method:    "set_buffer_transform",
+		Sender: &obj,
+		Op:     7,
+		Method: "set_buffer_transform",
+		Args:   []any{transform},
 	}
 
 	builder.WriteInt(transform)
@@ -2744,10 +2744,10 @@ func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilde
 // raised.
 func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        8,
-		Interface: "wl_surface",
-		Method:    "set_buffer_scale",
+		Sender: &obj,
+		Op:     8,
+		Method: "set_buffer_scale",
+		Args:   []any{scale},
 	}
 
 	builder.WriteInt(scale)
@@ -2789,10 +2789,10 @@ func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
 // after receiving the wl_surface.commit.
 func (obj surfaceObject) DamageBuffer(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        9,
-		Interface: "wl_surface",
-		Method:    "damage_buffer",
+		Sender: &obj,
+		Op:     9,
+		Method: "damage_buffer",
+		Args:   []any{x, y, width, height},
 	}
 
 	builder.WriteInt(x)
@@ -2917,10 +2917,10 @@ func (obj seatObject) Delete() {
 // be sent in this case.
 func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_seat",
-		Method:    "get_pointer",
+		Sender: &obj,
+		Op:     0,
+		Method: "get_pointer",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -2938,10 +2938,10 @@ func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
 // be sent in this case.
 func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_seat",
-		Method:    "get_keyboard",
+		Sender: &obj,
+		Op:     1,
+		Method: "get_keyboard",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -2959,10 +2959,10 @@ func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
 // be sent in this case.
 func (obj seatObject) GetTouch(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_seat",
-		Method:    "get_touch",
+		Sender: &obj,
+		Op:     2,
+		Method: "get_touch",
+		Args:   []any{id},
 	}
 
 	builder.WriteUint(id)
@@ -2974,10 +2974,10 @@ func (obj seatObject) GetTouch(id uint32) *wire.MessageBuilder {
 // use the seat object anymore.
 func (obj seatObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        3,
-		Interface: "wl_seat",
-		Method:    "release",
+		Sender: &obj,
+		Op:     3,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -3356,10 +3356,10 @@ func (obj pointerObject) Delete() {
 // undefined, and the wl_surface is unmapped.
 func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32, hotspotY int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_pointer",
-		Method:    "set_cursor",
+		Sender: &obj,
+		Op:     0,
+		Method: "set_cursor",
+		Args:   []any{serial, surface, hotspotX, hotspotY},
 	}
 
 	builder.WriteUint(serial)
@@ -3377,10 +3377,10 @@ func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32
 // wl_pointer_destroy() after using this request.
 func (obj pointerObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_pointer",
-		Method:    "release",
+		Sender: &obj,
+		Op:     1,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -3626,10 +3626,10 @@ func (obj keyboardObject) Delete() {
 
 func (obj keyboardObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_keyboard",
-		Method:    "release",
+		Sender: &obj,
+		Op:     0,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -3877,10 +3877,10 @@ func (obj touchObject) Delete() {
 
 func (obj touchObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_touch",
-		Method:    "release",
+		Sender: &obj,
+		Op:     0,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4062,10 +4062,10 @@ func (obj outputObject) Delete() {
 // use the output object anymore.
 func (obj outputObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_output",
-		Method:    "release",
+		Sender: &obj,
+		Op:     0,
+		Method: "release",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4188,10 +4188,10 @@ func (obj regionObject) Delete() {
 // Destroy the region.  This will invalidate the object ID.
 func (obj regionObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_region",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     0,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4200,10 +4200,10 @@ func (obj regionObject) Destroy() *wire.MessageBuilder {
 // Add the specified rectangle to the region.
 func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_region",
-		Method:    "add",
+		Sender: &obj,
+		Op:     1,
+		Method: "add",
+		Args:   []any{x, y, width, height},
 	}
 
 	builder.WriteInt(x)
@@ -4217,10 +4217,10 @@ func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.M
 // Subtract the specified rectangle from the region.
 func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_region",
-		Method:    "subtract",
+		Sender: &obj,
+		Op:     2,
+		Method: "subtract",
+		Args:   []any{x, y, width, height},
 	}
 
 	builder.WriteInt(x)
@@ -4290,10 +4290,10 @@ func (obj subcompositorObject) Delete() {
 // objects, wl_subsurface objects included.
 func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_subcompositor",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     0,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4316,10 +4316,10 @@ func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
 // the sub-surface, see the documentation on wl_subsurface interface.
 func (obj subcompositorObject) GetSubsurface(id uint32, surface uint32, parent uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_subcompositor",
-		Method:    "get_subsurface",
+		Sender: &obj,
+		Op:     1,
+		Method: "get_subsurface",
+		Args:   []any{id, surface, parent},
 	}
 
 	builder.WriteUint(id)
@@ -4427,10 +4427,10 @@ func (obj subsurfaceObject) Delete() {
 // a sub-surface. The wl_surface is unmapped immediately.
 func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        0,
-		Interface: "wl_subsurface",
-		Method:    "destroy",
+		Sender: &obj,
+		Op:     0,
+		Method: "destroy",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4454,10 +4454,10 @@ func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
 // The initial position is 0, 0.
 func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        1,
-		Interface: "wl_subsurface",
-		Method:    "set_position",
+		Sender: &obj,
+		Op:     1,
+		Method: "set_position",
+		Args:   []any{x, y},
 	}
 
 	builder.WriteInt(x)
@@ -4483,10 +4483,10 @@ func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
 // of its siblings and parent.
 func (obj subsurfaceObject) PlaceAbove(sibling uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        2,
-		Interface: "wl_subsurface",
-		Method:    "place_above",
+		Sender: &obj,
+		Op:     2,
+		Method: "place_above",
+		Args:   []any{sibling},
 	}
 
 	builder.WriteUint(sibling)
@@ -4498,10 +4498,10 @@ func (obj subsurfaceObject) PlaceAbove(sibling uint32) *wire.MessageBuilder {
 // See wl_subsurface.place_above.
 func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        3,
-		Interface: "wl_subsurface",
-		Method:    "place_below",
+		Sender: &obj,
+		Op:     3,
+		Method: "place_below",
+		Args:   []any{sibling},
 	}
 
 	builder.WriteUint(sibling)
@@ -4524,10 +4524,10 @@ func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
 // See wl_subsurface for the recursive effect of this mode.
 func (obj subsurfaceObject) SetSync() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        4,
-		Interface: "wl_subsurface",
-		Method:    "set_sync",
+		Sender: &obj,
+		Op:     4,
+		Method: "set_sync",
+		Args:   []any{},
 	}
 
 	return &builder
@@ -4554,10 +4554,10 @@ func (obj subsurfaceObject) SetSync() *wire.MessageBuilder {
 // the cached state is applied on set_desync.
 func (obj subsurfaceObject) SetDesync() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
-		Sender:    obj.id,
-		Op:        5,
-		Interface: "wl_subsurface",
-		Method:    "set_desync",
+		Sender: &obj,
+		Op:     5,
+		Method: "set_desync",
+		Args:   []any{},
 	}
 
 	return &builder

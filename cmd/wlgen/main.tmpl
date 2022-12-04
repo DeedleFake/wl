@@ -78,10 +78,10 @@ import (
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
 		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
 			builder := wire.MessageBuilder{
-				Sender: obj.id,
+				Sender: &obj,
 				Op: {{$op}},
-				Interface: {{$interface.Name | printf "%q"}},
 				Method: {{$method.Name | printf "%q"}},
+				Args: []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} },
 			}
 
 			{{range $method.Args -}}
