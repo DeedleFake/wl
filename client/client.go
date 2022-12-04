@@ -3,6 +3,7 @@ package wl
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"deedles.dev/wl/wire"
 )
@@ -12,7 +13,11 @@ import (
 var debug = func(string, ...any) {}
 
 func init() {
-	if os.Getenv("WL_DEBUG") == "1" {
+	debugLevel, err := strconv.ParseInt(os.Getenv("WL_DEBUG"), 10, 0)
+	if err != nil {
+		return
+	}
+	if debugLevel > 0 {
 		debug = func(str string, args ...any) { fmt.Printf(str, args...) }
 	}
 }
