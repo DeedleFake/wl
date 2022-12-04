@@ -99,12 +99,12 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 		return UnknownSenderIDError{Msg: msg}
 	}
 
-	debug("dispatch: %v -> %v(???)", obj, obj.MethodName(msg.Op()))
+	debug("%v.%v(???)", obj, obj.MethodName(msg.Op()))
 	return obj.Dispatch(msg)
 }
 
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	debug("enqueue: %v", msg)
+	debug(" -> %v", msg)
 	display.queue.Add() <- func() error { return msg.Build(display.conn) }
 }
 

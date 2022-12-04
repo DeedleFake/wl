@@ -14,7 +14,7 @@ import (
 var debug = func(string, ...any) {}
 
 func init() {
-	debugLevel, err := strconv.ParseInt(os.Getenv("WL_DEBUG"), 10, 0)
+	debugLevel, err := strconv.ParseInt(os.Getenv("WAYLAND_DEBUG"), 10, 0)
 	if err != nil {
 		return
 	}
