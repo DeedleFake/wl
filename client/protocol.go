@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	displayName    = "wl_display"
-	displayVersion = 1
+	displayInterface = "wl_display"
+	displayVersion   = 1
 )
 
 // The core global object.  This is a special singleton object.  It
@@ -141,8 +141,8 @@ const (
 )
 
 const (
-	registryName    = "wl_registry"
-	registryVersion = 1
+	registryInterface = "wl_registry"
+	registryVersion   = 1
 )
 
 // The singleton global registry object.  The server has a number of
@@ -249,8 +249,8 @@ func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder 
 }
 
 const (
-	callbackName    = "wl_callback"
-	callbackVersion = 1
+	callbackInterface = "wl_callback"
+	callbackVersion   = 1
 )
 
 // Clients can handle the 'done' event to get notified when
@@ -295,8 +295,8 @@ func (obj callbackObject) Delete() {
 }
 
 const (
-	compositorName    = "wl_compositor"
-	compositorVersion = 4
+	compositorInterface = "wl_compositor"
+	compositorVersion   = 4
 )
 
 // A compositor.  This object is a singleton global.  The
@@ -353,8 +353,8 @@ func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
 }
 
 const (
-	shmPoolName    = "wl_shm_pool"
-	shmPoolVersion = 1
+	shmPoolInterface = "wl_shm_pool"
+	shmPoolVersion   = 1
 )
 
 // The wl_shm_pool object encapsulates a piece of memory shared
@@ -447,8 +447,8 @@ func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
 }
 
 const (
-	shmName    = "wl_shm"
-	shmVersion = 1
+	shmInterface = "wl_shm"
+	shmVersion   = 1
 )
 
 // A singleton global object that provides support for shared
@@ -847,8 +847,8 @@ const (
 )
 
 const (
-	bufferName    = "wl_buffer"
-	bufferVersion = 1
+	bufferInterface = "wl_buffer"
+	bufferVersion   = 1
 )
 
 // A buffer provides the content for a wl_surface. Buffers are
@@ -917,8 +917,8 @@ func (obj bufferObject) Destroy() *wire.MessageBuilder {
 }
 
 const (
-	dataOfferName    = "wl_data_offer"
-	dataOfferVersion = 3
+	dataOfferInterface = "wl_data_offer"
+	dataOfferVersion   = 3
 )
 
 // A wl_data_offer represents a piece of data offered for transfer
@@ -1175,8 +1175,8 @@ const (
 )
 
 const (
-	dataSourceName    = "wl_data_source"
-	dataSourceVersion = 3
+	dataSourceInterface = "wl_data_source"
+	dataSourceVersion   = 3
 )
 
 // The wl_data_source object is the source side of a wl_data_offer.
@@ -1400,8 +1400,8 @@ const (
 )
 
 const (
-	dataDeviceName    = "wl_data_device"
-	dataDeviceVersion = 3
+	dataDeviceInterface = "wl_data_device"
+	dataDeviceVersion   = 3
 )
 
 // There is one wl_data_device per seat which can be obtained
@@ -1631,8 +1631,8 @@ const (
 )
 
 const (
-	dataDeviceManagerName    = "wl_data_device_manager"
-	dataDeviceManagerVersion = 3
+	dataDeviceManagerInterface = "wl_data_device_manager"
+	dataDeviceManagerVersion   = 3
 )
 
 // The wl_data_device_manager is a singleton global object that
@@ -1736,8 +1736,8 @@ const (
 )
 
 const (
-	shellName    = "wl_shell"
-	shellVersion = 1
+	shellInterface = "wl_shell"
+	shellVersion   = 1
 )
 
 // This interface is implemented by servers that provide
@@ -1799,8 +1799,8 @@ const (
 )
 
 const (
-	shellSurfaceName    = "wl_shell_surface"
-	shellSurfaceVersion = 1
+	shellSurfaceInterface = "wl_shell_surface"
+	shellSurfaceVersion   = 1
 )
 
 // An interface that may be implemented by a wl_surface, for
@@ -2189,8 +2189,8 @@ const (
 )
 
 const (
-	surfaceName    = "wl_surface"
-	surfaceVersion = 4
+	surfaceInterface = "wl_surface"
+	surfaceVersion   = 4
 )
 
 // A surface is a rectangular area that may be displayed on zero
@@ -2674,8 +2674,8 @@ const (
 )
 
 const (
-	seatName    = "wl_seat"
-	seatVersion = 7
+	seatInterface = "wl_seat"
+	seatVersion   = 7
 )
 
 // A seat is a group of keyboards, pointer and touch devices. This
@@ -2851,8 +2851,8 @@ const (
 )
 
 const (
-	pointerName    = "wl_pointer"
-	pointerVersion = 7
+	pointerInterface = "wl_pointer"
+	pointerVersion   = 7
 )
 
 // The wl_pointer interface represents one or more input devices,
@@ -3285,8 +3285,8 @@ const (
 )
 
 const (
-	keyboardName    = "wl_keyboard"
-	keyboardVersion = 7
+	keyboardInterface = "wl_keyboard"
+	keyboardVersion   = 7
 )
 
 // The wl_keyboard interface represents one or more keyboards
@@ -3489,8 +3489,8 @@ const (
 )
 
 const (
-	touchName    = "wl_touch"
-	touchVersion = 7
+	touchInterface = "wl_touch"
+	touchVersion   = 7
 )
 
 // The wl_touch interface represents a touchscreen
@@ -3711,8 +3711,8 @@ func (obj touchObject) Release() *wire.MessageBuilder {
 }
 
 const (
-	outputName    = "wl_output"
-	outputVersion = 3
+	outputInterface = "wl_output"
+	outputVersion   = 3
 )
 
 // An output describes part of the compositor geometry.  The
@@ -3965,8 +3965,8 @@ const (
 )
 
 const (
-	regionName    = "wl_region"
-	regionVersion = 1
+	regionInterface = "wl_region"
+	regionVersion   = 1
 )
 
 // A region object describes an area.
@@ -4040,8 +4040,8 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 }
 
 const (
-	subcompositorName    = "wl_subcompositor"
-	subcompositorVersion = 1
+	subcompositorInterface = "wl_subcompositor"
+	subcompositorVersion   = 1
 )
 
 // The global interface exposing sub-surface compositing capabilities.
@@ -4137,8 +4137,8 @@ const (
 )
 
 const (
-	subsurfaceName    = "wl_subsurface"
-	subsurfaceVersion = 1
+	subsurfaceInterface = "wl_subsurface"
+	subsurfaceVersion   = 1
 )
 
 // An additional interface to a wl_surface object, which has been

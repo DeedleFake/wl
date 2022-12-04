@@ -15,7 +15,7 @@ import (
 	{{- $senders := senders $.IsClient . -}}
 
 	const (
-		{{$name}}Name = {{.Name | printf "%q"}}
+		{{$name}}Interface = {{.Name | printf "%q"}}
 		{{$name}}Version = {{.Version}}
 	)
 
