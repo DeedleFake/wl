@@ -3,7 +3,7 @@ package wl
 import "os"
 
 type Shm struct {
-	Format func(uint32)
+	Format func(ShmFormat)
 
 	obj     shmObject
 	display *Display
@@ -38,6 +38,6 @@ type shmListener struct {
 
 func (lis shmListener) Format(format uint32) {
 	if lis.shm.Format != nil {
-		lis.shm.Format(format)
+		lis.shm.Format(ShmFormat(format))
 	}
 }

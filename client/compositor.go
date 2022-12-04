@@ -21,6 +21,7 @@ func BindCompositor(display *Display, name uint32) *Compositor {
 
 func (c *Compositor) CreateSurface() *Surface {
 	s := Surface{display: c.display}
+	s.obj.listener = surfaceListener{surface: &s}
 	c.display.AddObject(&s.obj)
 	c.display.Enqueue(c.obj.CreateSurface(s.obj.id))
 

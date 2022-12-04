@@ -124,20 +124,20 @@ func (obj displayObject) GetRegistry(registry uint32) *wire.MessageBuilder {
 
 // These errors are global and can be emitted in response to any
 // server request.
-type displayError int32
+type DisplayError int64
 
 const (
 	// server couldn't find object
-	displayErrorInvalidObject displayError = 0
+	DisplayErrorInvalidObject DisplayError = 0
 
 	// method doesn't exist on the specified interface or malformed request
-	displayErrorInvalidMethod displayError = 1
+	DisplayErrorInvalidMethod DisplayError = 1
 
 	// server is out of memory
-	displayErrorNoMemory displayError = 2
+	DisplayErrorNoMemory DisplayError = 2
 
 	// implementation error in compositor
-	displayErrorImplementation displayError = 3
+	DisplayErrorImplementation DisplayError = 3
 )
 
 const (
@@ -520,17 +520,17 @@ func (obj shmObject) CreatePool(id uint32, fd *os.File, size int32) *wire.Messag
 }
 
 // These errors can be emitted in response to wl_shm requests.
-type shmError int32
+type ShmError int64
 
 const (
 	// buffer format is not known
-	shmErrorInvalidFormat shmError = 0
+	ShmErrorInvalidFormat ShmError = 0
 
 	// invalid size or stride during pool or buffer creation
-	shmErrorInvalidStride shmError = 1
+	ShmErrorInvalidStride ShmError = 1
 
 	// mmapping the file descriptor failed
-	shmErrorInvalidFd shmError = 2
+	ShmErrorInvalidFd ShmError = 2
 )
 
 // This describes the memory layout of an individual pixel.
@@ -542,308 +542,308 @@ const (
 // The drm format codes match the macros defined in drm_fourcc.h, except
 // argb8888 and xrgb8888. The formats actually supported by the compositor
 // will be reported by the format event.
-type shmFormat int32
+type ShmFormat int64
 
 const (
 	// 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
-	shmFormatArgb8888 shmFormat = 0
+	ShmFormatArgb8888 ShmFormat = 0
 
 	// 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian
-	shmFormatXrgb8888 shmFormat = 1
+	ShmFormatXrgb8888 ShmFormat = 1
 
 	// 8-bit color index format, [7:0] C
-	shmFormatC8 shmFormat = 538982467
+	ShmFormatC8 ShmFormat = 538982467
 
 	// 8-bit RGB format, [7:0] R:G:B 3:3:2
-	shmFormatRgb332 shmFormat = 943867730
+	ShmFormatRgb332 ShmFormat = 943867730
 
 	// 8-bit BGR format, [7:0] B:G:R 2:3:3
-	shmFormatBgr233 shmFormat = 944916290
+	ShmFormatBgr233 ShmFormat = 944916290
 
 	// 16-bit xRGB format, [15:0] x:R:G:B 4:4:4:4 little endian
-	shmFormatXrgb4444 shmFormat = 842093144
+	ShmFormatXrgb4444 ShmFormat = 842093144
 
 	// 16-bit xBGR format, [15:0] x:B:G:R 4:4:4:4 little endian
-	shmFormatXbgr4444 shmFormat = 842089048
+	ShmFormatXbgr4444 ShmFormat = 842089048
 
 	// 16-bit RGBx format, [15:0] R:G:B:x 4:4:4:4 little endian
-	shmFormatRgbx4444 shmFormat = 842094674
+	ShmFormatRgbx4444 ShmFormat = 842094674
 
 	// 16-bit BGRx format, [15:0] B:G:R:x 4:4:4:4 little endian
-	shmFormatBgrx4444 shmFormat = 842094658
+	ShmFormatBgrx4444 ShmFormat = 842094658
 
 	// 16-bit ARGB format, [15:0] A:R:G:B 4:4:4:4 little endian
-	shmFormatArgb4444 shmFormat = 842093121
+	ShmFormatArgb4444 ShmFormat = 842093121
 
 	// 16-bit ABGR format, [15:0] A:B:G:R 4:4:4:4 little endian
-	shmFormatAbgr4444 shmFormat = 842089025
+	ShmFormatAbgr4444 ShmFormat = 842089025
 
 	// 16-bit RBGA format, [15:0] R:G:B:A 4:4:4:4 little endian
-	shmFormatRgba4444 shmFormat = 842088786
+	ShmFormatRgba4444 ShmFormat = 842088786
 
 	// 16-bit BGRA format, [15:0] B:G:R:A 4:4:4:4 little endian
-	shmFormatBgra4444 shmFormat = 842088770
+	ShmFormatBgra4444 ShmFormat = 842088770
 
 	// 16-bit xRGB format, [15:0] x:R:G:B 1:5:5:5 little endian
-	shmFormatXrgb1555 shmFormat = 892424792
+	ShmFormatXrgb1555 ShmFormat = 892424792
 
 	// 16-bit xBGR 1555 format, [15:0] x:B:G:R 1:5:5:5 little endian
-	shmFormatXbgr1555 shmFormat = 892420696
+	ShmFormatXbgr1555 ShmFormat = 892420696
 
 	// 16-bit RGBx 5551 format, [15:0] R:G:B:x 5:5:5:1 little endian
-	shmFormatRgbx5551 shmFormat = 892426322
+	ShmFormatRgbx5551 ShmFormat = 892426322
 
 	// 16-bit BGRx 5551 format, [15:0] B:G:R:x 5:5:5:1 little endian
-	shmFormatBgrx5551 shmFormat = 892426306
+	ShmFormatBgrx5551 ShmFormat = 892426306
 
 	// 16-bit ARGB 1555 format, [15:0] A:R:G:B 1:5:5:5 little endian
-	shmFormatArgb1555 shmFormat = 892424769
+	ShmFormatArgb1555 ShmFormat = 892424769
 
 	// 16-bit ABGR 1555 format, [15:0] A:B:G:R 1:5:5:5 little endian
-	shmFormatAbgr1555 shmFormat = 892420673
+	ShmFormatAbgr1555 ShmFormat = 892420673
 
 	// 16-bit RGBA 5551 format, [15:0] R:G:B:A 5:5:5:1 little endian
-	shmFormatRgba5551 shmFormat = 892420434
+	ShmFormatRgba5551 ShmFormat = 892420434
 
 	// 16-bit BGRA 5551 format, [15:0] B:G:R:A 5:5:5:1 little endian
-	shmFormatBgra5551 shmFormat = 892420418
+	ShmFormatBgra5551 ShmFormat = 892420418
 
 	// 16-bit RGB 565 format, [15:0] R:G:B 5:6:5 little endian
-	shmFormatRgb565 shmFormat = 909199186
+	ShmFormatRgb565 ShmFormat = 909199186
 
 	// 16-bit BGR 565 format, [15:0] B:G:R 5:6:5 little endian
-	shmFormatBgr565 shmFormat = 909199170
+	ShmFormatBgr565 ShmFormat = 909199170
 
 	// 24-bit RGB format, [23:0] R:G:B little endian
-	shmFormatRgb888 shmFormat = 875710290
+	ShmFormatRgb888 ShmFormat = 875710290
 
 	// 24-bit BGR format, [23:0] B:G:R little endian
-	shmFormatBgr888 shmFormat = 875710274
+	ShmFormatBgr888 ShmFormat = 875710274
 
 	// 32-bit xBGR format, [31:0] x:B:G:R 8:8:8:8 little endian
-	shmFormatXbgr8888 shmFormat = 875709016
+	ShmFormatXbgr8888 ShmFormat = 875709016
 
 	// 32-bit RGBx format, [31:0] R:G:B:x 8:8:8:8 little endian
-	shmFormatRgbx8888 shmFormat = 875714642
+	ShmFormatRgbx8888 ShmFormat = 875714642
 
 	// 32-bit BGRx format, [31:0] B:G:R:x 8:8:8:8 little endian
-	shmFormatBgrx8888 shmFormat = 875714626
+	ShmFormatBgrx8888 ShmFormat = 875714626
 
 	// 32-bit ABGR format, [31:0] A:B:G:R 8:8:8:8 little endian
-	shmFormatAbgr8888 shmFormat = 875708993
+	ShmFormatAbgr8888 ShmFormat = 875708993
 
 	// 32-bit RGBA format, [31:0] R:G:B:A 8:8:8:8 little endian
-	shmFormatRgba8888 shmFormat = 875708754
+	ShmFormatRgba8888 ShmFormat = 875708754
 
 	// 32-bit BGRA format, [31:0] B:G:R:A 8:8:8:8 little endian
-	shmFormatBgra8888 shmFormat = 875708738
+	ShmFormatBgra8888 ShmFormat = 875708738
 
 	// 32-bit xRGB format, [31:0] x:R:G:B 2:10:10:10 little endian
-	shmFormatXrgb2101010 shmFormat = 808669784
+	ShmFormatXrgb2101010 ShmFormat = 808669784
 
 	// 32-bit xBGR format, [31:0] x:B:G:R 2:10:10:10 little endian
-	shmFormatXbgr2101010 shmFormat = 808665688
+	ShmFormatXbgr2101010 ShmFormat = 808665688
 
 	// 32-bit RGBx format, [31:0] R:G:B:x 10:10:10:2 little endian
-	shmFormatRgbx1010102 shmFormat = 808671314
+	ShmFormatRgbx1010102 ShmFormat = 808671314
 
 	// 32-bit BGRx format, [31:0] B:G:R:x 10:10:10:2 little endian
-	shmFormatBgrx1010102 shmFormat = 808671298
+	ShmFormatBgrx1010102 ShmFormat = 808671298
 
 	// 32-bit ARGB format, [31:0] A:R:G:B 2:10:10:10 little endian
-	shmFormatArgb2101010 shmFormat = 808669761
+	ShmFormatArgb2101010 ShmFormat = 808669761
 
 	// 32-bit ABGR format, [31:0] A:B:G:R 2:10:10:10 little endian
-	shmFormatAbgr2101010 shmFormat = 808665665
+	ShmFormatAbgr2101010 ShmFormat = 808665665
 
 	// 32-bit RGBA format, [31:0] R:G:B:A 10:10:10:2 little endian
-	shmFormatRgba1010102 shmFormat = 808665426
+	ShmFormatRgba1010102 ShmFormat = 808665426
 
 	// 32-bit BGRA format, [31:0] B:G:R:A 10:10:10:2 little endian
-	shmFormatBgra1010102 shmFormat = 808665410
+	ShmFormatBgra1010102 ShmFormat = 808665410
 
 	// packed YCbCr format, [31:0] Cr0:Y1:Cb0:Y0 8:8:8:8 little endian
-	shmFormatYuyv shmFormat = 1448695129
+	ShmFormatYuyv ShmFormat = 1448695129
 
 	// packed YCbCr format, [31:0] Cb0:Y1:Cr0:Y0 8:8:8:8 little endian
-	shmFormatYvyu shmFormat = 1431918169
+	ShmFormatYvyu ShmFormat = 1431918169
 
 	// packed YCbCr format, [31:0] Y1:Cr0:Y0:Cb0 8:8:8:8 little endian
-	shmFormatUyvy shmFormat = 1498831189
+	ShmFormatUyvy ShmFormat = 1498831189
 
 	// packed YCbCr format, [31:0] Y1:Cb0:Y0:Cr0 8:8:8:8 little endian
-	shmFormatVyuy shmFormat = 1498765654
+	ShmFormatVyuy ShmFormat = 1498765654
 
 	// packed AYCbCr format, [31:0] A:Y:Cb:Cr 8:8:8:8 little endian
-	shmFormatAyuv shmFormat = 1448433985
+	ShmFormatAyuv ShmFormat = 1448433985
 
 	// 2 plane YCbCr Cr:Cb format, 2x2 subsampled Cr:Cb plane
-	shmFormatNv12 shmFormat = 842094158
+	ShmFormatNv12 ShmFormat = 842094158
 
 	// 2 plane YCbCr Cb:Cr format, 2x2 subsampled Cb:Cr plane
-	shmFormatNv21 shmFormat = 825382478
+	ShmFormatNv21 ShmFormat = 825382478
 
 	// 2 plane YCbCr Cr:Cb format, 2x1 subsampled Cr:Cb plane
-	shmFormatNv16 shmFormat = 909203022
+	ShmFormatNv16 ShmFormat = 909203022
 
 	// 2 plane YCbCr Cb:Cr format, 2x1 subsampled Cb:Cr plane
-	shmFormatNv61 shmFormat = 825644622
+	ShmFormatNv61 ShmFormat = 825644622
 
 	// 3 plane YCbCr format, 4x4 subsampled Cb (1) and Cr (2) planes
-	shmFormatYuv410 shmFormat = 961959257
+	ShmFormatYuv410 ShmFormat = 961959257
 
 	// 3 plane YCbCr format, 4x4 subsampled Cr (1) and Cb (2) planes
-	shmFormatYvu410 shmFormat = 961893977
+	ShmFormatYvu410 ShmFormat = 961893977
 
 	// 3 plane YCbCr format, 4x1 subsampled Cb (1) and Cr (2) planes
-	shmFormatYuv411 shmFormat = 825316697
+	ShmFormatYuv411 ShmFormat = 825316697
 
 	// 3 plane YCbCr format, 4x1 subsampled Cr (1) and Cb (2) planes
-	shmFormatYvu411 shmFormat = 825316953
+	ShmFormatYvu411 ShmFormat = 825316953
 
 	// 3 plane YCbCr format, 2x2 subsampled Cb (1) and Cr (2) planes
-	shmFormatYuv420 shmFormat = 842093913
+	ShmFormatYuv420 ShmFormat = 842093913
 
 	// 3 plane YCbCr format, 2x2 subsampled Cr (1) and Cb (2) planes
-	shmFormatYvu420 shmFormat = 842094169
+	ShmFormatYvu420 ShmFormat = 842094169
 
 	// 3 plane YCbCr format, 2x1 subsampled Cb (1) and Cr (2) planes
-	shmFormatYuv422 shmFormat = 909202777
+	ShmFormatYuv422 ShmFormat = 909202777
 
 	// 3 plane YCbCr format, 2x1 subsampled Cr (1) and Cb (2) planes
-	shmFormatYvu422 shmFormat = 909203033
+	ShmFormatYvu422 ShmFormat = 909203033
 
 	// 3 plane YCbCr format, non-subsampled Cb (1) and Cr (2) planes
-	shmFormatYuv444 shmFormat = 875713881
+	ShmFormatYuv444 ShmFormat = 875713881
 
 	// 3 plane YCbCr format, non-subsampled Cr (1) and Cb (2) planes
-	shmFormatYvu444 shmFormat = 875714137
+	ShmFormatYvu444 ShmFormat = 875714137
 
 	// [7:0] R
-	shmFormatR8 shmFormat = 538982482
+	ShmFormatR8 ShmFormat = 538982482
 
 	// [15:0] R little endian
-	shmFormatR16 shmFormat = 540422482
+	ShmFormatR16 ShmFormat = 540422482
 
 	// [15:0] R:G 8:8 little endian
-	shmFormatRg88 shmFormat = 943212370
+	ShmFormatRg88 ShmFormat = 943212370
 
 	// [15:0] G:R 8:8 little endian
-	shmFormatGr88 shmFormat = 943215175
+	ShmFormatGr88 ShmFormat = 943215175
 
 	// [31:0] R:G 16:16 little endian
-	shmFormatRg1616 shmFormat = 842221394
+	ShmFormatRg1616 ShmFormat = 842221394
 
 	// [31:0] G:R 16:16 little endian
-	shmFormatGr1616 shmFormat = 842224199
+	ShmFormatGr1616 ShmFormat = 842224199
 
 	// [63:0] x:R:G:B 16:16:16:16 little endian
-	shmFormatXrgb16161616f shmFormat = 1211388504
+	ShmFormatXrgb16161616f ShmFormat = 1211388504
 
 	// [63:0] x:B:G:R 16:16:16:16 little endian
-	shmFormatXbgr16161616f shmFormat = 1211384408
+	ShmFormatXbgr16161616f ShmFormat = 1211384408
 
 	// [63:0] A:R:G:B 16:16:16:16 little endian
-	shmFormatArgb16161616f shmFormat = 1211388481
+	ShmFormatArgb16161616f ShmFormat = 1211388481
 
 	// [63:0] A:B:G:R 16:16:16:16 little endian
-	shmFormatAbgr16161616f shmFormat = 1211384385
+	ShmFormatAbgr16161616f ShmFormat = 1211384385
 
 	// [31:0] X:Y:Cb:Cr 8:8:8:8 little endian
-	shmFormatXyuv8888 shmFormat = 1448434008
+	ShmFormatXyuv8888 ShmFormat = 1448434008
 
 	// [23:0] Cr:Cb:Y 8:8:8 little endian
-	shmFormatVuy888 shmFormat = 875713878
+	ShmFormatVuy888 ShmFormat = 875713878
 
 	// Y followed by U then V, 10:10:10. Non-linear modifier only
-	shmFormatVuy101010 shmFormat = 808670550
+	ShmFormatVuy101010 ShmFormat = 808670550
 
 	// [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 10:6:10:6:10:6:10:6 little endian per 2 Y pixels
-	shmFormatY210 shmFormat = 808530521
+	ShmFormatY210 ShmFormat = 808530521
 
 	// [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 12:4:12:4:12:4:12:4 little endian per 2 Y pixels
-	shmFormatY212 shmFormat = 842084953
+	ShmFormatY212 ShmFormat = 842084953
 
 	// [63:0] Cr0:Y1:Cb0:Y0 16:16:16:16 little endian per 2 Y pixels
-	shmFormatY216 shmFormat = 909193817
+	ShmFormatY216 ShmFormat = 909193817
 
 	// [31:0] A:Cr:Y:Cb 2:10:10:10 little endian
-	shmFormatY410 shmFormat = 808531033
+	ShmFormatY410 ShmFormat = 808531033
 
 	// [63:0] A:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	shmFormatY412 shmFormat = 842085465
+	ShmFormatY412 ShmFormat = 842085465
 
 	// [63:0] A:Cr:Y:Cb 16:16:16:16 little endian
-	shmFormatY416 shmFormat = 909194329
+	ShmFormatY416 ShmFormat = 909194329
 
 	// [31:0] X:Cr:Y:Cb 2:10:10:10 little endian
-	shmFormatXvyu2101010 shmFormat = 808670808
+	ShmFormatXvyu2101010 ShmFormat = 808670808
 
 	// [63:0] X:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	shmFormatXvyu1216161616 shmFormat = 909334104
+	ShmFormatXvyu1216161616 ShmFormat = 909334104
 
 	// [63:0] X:Cr:Y:Cb 16:16:16:16 little endian
-	shmFormatXvyu16161616 shmFormat = 942954072
+	ShmFormatXvyu16161616 ShmFormat = 942954072
 
 	// [63:0]   A3:A2:Y3:0:Cr0:0:Y2:0:A1:A0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	shmFormatY0l0 shmFormat = 810299481
+	ShmFormatY0l0 ShmFormat = 810299481
 
 	// [63:0]   X3:X2:Y3:0:Cr0:0:Y2:0:X1:X0:Y1:0:Cb0:0:Y0:0  1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	shmFormatX0l0 shmFormat = 810299480
+	ShmFormatX0l0 ShmFormat = 810299480
 
 	// [63:0]   A3:A2:Y3:Cr0:Y2:A1:A0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
-	shmFormatY0l2 shmFormat = 843853913
+	ShmFormatY0l2 ShmFormat = 843853913
 
 	// [63:0]   X3:X2:Y3:Cr0:Y2:X1:X0:Y1:Cb0:Y0  1:1:10:10:10:1:1:10:10:10 little endian
-	shmFormatX0l2 shmFormat = 843853912
+	ShmFormatX0l2 ShmFormat = 843853912
 
-	shmFormatYuv4208bit shmFormat = 942691673
+	ShmFormatYuv4208bit ShmFormat = 942691673
 
-	shmFormatYuv42010bit shmFormat = 808539481
+	ShmFormatYuv42010bit ShmFormat = 808539481
 
-	shmFormatXrgb8888A8 shmFormat = 943805016
+	ShmFormatXrgb8888A8 ShmFormat = 943805016
 
-	shmFormatXbgr8888A8 shmFormat = 943800920
+	ShmFormatXbgr8888A8 ShmFormat = 943800920
 
-	shmFormatRgbx8888A8 shmFormat = 943806546
+	ShmFormatRgbx8888A8 ShmFormat = 943806546
 
-	shmFormatBgrx8888A8 shmFormat = 943806530
+	ShmFormatBgrx8888A8 ShmFormat = 943806530
 
-	shmFormatRgb888A8 shmFormat = 943798354
+	ShmFormatRgb888A8 ShmFormat = 943798354
 
-	shmFormatBgr888A8 shmFormat = 943798338
+	ShmFormatBgr888A8 ShmFormat = 943798338
 
-	shmFormatRgb565A8 shmFormat = 943797586
+	ShmFormatRgb565A8 ShmFormat = 943797586
 
-	shmFormatBgr565A8 shmFormat = 943797570
+	ShmFormatBgr565A8 ShmFormat = 943797570
 
 	// non-subsampled Cr:Cb plane
-	shmFormatNv24 shmFormat = 875714126
+	ShmFormatNv24 ShmFormat = 875714126
 
 	// non-subsampled Cb:Cr plane
-	shmFormatNv42 shmFormat = 842290766
+	ShmFormatNv42 ShmFormat = 842290766
 
 	// 2x1 subsampled Cr:Cb plane, 10 bit per channel
-	shmFormatP210 shmFormat = 808530512
+	ShmFormatP210 ShmFormat = 808530512
 
 	// 2x2 subsampled Cr:Cb plane 10 bits per channel
-	shmFormatP010 shmFormat = 808530000
+	ShmFormatP010 ShmFormat = 808530000
 
 	// 2x2 subsampled Cr:Cb plane 12 bits per channel
-	shmFormatP012 shmFormat = 842084432
+	ShmFormatP012 ShmFormat = 842084432
 
 	// 2x2 subsampled Cr:Cb plane 16 bits per channel
-	shmFormatP016 shmFormat = 909193296
+	ShmFormatP016 ShmFormat = 909193296
 
 	// [63:0] A:x:B:x:G:x:R:x 10:6:10:6:10:6:10:6 little endian
-	shmFormatAxbxgxrx106106106106 shmFormat = 808534593
+	ShmFormatAxbxgxrx106106106106 ShmFormat = 808534593
 
 	// 2x2 subsampled Cr:Cb plane
-	shmFormatNv15 shmFormat = 892425806
+	ShmFormatNv15 ShmFormat = 892425806
 
-	shmFormatQ410 shmFormat = 808531025
+	ShmFormatQ410 ShmFormat = 808531025
 
-	shmFormatQ401 shmFormat = 825242705
+	ShmFormatQ401 ShmFormat = 825242705
 )
 
 const (
@@ -1158,20 +1158,20 @@ func (obj dataOfferObject) SetActions(dndActions uint32, preferredAction uint32)
 	return &builder
 }
 
-type dataOfferError int32
+type DataOfferError int64
 
 const (
 	// finish request was called untimely
-	dataOfferErrorInvalidFinish dataOfferError = 0
+	DataOfferErrorInvalidFinish DataOfferError = 0
 
 	// action mask contains invalid values
-	dataOfferErrorInvalidActionMask dataOfferError = 1
+	DataOfferErrorInvalidActionMask DataOfferError = 1
 
 	// action argument has an invalid value
-	dataOfferErrorInvalidAction dataOfferError = 2
+	DataOfferErrorInvalidAction DataOfferError = 2
 
 	// offer doesn't accept this request
-	dataOfferErrorInvalidOffer dataOfferError = 3
+	DataOfferErrorInvalidOffer DataOfferError = 3
 )
 
 const (
@@ -1389,14 +1389,14 @@ func (obj dataSourceObject) SetActions(dndActions uint32) *wire.MessageBuilder {
 	return &builder
 }
 
-type dataSourceError int32
+type DataSourceError int64
 
 const (
 	// action mask contains invalid values
-	dataSourceErrorInvalidActionMask dataSourceError = 0
+	DataSourceErrorInvalidActionMask DataSourceError = 0
 
 	// source doesn't accept this request
-	dataSourceErrorInvalidSource dataSourceError = 1
+	DataSourceErrorInvalidSource DataSourceError = 1
 )
 
 const (
@@ -1623,11 +1623,11 @@ func (obj dataDeviceObject) Release() *wire.MessageBuilder {
 	return &builder
 }
 
-type dataDeviceError int32
+type DataDeviceError int64
 
 const (
 	// given wl_surface has another role
-	dataDeviceErrorRole dataDeviceError = 0
+	DataDeviceErrorRole DataDeviceError = 0
 )
 
 const (
@@ -1719,20 +1719,20 @@ func (obj dataDeviceManagerObject) GetDataDevice(id uint32, seat uint32) *wire.M
 // Compositors may for example bind other modifiers (like Alt/Meta)
 // or drags initiated with other buttons than BTN_LEFT to specific
 // actions (e.g. "ask").
-type dataDeviceManagerDndAction int32
+type DataDeviceManagerDndAction int64
 
 const (
 	// no action
-	dataDeviceManagerDndActionNone dataDeviceManagerDndAction = 0
+	DataDeviceManagerDndActionNone DataDeviceManagerDndAction = 0
 
 	// copy action
-	dataDeviceManagerDndActionCopy dataDeviceManagerDndAction = 1
+	DataDeviceManagerDndActionCopy DataDeviceManagerDndAction = 1
 
 	// move action
-	dataDeviceManagerDndActionMove dataDeviceManagerDndAction = 2
+	DataDeviceManagerDndActionMove DataDeviceManagerDndAction = 2
 
 	// ask action
-	dataDeviceManagerDndActionAsk dataDeviceManagerDndAction = 4
+	DataDeviceManagerDndActionAsk DataDeviceManagerDndAction = 4
 )
 
 const (
@@ -1791,11 +1791,11 @@ func (obj shellObject) GetShellSurface(id uint32, surface uint32) *wire.MessageB
 	return &builder
 }
 
-type shellError int32
+type ShellError int64
 
 const (
 	// given wl_surface has another role
-	shellErrorRole shellError = 0
+	ShellErrorRole ShellError = 0
 )
 
 const (
@@ -2129,63 +2129,63 @@ func (obj shellSurfaceObject) SetClass(class string) *wire.MessageBuilder {
 // is being dragged in a resize operation. The server may
 // use this information to adapt its behavior, e.g. choose
 // an appropriate cursor image.
-type shellSurfaceResize int32
+type ShellSurfaceResize int64
 
 const (
 	// no edge
-	shellSurfaceResizeNone shellSurfaceResize = 0
+	ShellSurfaceResizeNone ShellSurfaceResize = 0
 
 	// top edge
-	shellSurfaceResizeTop shellSurfaceResize = 1
+	ShellSurfaceResizeTop ShellSurfaceResize = 1
 
 	// bottom edge
-	shellSurfaceResizeBottom shellSurfaceResize = 2
+	ShellSurfaceResizeBottom ShellSurfaceResize = 2
 
 	// left edge
-	shellSurfaceResizeLeft shellSurfaceResize = 4
+	ShellSurfaceResizeLeft ShellSurfaceResize = 4
 
 	// top and left edges
-	shellSurfaceResizeTopLeft shellSurfaceResize = 5
+	ShellSurfaceResizeTopLeft ShellSurfaceResize = 5
 
 	// bottom and left edges
-	shellSurfaceResizeBottomLeft shellSurfaceResize = 6
+	ShellSurfaceResizeBottomLeft ShellSurfaceResize = 6
 
 	// right edge
-	shellSurfaceResizeRight shellSurfaceResize = 8
+	ShellSurfaceResizeRight ShellSurfaceResize = 8
 
 	// top and right edges
-	shellSurfaceResizeTopRight shellSurfaceResize = 9
+	ShellSurfaceResizeTopRight ShellSurfaceResize = 9
 
 	// bottom and right edges
-	shellSurfaceResizeBottomRight shellSurfaceResize = 10
+	ShellSurfaceResizeBottomRight ShellSurfaceResize = 10
 )
 
 // These flags specify details of the expected behaviour
 // of transient surfaces. Used in the set_transient request.
-type shellSurfaceTransient int32
+type ShellSurfaceTransient int64
 
 const (
 	// do not set keyboard focus
-	shellSurfaceTransientInactive shellSurfaceTransient = 1
+	ShellSurfaceTransientInactive ShellSurfaceTransient = 1
 )
 
 // Hints to indicate to the compositor how to deal with a conflict
 // between the dimensions of the surface and the dimensions of the
 // output. The compositor is free to ignore this parameter.
-type shellSurfaceFullscreenMethod int32
+type ShellSurfaceFullscreenMethod int64
 
 const (
 	// no preference, apply default policy
-	shellSurfaceFullscreenMethodDefault shellSurfaceFullscreenMethod = 0
+	ShellSurfaceFullscreenMethodDefault ShellSurfaceFullscreenMethod = 0
 
 	// scale, preserve the surface's aspect ratio and center on output
-	shellSurfaceFullscreenMethodScale shellSurfaceFullscreenMethod = 1
+	ShellSurfaceFullscreenMethodScale ShellSurfaceFullscreenMethod = 1
 
 	// switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
-	shellSurfaceFullscreenMethodDriver shellSurfaceFullscreenMethod = 2
+	ShellSurfaceFullscreenMethodDriver ShellSurfaceFullscreenMethod = 2
 
 	// no upscaling, center on output and add black borders to compensate size mismatch
-	shellSurfaceFullscreenMethodFill shellSurfaceFullscreenMethod = 3
+	ShellSurfaceFullscreenMethodFill ShellSurfaceFullscreenMethod = 3
 )
 
 const (
@@ -2660,17 +2660,17 @@ func (obj surfaceObject) DamageBuffer(x int32, y int32, width int32, height int3
 }
 
 // These errors can be emitted in response to wl_surface requests.
-type surfaceError int32
+type SurfaceError int64
 
 const (
 	// buffer scale value is invalid
-	surfaceErrorInvalidScale surfaceError = 0
+	SurfaceErrorInvalidScale SurfaceError = 0
 
 	// buffer transform value is invalid
-	surfaceErrorInvalidTransform surfaceError = 1
+	SurfaceErrorInvalidTransform SurfaceError = 1
 
 	// buffer size is invalid
-	surfaceErrorInvalidSize surfaceError = 2
+	SurfaceErrorInvalidSize SurfaceError = 2
 )
 
 const (
@@ -2829,25 +2829,25 @@ func (obj seatObject) Release() *wire.MessageBuilder {
 
 // This is a bitmask of capabilities this seat has; if a member is
 // set, then it is present on the seat.
-type seatCapability int32
+type SeatCapability int64
 
 const (
 	// the seat has pointer devices
-	seatCapabilityPointer seatCapability = 1
+	SeatCapabilityPointer SeatCapability = 1
 
 	// the seat has one or more keyboards
-	seatCapabilityKeyboard seatCapability = 2
+	SeatCapabilityKeyboard SeatCapability = 2
 
 	// the seat has touch devices
-	seatCapabilityTouch seatCapability = 4
+	SeatCapabilityTouch SeatCapability = 4
 )
 
 // These errors can be emitted in response to wl_seat requests.
-type seatError int32
+type SeatError int64
 
 const (
 	// get_pointer, get_keyboard or get_touch called on seat without the matching capability
-	seatErrorMissingCapability seatError = 0
+	SeatErrorMissingCapability SeatError = 0
 )
 
 const (
@@ -3222,34 +3222,34 @@ func (obj pointerObject) Release() *wire.MessageBuilder {
 	return &builder
 }
 
-type pointerError int32
+type PointerError int64
 
 const (
 	// given wl_surface has another role
-	pointerErrorRole pointerError = 0
+	PointerErrorRole PointerError = 0
 )
 
 // Describes the physical state of a button that produced the button
 // event.
-type pointerButtonState int32
+type PointerButtonState int64
 
 const (
 	// the button is not pressed
-	pointerButtonStateReleased pointerButtonState = 0
+	PointerButtonStateReleased PointerButtonState = 0
 
 	// the button is pressed
-	pointerButtonStatePressed pointerButtonState = 1
+	PointerButtonStatePressed PointerButtonState = 1
 )
 
 // Describes the axis types of scroll events.
-type pointerAxis int32
+type PointerAxis int64
 
 const (
 	// vertical axis
-	pointerAxisVerticalScroll pointerAxis = 0
+	PointerAxisVerticalScroll PointerAxis = 0
 
 	// horizontal axis
-	pointerAxisHorizontalScroll pointerAxis = 1
+	PointerAxisHorizontalScroll PointerAxis = 1
 )
 
 // Describes the source types for axis events. This indicates to the
@@ -3268,20 +3268,20 @@ const (
 // The "wheel tilt" axis source indicates that the actual device is a
 // wheel but the scroll event is not caused by a rotation but a
 // (usually sideways) tilt of the wheel.
-type pointerAxisSource int32
+type PointerAxisSource int64
 
 const (
 	// a physical wheel rotation
-	pointerAxisSourceWheel pointerAxisSource = 0
+	PointerAxisSourceWheel PointerAxisSource = 0
 
 	// finger on a touch surface
-	pointerAxisSourceFinger pointerAxisSource = 1
+	PointerAxisSourceFinger PointerAxisSource = 1
 
 	// continuous coordinate space
-	pointerAxisSourceContinuous pointerAxisSource = 2
+	PointerAxisSourceContinuous PointerAxisSource = 2
 
 	// a physical wheel tilt
-	pointerAxisSourceWheelTilt pointerAxisSource = 3
+	PointerAxisSourceWheelTilt PointerAxisSource = 3
 )
 
 const (
@@ -3467,25 +3467,25 @@ func (obj keyboardObject) Release() *wire.MessageBuilder {
 
 // This specifies the format of the keymap provided to the
 // client with the wl_keyboard.keymap event.
-type keyboardKeymapFormat int32
+type KeyboardKeymapFormat int64
 
 const (
 	// no keymap; client must understand how to interpret the raw keycode
-	keyboardKeymapFormatNoKeymap keyboardKeymapFormat = 0
+	KeyboardKeymapFormatNoKeymap KeyboardKeymapFormat = 0
 
 	// libxkbcommon compatible; to determine the xkb keycode, clients must add 8 to the key event keycode
-	keyboardKeymapFormatXkbV1 keyboardKeymapFormat = 1
+	KeyboardKeymapFormatXkbV1 KeyboardKeymapFormat = 1
 )
 
 // Describes the physical state of a key that produced the key event.
-type keyboardKeyState int32
+type KeyboardKeyState int64
 
 const (
 	// key is not pressed
-	keyboardKeyStateReleased keyboardKeyState = 0
+	KeyboardKeyStateReleased KeyboardKeyState = 0
 
 	// key is pressed
-	keyboardKeyStatePressed keyboardKeyState = 1
+	KeyboardKeyStatePressed KeyboardKeyState = 1
 )
 
 const (
@@ -3891,26 +3891,26 @@ func (obj outputObject) Release() *wire.MessageBuilder {
 
 // This enumeration describes how the physical
 // pixels on an output are laid out.
-type outputSubpixel int32
+type OutputSubpixel int64
 
 const (
 	// unknown geometry
-	outputSubpixelUnknown outputSubpixel = 0
+	OutputSubpixelUnknown OutputSubpixel = 0
 
 	// no geometry
-	outputSubpixelNone outputSubpixel = 1
+	OutputSubpixelNone OutputSubpixel = 1
 
 	// horizontal RGB
-	outputSubpixelHorizontalRgb outputSubpixel = 2
+	OutputSubpixelHorizontalRgb OutputSubpixel = 2
 
 	// horizontal BGR
-	outputSubpixelHorizontalBgr outputSubpixel = 3
+	OutputSubpixelHorizontalBgr OutputSubpixel = 3
 
 	// vertical RGB
-	outputSubpixelVerticalRgb outputSubpixel = 4
+	OutputSubpixelVerticalRgb OutputSubpixel = 4
 
 	// vertical BGR
-	outputSubpixelVerticalBgr outputSubpixel = 5
+	OutputSubpixelVerticalBgr OutputSubpixel = 5
 )
 
 // This describes the transform that a compositor will apply to a
@@ -3924,44 +3924,44 @@ const (
 // tell the compositor, so that for fullscreen surfaces, the
 // compositor will still be able to scan out directly from client
 // surfaces.
-type outputTransform int32
+type OutputTransform int64
 
 const (
 	// no transform
-	outputTransformNormal outputTransform = 0
+	OutputTransformNormal OutputTransform = 0
 
 	// 90 degrees counter-clockwise
-	outputTransform90 outputTransform = 1
+	OutputTransform90 OutputTransform = 1
 
 	// 180 degrees counter-clockwise
-	outputTransform180 outputTransform = 2
+	OutputTransform180 OutputTransform = 2
 
 	// 270 degrees counter-clockwise
-	outputTransform270 outputTransform = 3
+	OutputTransform270 OutputTransform = 3
 
 	// 180 degree flip around a vertical axis
-	outputTransformFlipped outputTransform = 4
+	OutputTransformFlipped OutputTransform = 4
 
 	// flip and rotate 90 degrees counter-clockwise
-	outputTransformFlipped90 outputTransform = 5
+	OutputTransformFlipped90 OutputTransform = 5
 
 	// flip and rotate 180 degrees counter-clockwise
-	outputTransformFlipped180 outputTransform = 6
+	OutputTransformFlipped180 OutputTransform = 6
 
 	// flip and rotate 270 degrees counter-clockwise
-	outputTransformFlipped270 outputTransform = 7
+	OutputTransformFlipped270 OutputTransform = 7
 )
 
 // These flags describe properties of an output mode.
 // They are used in the flags bitfield of the mode event.
-type outputMode int32
+type OutputMode int64
 
 const (
 	// indicates this is the current mode
-	outputModeCurrent outputMode = 1
+	OutputModeCurrent OutputMode = 1
 
 	// indicates this is the preferred mode
-	outputModePreferred outputMode = 2
+	OutputModePreferred OutputMode = 2
 )
 
 const (
@@ -4129,11 +4129,11 @@ func (obj subcompositorObject) GetSubsurface(id uint32, surface uint32, parent u
 	return &builder
 }
 
-type subcompositorError int32
+type SubcompositorError int64
 
 const (
 	// the to-be sub-surface is invalid
-	subcompositorErrorBadSurface subcompositorError = 0
+	SubcompositorErrorBadSurface SubcompositorError = 0
 )
 
 const (
@@ -4347,9 +4347,9 @@ func (obj subsurfaceObject) SetDesync() *wire.MessageBuilder {
 	return &builder
 }
 
-type subsurfaceError int32
+type SubsurfaceError int64
 
 const (
 	// wl_surface is not a sibling or the parent
-	subsurfaceErrorBadSurface subsurfaceError = 0
+	SubsurfaceErrorBadSurface SubsurfaceError = 0
 )
