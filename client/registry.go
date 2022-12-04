@@ -2,27 +2,14 @@ package wl
 
 import (
 	"deedles.dev/wl/wire"
-	"golang.org/x/exp/maps"
 )
 
 type Registry struct {
+	Global       func(name uint32, inter string, version uint32)
+	GlobalRemove func(name uint32)
+
 	obj     registryObject
 	display *Display
-
-	globals map[uint32]Interface
-}
-
-func (registry *Registry) Globals() map[uint32]Interface {
-	return maps.Clone(registry.globals)
-}
-
-func (registry *Registry) FindGlobal(inter string, version uint32) (uint32, bool) {
-	for name, global := range registry.globals {
-		if (global.Name == inter) && (global.Version >= version) {
-			return name, true
-		}
-	}
-	return 0, false
 }
 
 func (registry *Registry) Bind(name uint32, inter string, version, id uint32) {
@@ -38,9 +25,13 @@ type registryListener struct {
 }
 
 func (lis registryListener) Global(name uint32, inter string, version uint32) {
-	lis.registry.globals[name] = Interface{Name: inter, Version: version}
+	if lis.registry.Global != nil {
+		lis.registry.Global(name, inter, version)
+	}
 }
 
 func (lis registryListener) GlobalRemove(name uint32) {
-	delete(lis.registry.globals, name)
+	if lis.registry.GlobalRemove != nil {
+		lis.registry.GlobalRemove(name)
+	}
 }

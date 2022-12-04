@@ -126,7 +126,6 @@ func (display *Display) GetRegistry() *Registry {
 
 	registry := Registry{
 		display: display,
-		globals: make(map[uint32]Interface),
 	}
 	registry.obj.listener = registryListener{registry: &registry}
 	display.AddObject(&registry.obj)
