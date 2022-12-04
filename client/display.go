@@ -5,6 +5,7 @@ import (
 	"net"
 	"sync"
 
+	"deedles.dev/wl/internal/cq"
 	"deedles.dev/wl/wire"
 )
 
@@ -18,8 +19,7 @@ type Display struct {
 	objects  map[uint32]wire.Object
 	nextID   uint32
 	registry *Registry
-	queue    chan []func() error
-	enqueue  chan func() error
+	queue    *cq.Queue[func() error]
 }
 
 func DialDisplay() (*Display, error) {
@@ -36,35 +36,14 @@ func ConnectDisplay(c *net.UnixConn) *Display {
 		conn:    c,
 		objects: make(map[uint32]wire.Object),
 		nextID:  1,
-		queue:   make(chan []func() error),
-		enqueue: make(chan func() error),
+		queue:   cq.New[func() error](),
 	}
 	display.AddObject(&display.obj)
 	display.obj.listener = displayListener{display: &display}
 
-	go display.runQueue()
 	go display.listen()
 
 	return &display
-}
-
-func (display *Display) runQueue() {
-	var queue []func() error
-	var qc chan []func() error
-	for {
-		select {
-		case <-display.done:
-			return
-
-		case qc <- queue:
-			queue = nil
-			qc = nil
-
-		case ev := <-display.enqueue:
-			queue = append(queue, ev)
-			qc = display.queue
-		}
-	}
 }
 
 func (display *Display) listen() {
@@ -78,7 +57,7 @@ func (display *Display) listen() {
 			select {
 			case <-display.done:
 				return
-			case display.enqueue <- func() error { return err }:
+			case display.queue.Add() <- func() error { return err }:
 				continue
 			}
 		}
@@ -86,13 +65,14 @@ func (display *Display) listen() {
 		select {
 		case <-display.done:
 			return
-		case display.enqueue <- func() error { return display.dispatch(msg) }:
+		case display.queue.Add() <- func() error { return display.dispatch(msg) }:
 		}
 	}
 }
 
 func (display *Display) Close() error {
 	display.close.Do(func() { close(display.done) })
+	display.queue.Stop()
 	return display.conn.Close()
 }
 
@@ -114,7 +94,7 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 }
 
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	display.enqueue <- func() error { return msg.Build(display.conn) }
+	display.queue.Add() <- func() error { return msg.Build(display.conn) }
 }
 
 func (display *Display) RoundTrip() error {
@@ -128,7 +108,7 @@ func (display *Display) RoundTrip() error {
 		case <-done:
 			return errors.Join(errs...)
 
-		case queue := <-display.queue:
+		case queue := <-display.queue.Get():
 			for _, ev := range queue {
 				err := ev()
 				if err != nil {
