@@ -79,6 +79,17 @@ import (
 		return fmt.Sprintf("%v(%v)", {{$interface.Name | printf "%q"}}, obj.id)
 	}
 
+	func (obj {{$name}}Object) MethodName(op uint16) string {
+		switch op {
+		{{- range $op, $method := $listeners}}
+			case {{$op}}:
+				return {{$method.Name | printf "%q"}}
+		{{end -}}
+		}
+
+		return "unknown method"
+	}
+
 	{{range $op, $method := $senders}}
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
 		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {

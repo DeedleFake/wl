@@ -89,6 +89,18 @@ func (obj displayObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_display", obj.id)
 }
 
+func (obj displayObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "error"
+
+	case 1:
+		return "delete_id"
+	}
+
+	return "unknown method"
+}
+
 // The sync request asks the server to emit the 'done' event
 // on the returned wl_callback object.  Since requests are
 // handled in-order and events are delivered in-order, this can
@@ -255,6 +267,18 @@ func (obj registryObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_registry", obj.id)
 }
 
+func (obj registryObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "global"
+
+	case 1:
+		return "global_remove"
+	}
+
+	return "unknown method"
+}
+
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
 func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
@@ -325,6 +349,15 @@ func (obj callbackObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_callback", obj.id)
 }
 
+func (obj callbackObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "done"
+	}
+
+	return "unknown method"
+}
+
 const (
 	compositorInterface = "wl_compositor"
 	compositorVersion   = 4
@@ -365,6 +398,13 @@ func (obj compositorObject) Delete() {
 
 func (obj compositorObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_compositor", obj.id)
+}
+
+func (obj compositorObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
 }
 
 // Ask the compositor to create a new surface.
@@ -439,6 +479,13 @@ func (obj shmPoolObject) Delete() {
 
 func (obj shmPoolObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shm_pool", obj.id)
+}
+
+func (obj shmPoolObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
 }
 
 // Create a wl_buffer object from the pool.
@@ -564,6 +611,15 @@ func (obj shmObject) Delete() {
 
 func (obj shmObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shm", obj.id)
+}
+
+func (obj shmObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "format"
+	}
+
+	return "unknown method"
 }
 
 // Create a new wl_shm_pool object.
@@ -978,6 +1034,15 @@ func (obj bufferObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_buffer", obj.id)
 }
 
+func (obj bufferObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "release"
+	}
+
+	return "unknown method"
+}
+
 // Destroy a buffer. If and how you need to release the backing
 // storage is defined by the buffer factory interface.
 //
@@ -1112,6 +1177,21 @@ func (obj dataOfferObject) Delete() {
 
 func (obj dataOfferObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_offer", obj.id)
+}
+
+func (obj dataOfferObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "offer"
+
+	case 1:
+		return "source_actions"
+
+	case 2:
+		return "action"
+	}
+
+	return "unknown method"
 }
 
 // Indicate that the client can accept the given mime type, or
@@ -1444,6 +1524,30 @@ func (obj dataSourceObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_source", obj.id)
 }
 
+func (obj dataSourceObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "target"
+
+	case 1:
+		return "send"
+
+	case 2:
+		return "cancelled"
+
+	case 3:
+		return "dnd_drop_performed"
+
+	case 4:
+		return "dnd_finished"
+
+	case 5:
+		return "action"
+	}
+
+	return "unknown method"
+}
+
 // This request adds a mime type to the set of mime types
 // advertised to targets.  Can be called several times to offer
 // multiple types.
@@ -1672,6 +1776,30 @@ func (obj dataDeviceObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_device", obj.id)
 }
 
+func (obj dataDeviceObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "data_offer"
+
+	case 1:
+		return "enter"
+
+	case 2:
+		return "leave"
+
+	case 3:
+		return "motion"
+
+	case 4:
+		return "drop"
+
+	case 5:
+		return "selection"
+	}
+
+	return "unknown method"
+}
+
 // This request asks the compositor to start a drag-and-drop
 // operation on behalf of the client.
 //
@@ -1802,6 +1930,13 @@ func (obj dataDeviceManagerObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_device_manager", obj.id)
 }
 
+func (obj dataDeviceManagerObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
+}
+
 // Create a new data source.
 func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
@@ -1915,6 +2050,13 @@ func (obj shellObject) Delete() {
 
 func (obj shellObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shell", obj.id)
+}
+
+func (obj shellObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
 }
 
 // Create a shell surface for an existing surface. This gives
@@ -2050,6 +2192,21 @@ func (obj shellSurfaceObject) Delete() {
 
 func (obj shellSurfaceObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shell_surface", obj.id)
+}
+
+func (obj shellSurfaceObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "ping"
+
+	case 1:
+		return "configure"
+
+	case 2:
+		return "popup_done"
+	}
+
+	return "unknown method"
 }
 
 // A client must respond to a ping event with a pong request or
@@ -2477,6 +2634,18 @@ func (obj surfaceObject) Delete() {
 
 func (obj surfaceObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_surface", obj.id)
+}
+
+func (obj surfaceObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "enter"
+
+	case 1:
+		return "leave"
+	}
+
+	return "unknown method"
 }
 
 // Deletes the surface and invalidates its object ID.
@@ -2968,6 +3137,18 @@ func (obj seatObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_seat", obj.id)
 }
 
+func (obj seatObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "capabilities"
+
+	case 1:
+		return "name"
+	}
+
+	return "unknown method"
+}
+
 // The ID provided will be initialized to the wl_pointer interface
 // for this seat.
 //
@@ -3388,6 +3569,39 @@ func (obj pointerObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_pointer", obj.id)
 }
 
+func (obj pointerObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "enter"
+
+	case 1:
+		return "leave"
+
+	case 2:
+		return "motion"
+
+	case 3:
+		return "button"
+
+	case 4:
+		return "axis"
+
+	case 5:
+		return "frame"
+
+	case 6:
+		return "axis_source"
+
+	case 7:
+		return "axis_stop"
+
+	case 8:
+		return "axis_discrete"
+	}
+
+	return "unknown method"
+}
+
 // Set the pointer surface, i.e., the surface that contains the
 // pointer image (cursor). This request gives the surface the role
 // of a cursor. If the surface already has another role, it raises
@@ -3693,6 +3907,30 @@ func (obj keyboardObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_keyboard", obj.id)
 }
 
+func (obj keyboardObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "keymap"
+
+	case 1:
+		return "enter"
+
+	case 2:
+		return "leave"
+
+	case 3:
+		return "key"
+
+	case 4:
+		return "modifiers"
+
+	case 5:
+		return "repeat_info"
+	}
+
+	return "unknown method"
+}
+
 func (obj keyboardObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: &obj,
@@ -3948,6 +4186,33 @@ func (obj touchObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_touch", obj.id)
 }
 
+func (obj touchObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "down"
+
+	case 1:
+		return "up"
+
+	case 2:
+		return "motion"
+
+	case 3:
+		return "frame"
+
+	case 4:
+		return "cancel"
+
+	case 5:
+		return "shape"
+
+	case 6:
+		return "orientation"
+	}
+
+	return "unknown method"
+}
+
 func (obj touchObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: &obj,
@@ -4135,6 +4400,24 @@ func (obj outputObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_output", obj.id)
 }
 
+func (obj outputObject) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "geometry"
+
+	case 1:
+		return "mode"
+
+	case 2:
+		return "done"
+
+	case 3:
+		return "scale"
+	}
+
+	return "unknown method"
+}
+
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
 func (obj outputObject) Release() *wire.MessageBuilder {
@@ -4266,6 +4549,13 @@ func (obj regionObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_region", obj.id)
 }
 
+func (obj regionObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
+}
+
 // Destroy the region.  This will invalidate the object ID.
 func (obj regionObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
@@ -4368,6 +4658,13 @@ func (obj subcompositorObject) Delete() {
 
 func (obj subcompositorObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_subcompositor", obj.id)
+}
+
+func (obj subcompositorObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
 }
 
 // Informs the server that the client will not be using this
@@ -4507,6 +4804,13 @@ func (obj subsurfaceObject) Delete() {
 
 func (obj subsurfaceObject) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_subsurface", obj.id)
+}
+
+func (obj subsurfaceObject) MethodName(op uint16) string {
+	switch op {
+	}
+
+	return "unknown method"
 }
 
 // The sub-surface interface is removed from the wl_surface object

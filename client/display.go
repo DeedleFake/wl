@@ -99,7 +99,7 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 		return UnknownSenderIDError{Msg: msg}
 	}
 
-	debug("dispatch: %v -> %v", obj, msg.Op())
+	debug("dispatch: %v -> %v(???)", obj, obj.MethodName(msg.Op()))
 	return obj.Dispatch(msg)
 }
 

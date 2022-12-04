@@ -116,6 +116,10 @@ type Object interface {
 	// Delete is called by the object ID management system when an
 	// object is deleted.
 	Delete()
+
+	// MethodName returns the string name of the specified method. It is
+	// provided purely for debugging purposes.
+	MethodName(opcode uint16) string
 }
 
 // Identifier is a type that is capable of reporting its own ID.
