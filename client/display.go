@@ -103,7 +103,10 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 }
 
 func (display *Display) Enqueue(msg *wire.MessageBuilder) {
-	display.queue.Add() <- func() error { return msg.Build(display.conn) }
+	display.queue.Add() <- func() error {
+		debug("%v(%v) -> %v(%v)\n", msg.Interface, msg.Sender, msg.Method, msg.Op)
+		return msg.Build(display.conn)
+	}
 }
 
 func (display *Display) flush(queue []func() error) (errs []error) {

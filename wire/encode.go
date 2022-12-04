@@ -17,6 +17,10 @@ type MessageBuilder struct {
 	// Op is the opcode of the request or event of the message.
 	Op uint16
 
+	// Interface and Method are automatically filled by generated code.
+	// They are purely for debugging purposes.
+	Interface, Method string
+
 	data bytes.Buffer
 	fds  []int
 }

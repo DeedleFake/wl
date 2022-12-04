@@ -1,6 +1,8 @@
 package wl
 
-import "os"
+import (
+	"os"
+)
 
 type Shm struct {
 	Format func(ShmFormat)

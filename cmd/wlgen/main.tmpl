@@ -9,7 +9,7 @@ import (
 	"deedles.dev/wl/wire"
 )
 
-{{range .Protocol.Interfaces}}
+{{range $interface := .Protocol.Interfaces}}
 	{{- $name := .Name | trimPrefix $.Prefix | camel | unexport -}}
 	{{- $listeners := listeners $.IsClient . -}}
 	{{- $senders := senders $.IsClient . -}}
@@ -80,6 +80,8 @@ import (
 			builder := wire.MessageBuilder{
 				Sender: obj.id,
 				Op: {{$op}},
+				Interface: {{$interface.Name | printf "%q"}},
+				Method: {{$method.Name | printf "%q"}},
 			}
 
 			{{range $method.Args -}}
