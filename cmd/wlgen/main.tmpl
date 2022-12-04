@@ -87,7 +87,7 @@ import (
 	{{end}}
 
 	{{range $enum := .Enums}}
-		{{- $enumName := printf "%s%s" ($name | export) (.Name | camel | export) | unexport -}}
+		{{- $enumName := printf "%s%s" ($name | export) (.Name | camel | export) | export -}}
 
 		{{$enum.Description.Full | trimSpace | trimLines | comment -}}
 		type {{$enumName}} int32
