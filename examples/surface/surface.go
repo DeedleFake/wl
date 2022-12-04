@@ -81,6 +81,8 @@ func (state *state) init() error {
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
 
+	state.surface.Commit()
+
 	return nil
 }
 
@@ -104,13 +106,16 @@ func (state *state) drawFrame() *wl.Buffer {
 	)
 
 	file := CreateShmFile(ShmSize)
+	defer file.Close()
+
 	mmap, err := unix.Mmap(int(file.Fd()), 0, ShmSize, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
+
 	pool := state.shm.CreatePool(file, ShmSize)
+	defer pool.Destroy()
 	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
-	file.Close()
 
 	data := unsafe.Slice((*uint32)(unsafe.Pointer(&mmap[0])), Width*Height)
 	for y := 0; y < Height; y++ {
