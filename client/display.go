@@ -84,6 +84,15 @@ func (display *Display) AddObject(obj wire.Object) {
 	obj.SetID(id)
 }
 
+func (display *Display) DeleteObject(id uint32) {
+	obj := display.objects[id]
+	if obj == nil {
+		return
+	}
+	obj.Delete()
+	delete(display.objects, id)
+}
+
 func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 	obj := display.objects[msg.Sender()]
 	if obj == nil {
@@ -166,10 +175,5 @@ func (lis displayListener) Error(objectID, code uint32, message string) {
 }
 
 func (lis displayListener) DeleteId(id uint32) {
-	obj := lis.display.objects[id]
-	if obj == nil {
-		return
-	}
-	obj.Delete()
-	delete(lis.display.objects, id)
+	lis.display.DeleteObject(id)
 }

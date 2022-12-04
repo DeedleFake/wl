@@ -13,3 +13,8 @@ func (pool *ShmPool) CreateBuffer(offset, width, height, stride int32, format Sh
 
 	return &buf
 }
+
+func (pool *ShmPool) Destroy() {
+	pool.display.Enqueue(pool.obj.Destroy())
+	pool.display.DeleteObject(pool.obj.id)
+}
