@@ -2,11 +2,20 @@ package wl
 
 import (
 	"fmt"
+	"os"
 
 	"deedles.dev/wl/wire"
 )
 
 //go:generate go run deedles.dev/wl/cmd/wlgen -client -pkg wl -prefix wl_ -out protocol.go -xml ../protocol/wayland.xml
+
+var debug = func(string, ...any) {}
+
+func init() {
+	if os.Getenv("WL_DEBUG") == "1" {
+		debug = func(str string, args ...any) { fmt.Printf(str, args...) }
+	}
+}
 
 type UnknownSenderIDError struct {
 	Msg *wire.MessageBuffer
