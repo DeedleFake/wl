@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"log"
-	"math"
 	"os"
 	"os/signal"
 	"time"
+	"unsafe"
 
 	wl "deedles.dev/wl/client"
 	xdg "deedles.dev/xdg/client"
+	"golang.org/x/sys/unix"
 )
 
 func CreateShmFile(size int64) *os.File {
@@ -75,28 +76,44 @@ func main() {
 		log.Fatalln("no wmbase found")
 	}
 
-	const (
-		Width   = 640
-		Height  = 480
-		Stride  = Width * 4
-		ShmSize = Height * Stride
-	)
-	file := CreateShmFile(ShmSize)
-	//mmap, err := unix.Mmap(int(file.Fd()), 0, ShmSize, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
-	//if err != nil {
-	//	log.Fatalf("mmap: %v", err)
-	//}
-
-	pool := shm.CreatePool(file, ShmSize)
-	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
-
 	surface := compositor.CreateSurface()
-	tl := wmBase.GetXdgSurface(surface).GetToplevel()
-	tl.SetTitle("Example")
 
-	surface.Attach(buf, 0, 0)
-	surface.Damage(0, 0, math.MaxInt32, math.MaxInt32)
-	surface.Commit()
+	xsurface := wmBase.GetXdgSurface(surface)
+	xsurface.Configure = func() {
+		const (
+			Width   = 640
+			Height  = 480
+			Stride  = Width * 4
+			ShmSize = Height * Stride
+		)
+		file := CreateShmFile(ShmSize)
+		mmap, err := unix.Mmap(int(file.Fd()), 0, ShmSize, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
+		if err != nil {
+			log.Fatalf("mmap: %v", err)
+		}
+
+		pool := shm.CreatePool(file, ShmSize)
+		buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
+
+		file.Close()
+
+		data := unsafe.Slice((*uint32)(unsafe.Pointer(&mmap[0])), Width*Height)
+		for y := 0; y < Height; y++ {
+			for x := 0; x < Width; x++ {
+				if (x+y/8*8)%16 < 8 {
+					data[y*Width+x] = 0xFF666666
+					continue
+				}
+				data[y*Width+x] = 0xFFEEEEEE
+			}
+		}
+
+		surface.Attach(buf, 0, 0)
+		surface.Commit()
+	}
+
+	tl := xsurface.GetToplevel()
+	tl.SetTitle("Example")
 
 	for {
 		select {
