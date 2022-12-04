@@ -39,6 +39,9 @@ func main() {
 		log.Fatalf("dial display: %v", err)
 	}
 	defer display.Close()
+	display.Error = func(id, code uint32, msg string) {
+		log.Fatalf("display error: id: %v, code: %v, msg: %q", id, code, msg)
+	}
 
 	registry := display.GetRegistry()
 
