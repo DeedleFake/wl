@@ -97,6 +97,21 @@ func (display *Display) Enqueue(msg *wire.MessageBuilder) {
 	display.queue.Add() <- func() error { return msg.Build(display.conn) }
 }
 
+func (display *Display) flush(queue []func() error) (errs []error) {
+	for _, ev := range queue {
+		err := ev()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
+func (display *Display) Flush() error {
+	queue := <-display.queue.Get()
+	return errors.Join(display.flush(queue)...)
+}
+
 func (display *Display) RoundTrip() error {
 	done := make(chan struct{})
 	display.Sync(func() { close(done) })
@@ -109,12 +124,7 @@ func (display *Display) RoundTrip() error {
 			return errors.Join(errs...)
 
 		case queue := <-display.queue.Get():
-			for _, ev := range queue {
-				err := ev()
-				if err != nil {
-					errs = append(errs, err)
-				}
-			}
+			errs = append(errs, display.flush(queue)...)
 		}
 	}
 }
