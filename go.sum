@@ -1,4 +1,4 @@
-golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 h1:yZNXmy+j/JpX19vZkVktWqAo7Gny4PBWYYK3zskGpx4=
-golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
+deedles.dev/xdg v0.0.0-20221204072045-c126a33f714b h1:QQdZ/jONzuu+1CczgO+vnI6qp37+ZK2fJQrbqF8gP34=
+deedles.dev/xdg v0.0.0-20221204072045-c126a33f714b/go.mod h1:XHjCH5kqlGzq7xHBZQHwBXfusHpFAiIqUfJ6BhweHYw=
 golang.org/x/sys v0.2.0 h1:ljd4t30dBnAvMZaQCevtY0xLLD0A+bRZXbgLMLU1F/A=
 golang.org/x/sys v0.2.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
