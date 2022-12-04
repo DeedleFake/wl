@@ -42,5 +42,6 @@ type Interface struct {
 }
 
 func (i Interface) Is(name string, version uint32) bool {
-	return (i.Name == name) && (i.Version >= version)
+	//return (i.Name == name) && (i.Version >= version)
+	return i.Name == name
 }
