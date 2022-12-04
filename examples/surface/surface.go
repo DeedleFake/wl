@@ -2,15 +2,37 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/signal"
+	"time"
 
 	wl "deedles.dev/wl/client"
 )
 
+func CreateShmFile(size int64) *os.File {
+	path := "/dev/shm/wl-surface-example-" + time.Now().String()
+
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		panic(err)
+	}
+
+	os.Remove(path)
+
+	err = file.Truncate(size)
+	if err != nil {
+		panic(err)
+	}
+
+	return file
+}
+
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	display, err := wl.DialDisplay()
 	if err != nil {
 		log.Fatalf("dial display: %v", err)
@@ -31,9 +53,30 @@ func main() {
 			shm = wl.BindShm(display, name)
 		}
 	}
+	err = display.RoundTrip()
+	if err != nil {
+		log.Fatalf("round trip: %v", err)
+	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
+	const (
+		Width   = 640
+		Height  = 480
+		Stride  = Width * 4
+		ShmSize = Height * Stride
+	)
+	file := CreateShmFile(ShmSize)
+	//mmap, err := unix.Mmap(int(file.Fd()), 0, ShmSize, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
+	//if err != nil {
+	//	log.Fatalf("mmap: %v", err)
+	//}
+
+	pool := shm.CreatePool(file, ShmSize)
+	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
+
+	surface := compositor.CreateSurface()
+	surface.Attach(buf, 0, 0)
+	surface.Damage(0, 0, math.MaxInt32, math.MaxInt32)
+	surface.Commit()
 
 	for {
 		select {
@@ -46,8 +89,5 @@ func main() {
 		if err != nil {
 			log.Fatalf("round trip: %v", err)
 		}
-
-		fmt.Println(compositor)
-		fmt.Println(shm)
 	}
 }
