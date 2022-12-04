@@ -90,7 +90,7 @@ import (
 		{{- $enumName := printf "%s%s" ($name | export) (.Name | camel | export) | export -}}
 
 		{{$enum.Description.Full | trimSpace | trimLines | comment -}}
-		type {{$enumName}} int32
+		type {{$enumName}} int64
 
 		const (
 			{{range .Entries -}}
