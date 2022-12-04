@@ -12,7 +12,7 @@ import (
 type Display struct {
 	Error func(id, code uint32, msg string)
 
-	obj      displayObject
+	I[displayObject]
 	done     chan struct{}
 	close    sync.Once
 	conn     *net.UnixConn

@@ -15,3 +15,13 @@ type UnknownSenderIDError struct {
 func (err UnknownSenderIDError) Error() string {
 	return fmt.Sprintf("unknown sender object ID: %v", err.Msg.Sender())
 }
+
+// I is a convience type that can be embedded into an object wrapper
+// struct to automatically forward the underlying Object's ID method.
+type I[T interface{ ID() uint32 }] struct {
+	obj T
+}
+
+func (i I[T]) ID() uint32 {
+	return i.obj.ID()
+}

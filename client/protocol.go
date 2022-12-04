@@ -70,6 +70,10 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj displayObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *displayObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -224,6 +228,10 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj registryObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *registryObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -284,6 +292,10 @@ func (obj callbackObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj callbackObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *callbackObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -316,6 +328,10 @@ func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj compositorObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *compositorObject) SetID(id uint32) {
@@ -378,6 +394,10 @@ func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj shmPoolObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *shmPoolObject) SetID(id uint32) {
@@ -489,6 +509,10 @@ func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj shmObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *shmObject) SetID(id uint32) {
@@ -893,6 +917,10 @@ func (obj bufferObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj bufferObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *bufferObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -1017,6 +1045,10 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj dataOfferObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *dataOfferObject) SetID(id uint32) {
@@ -1331,6 +1363,10 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj dataSourceObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *dataSourceObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -1545,6 +1581,10 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj dataDeviceObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *dataDeviceObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -1661,6 +1701,10 @@ func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj dataDeviceManagerObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *dataDeviceManagerObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -1762,6 +1806,10 @@ func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj shellObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *shellObject) SetID(id uint32) {
@@ -1887,6 +1935,10 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj shellSurfaceObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *shellSurfaceObject) SetID(id uint32) {
@@ -2286,6 +2338,10 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj surfaceObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *surfaceObject) SetID(id uint32) {
@@ -2749,6 +2805,10 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj seatObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *seatObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -3153,6 +3213,10 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj pointerObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *pointerObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -3446,6 +3510,10 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj keyboardObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *keyboardObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -3691,6 +3759,10 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj touchObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *touchObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -3868,6 +3940,10 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj outputObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *outputObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -3989,6 +4065,10 @@ func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
+func (obj regionObject) ID() uint32 {
+	return obj.id
+}
+
 func (obj *regionObject) SetID(id uint32) {
 	obj.id = id
 }
@@ -4077,6 +4157,10 @@ func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj subcompositorObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *subcompositorObject) SetID(id uint32) {
@@ -4204,6 +4288,10 @@ func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		Type:      "event",
 		Op:        msg.Op(),
 	}
+}
+
+func (obj subsurfaceObject) ID() uint32 {
+	return obj.id
 }
 
 func (obj *subsurfaceObject) SetID(id uint32) {
