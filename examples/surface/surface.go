@@ -9,6 +9,7 @@ import (
 	"time"
 
 	wl "deedles.dev/wl/client"
+	xdg "deedles.dev/xdg/client"
 )
 
 func CreateShmFile(size int64) *os.File {
@@ -44,6 +45,7 @@ func main() {
 	var (
 		compositor *wl.Compositor
 		shm        *wl.Shm
+		wmBase     *xdg.WmBase
 	)
 	registry.Global = func(name uint32, inter wl.Interface) {
 		switch {
@@ -51,11 +53,23 @@ func main() {
 			compositor = wl.BindCompositor(display, name)
 		case wl.IsShm(inter):
 			shm = wl.BindShm(display, name)
+		case xdg.IsWmBase(inter):
+			wmBase = xdg.BindWmBase(display, name)
 		}
 	}
 	err = display.RoundTrip()
 	if err != nil {
 		log.Fatalf("round trip: %v", err)
+	}
+
+	if compositor == nil {
+		log.Fatalln("no compositor found")
+	}
+	if shm == nil {
+		log.Fatalln("no shm found")
+	}
+	if wmBase == nil {
+		log.Fatalln("no wmbase found")
 	}
 
 	const (
@@ -74,6 +88,9 @@ func main() {
 	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
 
 	surface := compositor.CreateSurface()
+	tl := wmBase.GetXdgSurface(surface).GetToplevel()
+	tl.SetTitle("Example")
+
 	surface.Attach(buf, 0, 0)
 	surface.Damage(0, 0, math.MaxInt32, math.MaxInt32)
 	surface.Commit()
@@ -85,9 +102,9 @@ func main() {
 		default:
 		}
 
-		err = display.RoundTrip()
+		err := display.Flush()
 		if err != nil {
-			log.Fatalf("round trip: %v", err)
+			log.Printf("flush: %v", err)
 		}
 	}
 }
