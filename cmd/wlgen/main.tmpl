@@ -60,6 +60,10 @@ import (
 		}
 	}
 
+	func (obj {{$name}}Object) ID() uint32 {
+		return obj.id
+	}
+
 	func (obj *{{$name}}Object) SetID(id uint32) {
 		obj.id = id
 	}
