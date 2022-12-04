@@ -15,8 +15,3 @@ type UnknownSenderIDError struct {
 func (err UnknownSenderIDError) Error() string {
 	return fmt.Sprintf("unknown sender object ID: %v", err.Msg.Sender())
 }
-
-type Interface struct {
-	Name    string
-	Version uint32
-}

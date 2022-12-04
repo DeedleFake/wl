@@ -17,8 +17,8 @@ func main() {
 	}
 
 	registry := display.GetRegistry()
-	registry.Global = func(name uint32, inter string, version uint32) {
-		log.Printf("global: name: %v, interface: %q, version: %v", name, inter, version)
+	registry.Global = func(name uint32, inter wl.Interface) {
+		log.Printf("global: name: %v, interface: %q, version: %v", name, inter.Name, inter.Version)
 	}
 
 	err = display.RoundTrip()
