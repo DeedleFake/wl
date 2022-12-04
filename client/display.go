@@ -108,8 +108,12 @@ func (display *Display) flush(queue []func() error) (errs []error) {
 }
 
 func (display *Display) Flush() error {
-	queue := <-display.queue.Get()
-	return errors.Join(display.flush(queue)...)
+	select {
+	case queue := <-display.queue.Get():
+		return errors.Join(display.flush(queue)...)
+	default:
+		return nil
+	}
 }
 
 func (display *Display) RoundTrip() error {
