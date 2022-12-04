@@ -3,7 +3,7 @@ package wl
 type callback struct {
 	Done func(data uint32)
 
-	I[callbackObject]
+	id[callbackObject]
 }
 
 type callbackListener struct {

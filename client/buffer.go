@@ -3,7 +3,7 @@ package wl
 type Buffer struct {
 	Release func()
 
-	I[bufferObject]
+	id[bufferObject]
 	display *Display
 }
 

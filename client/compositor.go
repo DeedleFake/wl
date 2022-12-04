@@ -1,7 +1,7 @@
 package wl
 
 type Compositor struct {
-	I[compositorObject]
+	id[compositorObject]
 	display *Display
 }
 

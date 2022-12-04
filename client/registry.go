@@ -8,7 +8,7 @@ type Registry struct {
 	Global       func(name uint32, inter Interface)
 	GlobalRemove func(name uint32)
 
-	I[registryObject]
+	id[registryObject]
 	display *Display
 }
 

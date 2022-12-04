@@ -1,7 +1,7 @@
 package wl
 
 type Surface struct {
-	I[surfaceObject]
+	id[surfaceObject]
 	display *Display
 }
 

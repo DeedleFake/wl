@@ -5,7 +5,7 @@ import "os"
 type Shm struct {
 	Format func(ShmFormat)
 
-	I[shmObject]
+	id[shmObject]
 	display *Display
 }
 
