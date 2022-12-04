@@ -4,6 +4,7 @@ package wl
 
 import (
 	"deedles.dev/wl/wire"
+	"fmt"
 	"os"
 )
 
@@ -82,6 +83,10 @@ func (obj displayObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj displayObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_display", obj.id)
 }
 
 // The sync request asks the server to emit the 'done' event
@@ -246,6 +251,10 @@ func (obj registryObject) Delete() {
 	}
 }
 
+func (obj registryObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_registry", obj.id)
+}
+
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
 func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
@@ -312,6 +321,10 @@ func (obj callbackObject) Delete() {
 	}
 }
 
+func (obj callbackObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_callback", obj.id)
+}
+
 const (
 	compositorInterface = "wl_compositor"
 	compositorVersion   = 4
@@ -348,6 +361,10 @@ func (obj compositorObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj compositorObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_compositor", obj.id)
 }
 
 // Ask the compositor to create a new surface.
@@ -418,6 +435,10 @@ func (obj shmPoolObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj shmPoolObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_shm_pool", obj.id)
 }
 
 // Create a wl_buffer object from the pool.
@@ -539,6 +560,10 @@ func (obj shmObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj shmObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_shm", obj.id)
 }
 
 // Create a new wl_shm_pool object.
@@ -949,6 +974,10 @@ func (obj bufferObject) Delete() {
 	}
 }
 
+func (obj bufferObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_buffer", obj.id)
+}
+
 // Destroy a buffer. If and how you need to release the backing
 // storage is defined by the buffer factory interface.
 //
@@ -1079,6 +1108,10 @@ func (obj dataOfferObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj dataOfferObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_data_offer", obj.id)
 }
 
 // Indicate that the client can accept the given mime type, or
@@ -1407,6 +1440,10 @@ func (obj dataSourceObject) Delete() {
 	}
 }
 
+func (obj dataSourceObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_data_source", obj.id)
+}
+
 // This request adds a mime type to the set of mime types
 // advertised to targets.  Can be called several times to offer
 // multiple types.
@@ -1631,6 +1668,10 @@ func (obj dataDeviceObject) Delete() {
 	}
 }
 
+func (obj dataDeviceObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_data_device", obj.id)
+}
+
 // This request asks the compositor to start a drag-and-drop
 // operation on behalf of the client.
 //
@@ -1757,6 +1798,10 @@ func (obj dataDeviceManagerObject) Delete() {
 	}
 }
 
+func (obj dataDeviceManagerObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_data_device_manager", obj.id)
+}
+
 // Create a new data source.
 func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
@@ -1866,6 +1911,10 @@ func (obj shellObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj shellObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_shell", obj.id)
 }
 
 // Create a shell surface for an existing surface. This gives
@@ -1997,6 +2046,10 @@ func (obj shellSurfaceObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj shellSurfaceObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_shell_surface", obj.id)
 }
 
 // A client must respond to a ping event with a pong request or
@@ -2420,6 +2473,10 @@ func (obj surfaceObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj surfaceObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_surface", obj.id)
 }
 
 // Deletes the surface and invalidates its object ID.
@@ -2907,6 +2964,10 @@ func (obj seatObject) Delete() {
 	}
 }
 
+func (obj seatObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_seat", obj.id)
+}
+
 // The ID provided will be initialized to the wl_pointer interface
 // for this seat.
 //
@@ -3323,6 +3384,10 @@ func (obj pointerObject) Delete() {
 	}
 }
 
+func (obj pointerObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_pointer", obj.id)
+}
+
 // Set the pointer surface, i.e., the surface that contains the
 // pointer image (cursor). This request gives the surface the role
 // of a cursor. If the surface already has another role, it raises
@@ -3624,6 +3689,10 @@ func (obj keyboardObject) Delete() {
 	}
 }
 
+func (obj keyboardObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_keyboard", obj.id)
+}
+
 func (obj keyboardObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: &obj,
@@ -3875,6 +3944,10 @@ func (obj touchObject) Delete() {
 	}
 }
 
+func (obj touchObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_touch", obj.id)
+}
+
 func (obj touchObject) Release() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
 		Sender: &obj,
@@ -4058,6 +4131,10 @@ func (obj outputObject) Delete() {
 	}
 }
 
+func (obj outputObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_output", obj.id)
+}
+
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
 func (obj outputObject) Release() *wire.MessageBuilder {
@@ -4185,6 +4262,10 @@ func (obj regionObject) Delete() {
 	}
 }
 
+func (obj regionObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_region", obj.id)
+}
+
 // Destroy the region.  This will invalidate the object ID.
 func (obj regionObject) Destroy() *wire.MessageBuilder {
 	builder := wire.MessageBuilder{
@@ -4283,6 +4364,10 @@ func (obj subcompositorObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj subcompositorObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_subcompositor", obj.id)
 }
 
 // Informs the server that the client will not be using this
@@ -4418,6 +4503,10 @@ func (obj subsurfaceObject) Delete() {
 	if obj.delete != nil {
 		obj.delete()
 	}
+}
+
+func (obj subsurfaceObject) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_subsurface", obj.id)
 }
 
 // The sub-surface interface is removed from the wl_surface object

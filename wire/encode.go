@@ -102,5 +102,5 @@ func (mb *MessageBuilder) String() string {
 		}
 	}
 
-	return fmt.Sprintf("%T(%v) -> %v(%v)", mb.Sender, mb.Sender.ID(), mb.Method, strings.Join(args, ", "))
+	return fmt.Sprintf("%v -> %v(%v)", mb.Sender, mb.Method, strings.Join(args, ", "))
 }

@@ -6,6 +6,7 @@ import (
 	{{range .ExtraImports -}}
 		{{. | printf "%q"}}
 	{{end -}}
+	"fmt"
 	"deedles.dev/wl/wire"
 )
 
@@ -72,6 +73,10 @@ import (
 		if obj.delete != nil {
 			obj.delete()
 		}
+	}
+
+	func (obj {{$name}}Object) String() string {
+		return fmt.Sprintf("%v(%v)", {{$interface.Name | printf "%q"}}, obj.id)
 	}
 
 	{{range $op, $method := $senders}}
