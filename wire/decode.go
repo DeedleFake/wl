@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"golang.org/x/sys/unix"
@@ -22,6 +23,8 @@ type MessageBuffer struct {
 	fds     []int
 	fdindex int
 	err     error
+	args    []any
+	method  string
 }
 
 // ReadMessage reads message data from the socket into a buffer.
@@ -101,6 +104,7 @@ func (r *MessageBuffer) ReadInt() (v int32) {
 	}
 
 	v, r.err = read[int32](&r.data)
+	r.args = append(r.args, v)
 	return v
 }
 
@@ -110,6 +114,7 @@ func (r *MessageBuffer) ReadUint() (v uint32) {
 	}
 
 	v, r.err = read[uint32](&r.data)
+	r.args = append(r.args, v)
 	return v
 }
 
@@ -127,6 +132,7 @@ func (r *MessageBuffer) ReadFixed() (v Fixed) {
 	}
 
 	v, r.err = read[Fixed](&r.data)
+	r.args = append(r.args, v)
 	return v
 }
 
@@ -153,6 +159,7 @@ func (r *MessageBuffer) ReadString() string {
 		return ""
 	}
 
+	r.args = append(r.args, v[:length-1])
 	return v[:length-1]
 }
 
@@ -173,6 +180,7 @@ func (r *MessageBuffer) ReadArray() []byte {
 		return nil
 	}
 
+	r.args = append(r.args, buf[:length])
 	return buf[:length]
 }
 
@@ -188,5 +196,23 @@ func (r *MessageBuffer) ReadFile() *os.File {
 
 	f := os.NewFile(uintptr(r.fds[r.fdindex]), "")
 	r.fdindex++
+	r.args = append(r.args, f)
 	return f
+}
+
+func (r *MessageBuffer) Debug(sender Object) string {
+	args := make([]string, 0, len(r.args))
+	for _, arg := range r.args {
+		switch arg := arg.(type) {
+		case string:
+			args = append(args, strconv.Quote(arg))
+		case *os.File:
+			args = append(args, fmt.Sprint(arg.Fd()))
+		default:
+			args = append(args, fmt.Sprint(arg))
+		}
+	}
+
+	method := sender.MethodName(r.op)
+	return fmt.Sprintf("%v.%v(%v)", sender, method, strings.Join(args, ", "))
 }
