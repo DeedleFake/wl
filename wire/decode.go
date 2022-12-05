@@ -5,35 +5,32 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"strconv"
 	"strings"
 
 	"deedles.dev/wl/internal/bin"
-	"golang.org/x/sys/unix"
 )
 
 // MessageBuffer holds message data that has been read from the socket
 // but not yet decoded.
 type MessageBuffer struct {
-	sender  uint32
-	op      uint16
-	size    uint16
-	data    bytes.Reader
-	fds     []int
-	fdindex int
-	err     error
-	args    []any
-	method  string
+	sender uint32
+	op     uint16
+	size   uint16
+	conn   *Conn
+	data   bytes.Reader
+	err    error
+	args   []any
+	method string
 }
 
 // ReadMessage reads message data from the socket into a buffer.
-func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
-	var mr MessageBuffer
+func ReadMessage(c *Conn) (*MessageBuffer, error) {
+	mr := MessageBuffer{conn: c}
 
 	var oob bytes.Buffer
-	r := unixTee{c: c, oob: &oob}
+	r := unixTee{c: c.UnixConn, oob: &oob}
 
 	sender, err := bin.Read[uint32](r)
 	if err != nil {
@@ -54,19 +51,9 @@ func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
 		return nil, fmt.Errorf("copy data to buffer: %w", err)
 	}
 
-	cmsgs, err := unix.ParseSocketControlMessage(oob.Bytes())
+	err = c.readFDs(oob.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("parse socket control messages: %w", err)
-	}
-	for _, cmsg := range cmsgs {
-		fds, err := unix.ParseUnixRights(&cmsg)
-		if err != nil {
-			if errors.Is(err, unix.EINVAL) {
-				continue
-			}
-			return nil, fmt.Errorf("parse unix control message: %w", err)
-		}
-		mr.fds = append(mr.fds, fds...)
+		return nil, fmt.Errorf("read FDs: %w", err)
 	}
 
 	mr.data.Reset(data.Bytes())
@@ -190,13 +177,13 @@ func (r *MessageBuffer) ReadFile() *os.File {
 		return nil
 	}
 
-	if r.fdindex >= len(r.fds) {
+	fd, ok := pop(r.conn.fds)
+	if !ok {
 		r.err = errors.New("no more file descriptors")
 		return nil
 	}
 
-	f := os.NewFile(uintptr(r.fds[r.fdindex]), "")
-	r.fdindex++
+	f := os.NewFile(uintptr(fd), "")
 	r.args = append(r.args, f)
 	return f
 }

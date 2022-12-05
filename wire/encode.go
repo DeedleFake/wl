@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"runtime"
 	"strconv"
@@ -125,7 +124,7 @@ func (mb *MessageBuilder) WriteFile(v *os.File) {
 
 // Build builds the message and sends it to c. The MessageBuilder
 // should not be used again after this method is called.
-func (mb *MessageBuilder) Build(c *net.UnixConn) error {
+func (mb *MessageBuilder) Build(c *Conn) error {
 	if mb.err != nil {
 		return mb.err
 	}

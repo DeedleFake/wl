@@ -32,7 +32,7 @@ func SocketPath() string {
 // Dial opens a connection to the Wayland socket based on the current
 // environment. It follows the procedure outlined at
 // https://wayland-book.com/protocol-design/wire-protocol.html#transports
-func Dial() (*net.UnixConn, error) {
+func Dial() (*Conn, error) {
 	if v, ok := os.LookupEnv("WAYLAND_SOCKET"); ok {
 		fd, err := strconv.ParseInt(v, 10, 0)
 		if err != nil {
@@ -45,12 +45,12 @@ func Dial() (*net.UnixConn, error) {
 		if err != nil {
 			return nil, fmt.Errorf("open WAYLAND_SOCKET connection: %w", err)
 		}
-		return c.(*net.UnixConn), nil // TODO: Make sure that this works.
+		return NewConn(c.(*net.UnixConn)), nil // TODO: Make sure that this works.
 	}
 
 	s, err := net.Dial("unix", SocketPath())
 	if err != nil {
 		return nil, err
 	}
-	return s.(*net.UnixConn), nil
+	return NewConn(s.(*net.UnixConn)), nil
 }

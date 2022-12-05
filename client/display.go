@@ -16,7 +16,7 @@ type Display struct {
 
 	done     chan struct{}
 	close    sync.Once
-	conn     *net.UnixConn
+	conn     *wire.Conn
 	registry *Registry
 	objects  map[uint32]wire.Object
 	nextID   uint32
@@ -31,7 +31,7 @@ func DialDisplay() (*Display, error) {
 	return ConnectDisplay(socket), nil
 }
 
-func ConnectDisplay(c *net.UnixConn) *Display {
+func ConnectDisplay(c *wire.Conn) *Display {
 	display := Display{
 		done:    make(chan struct{}),
 		conn:    c,
