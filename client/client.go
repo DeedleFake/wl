@@ -33,7 +33,7 @@ func (err UnknownSenderIDError) Error() string {
 
 // id is a convience type that can be embedded into an object wrapper
 // struct to automatically forward the underlying Object's ID method.
-type id[T wire.Identifier] struct {
+type id[T interface{ ID() uint32 }] struct {
 	obj T
 }
 

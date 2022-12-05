@@ -71,8 +71,13 @@ type NewID struct {
 
 // Object represents a Wayland protocol object.
 type Object interface {
+	// ID returns the ID of the object. It returns 0 before the Object
+	// is added to an object management system.
+	ID() uint32
+
 	// SetID is used by the object ID management system to tell the
-	// object what its own ID should be.
+	// object what its own ID should be. It should almost never be
+	// called manually.
 	SetID(id uint32)
 
 	// Dispatch pertforms the operation requested by the message in the
@@ -82,15 +87,13 @@ type Object interface {
 	// Delete is called by the object ID management system when an
 	// object is deleted.
 	Delete()
-
-	// MethodName returns the string name of the specified method. It is
-	// provided purely for debugging purposes.
-	MethodName(opcode uint16) string
 }
 
-// Identifier is a type that is capable of reporting its own ID.
-type Identifier interface {
-	ID() uint32
+// DebugObject is implemented by Objects that can provide debug
+// information about themselves.
+type DebugObject interface {
+	// MethodName returns the string name of the specified local method.
+	MethodName(opcode uint16) string
 }
 
 // UnknownOpError is returned by Object.Dispatch if it is given a

@@ -214,6 +214,9 @@ func (r *MessageBuffer) Debug(sender Object) string {
 		}
 	}
 
-	method := sender.MethodName(r.op)
+	method := strconv.FormatUint(uint64(r.op), 10)
+	if mn, ok := sender.(DebugObject); ok {
+		method = mn.MethodName(r.op)
+	}
 	return fmt.Sprintf("%v.%v(%v)", sender, method, strings.Join(args, ", "))
 }

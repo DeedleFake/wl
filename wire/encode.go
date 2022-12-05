@@ -25,14 +25,14 @@ type MessageBuilder struct {
 	// for debugging purposes.
 	Args []any
 
-	sender Identifier
+	sender Object
 	op     uint16
 	data   bytes.Buffer
 	fds    []int
 	err    error
 }
 
-func NewMessage(sender Identifier, op uint16) *MessageBuilder {
+func NewMessage(sender Object, op uint16) *MessageBuilder {
 	return &MessageBuilder{
 		sender: sender,
 		op:     op,
