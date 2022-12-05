@@ -2,6 +2,7 @@ package wire
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -39,8 +40,8 @@ func NewMessage(sender Object, op uint16) *MessageBuilder {
 	}
 }
 
-func (mb *MessageBuilder) Sender() uint32 {
-	return mb.sender.ID()
+func (mb *MessageBuilder) Sender() Object {
+	return mb.sender
 }
 
 func (mb *MessageBuilder) Op() uint16 {
@@ -142,8 +143,12 @@ func (mb *MessageBuilder) Build(c *net.UnixConn) error {
 }
 
 func (mb *MessageBuilder) close() {
+	errs := make([]error, 0, len(mb.fds))
 	for _, fd := range mb.fds {
-		unix.Close(fd) // TODO: Handle errors.
+		errs = append(errs, unix.Close(fd))
+	}
+	if mb.err == nil {
+		mb.err = errors.Join(errs...)
 	}
 	mb.fds = nil
 	runtime.SetFinalizer(mb, nil)
