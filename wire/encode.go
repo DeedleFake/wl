@@ -31,27 +31,48 @@ type MessageBuilder struct {
 
 	data bytes.Buffer
 	fds  []int
+	err  error
 }
 
 func (mb *MessageBuilder) WriteInt(v int32) {
+	if mb.err != nil {
+		return
+	}
+
 	write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteUint(v uint32) {
+	if mb.err != nil {
+		return
+	}
+
 	write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteNewID(v NewID) {
+	if mb.err != nil {
+		return
+	}
+
 	mb.WriteString(v.Interface)
 	mb.WriteUint(v.Version)
 	mb.WriteUint(v.ID)
 }
 
 func (mb *MessageBuilder) WriteFixed(v Fixed) {
+	if mb.err != nil {
+		return
+	}
+
 	write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteString(v string) {
+	if mb.err != nil {
+		return
+	}
+
 	pad := padding(uint32(len(v) + 1))
 	write(&mb.data, uint32(len(v)+1))
 	mb.data.WriteString(v)
@@ -62,6 +83,10 @@ func (mb *MessageBuilder) WriteString(v string) {
 }
 
 func (mb *MessageBuilder) WriteArray(v []byte) {
+	if mb.err != nil {
+		return
+	}
+
 	pad := padding(uint32(len(v)))
 	write(&mb.data, uint32(len(v)))
 	mb.data.Write(v)
@@ -71,12 +96,29 @@ func (mb *MessageBuilder) WriteArray(v []byte) {
 }
 
 func (mb *MessageBuilder) WriteFile(v *os.File) {
-	mb.fds = append(mb.fds, int(v.Fd()))
+	fd, err := unix.Dup(int(v.Fd()))
+	if err != nil {
+		mb.err = err
+		return
+	}
+
+	mb.fds = append(mb.fds, fd)
 }
 
 // Build builds the message and sends it to c. The MessageBuilder
 // should not be used again after this method is called.
 func (mb *MessageBuilder) Build(c *net.UnixConn) error {
+	defer func() {
+		for _, fd := range mb.fds {
+			unix.Close(fd) // TODO: Handle errors.
+		}
+		mb.fds = nil
+	}()
+
+	if mb.err != nil {
+		return mb.err
+	}
+
 	length := uint32(8 + mb.data.Len())
 	msg := bytes.NewBuffer(make([]byte, 0, length))
 	write(msg, mb.Sender.ID())
@@ -85,8 +127,8 @@ func (mb *MessageBuilder) Build(c *net.UnixConn) error {
 	io.Copy(msg, &mb.data)
 	oob := unix.UnixRights(mb.fds...)
 
-	_, _, err := c.WriteMsgUnix(msg.Bytes(), oob, nil)
-	return err
+	_, _, mb.err = c.WriteMsgUnix(msg.Bytes(), oob, nil)
+	return mb.err
 }
 
 func (mb *MessageBuilder) String() string {
