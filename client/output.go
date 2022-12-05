@@ -1,12 +1,13 @@
 package wl
 
 type Output struct {
+	id[outputObject]
+
 	Geometry func(x, y, physicalWidth, physicalHeight, subpixel int32, make, model string, transform OutputTransform)
 	Mode     func(flags OutputMode, width, height, refresh int32)
 	Done     func()
 	Scale    func(factor int32)
 
-	id[outputObject]
 	display *Display
 }
 

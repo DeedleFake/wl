@@ -10,9 +10,10 @@ import (
 )
 
 type Display struct {
+	id[displayObject]
+
 	Error func(id, code uint32, msg string)
 
-	id[displayObject]
 	done     chan struct{}
 	close    sync.Once
 	conn     *net.UnixConn
@@ -82,6 +83,10 @@ func (display *Display) AddObject(obj wire.Object) {
 
 	display.objects[id] = obj
 	obj.SetID(id)
+}
+
+func (display *Display) GetObject(id uint32) wire.Object {
+	return display.objects[id]
 }
 
 func (display *Display) DeleteObject(id uint32) {

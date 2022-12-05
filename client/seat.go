@@ -1,10 +1,11 @@
 package wl
 
 type Seat struct {
+	id[seatObject]
+
 	Capabilities func(SeatCapability)
 	Name         func(string)
 
-	id[seatObject]
 	display *Display
 }
 

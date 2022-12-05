@@ -1,13 +1,20 @@
 package wl
 
-import "os"
+import (
+	"os"
+	"unsafe"
+)
 
 type Keyboard struct {
+	id[keyboardObject]
+
 	Keymap     func(format KeyboardKeymapFormat, file *os.File, size uint32)
+	Enter      func(serial uint32, surface *Surface, keys []byte)
+	Leave      func(serial uint32, surface *Surface)
 	Key        func(serial, time, key uint32, state KeyboardKeyState)
+	Modifiers  func(serial, depressed, latched, locked, group uint32)
 	RepeatInfo func(rate, delay int32)
 
-	id[keyboardObject]
 	display *Display
 }
 
@@ -24,11 +31,25 @@ func (lis keyboardListener) Keymap(format uint32, fd *os.File, size uint32) {
 }
 
 func (lis keyboardListener) Enter(serial uint32, surface uint32, keys []byte) {
-	// TODO
+	if lis.kb.Enter != nil {
+		sobj := lis.kb.display.GetObject(surface)
+		var s *Surface
+		if sobj, ok := sobj.(*surfaceObject); ok {
+			s = (*Surface)(unsafe.Pointer(sobj))
+		}
+		lis.kb.Enter(serial, s, keys)
+	}
 }
 
 func (lis keyboardListener) Leave(serial uint32, surface uint32) {
-	// TODO
+	if lis.kb.Leave != nil {
+		sobj := lis.kb.display.GetObject(surface)
+		var s *Surface
+		if sobj, ok := sobj.(*surfaceObject); ok {
+			s = (*Surface)(unsafe.Pointer(sobj))
+		}
+		lis.kb.Leave(serial, s)
+	}
 }
 
 func (lis keyboardListener) Key(serial uint32, time uint32, key uint32, state uint32) {
@@ -38,7 +59,9 @@ func (lis keyboardListener) Key(serial uint32, time uint32, key uint32, state ui
 }
 
 func (lis keyboardListener) Modifiers(serial uint32, modsDepressed uint32, modsLatched uint32, modsLocked uint32, group uint32) {
-	// TODO
+	if lis.kb.Modifiers != nil {
+		lis.kb.Modifiers(serial, modsDepressed, modsLatched, modsLocked, group)
+	}
 }
 
 func (lis keyboardListener) RepeatInfo(rate int32, delay int32) {

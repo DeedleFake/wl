@@ -1,9 +1,10 @@
 package wl
 
 type Buffer struct {
+	id[bufferObject]
+
 	Release func()
 
-	id[bufferObject]
 	display *Display
 }
 

@@ -2,6 +2,7 @@ package wl
 
 type Compositor struct {
 	id[compositorObject]
+
 	display *Display
 }
 

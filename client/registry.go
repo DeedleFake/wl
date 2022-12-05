@@ -5,10 +5,11 @@ import (
 )
 
 type Registry struct {
+	id[registryObject]
+
 	Global       func(name uint32, inter Interface)
 	GlobalRemove func(name uint32)
 
-	id[registryObject]
 	display *Display
 }
 

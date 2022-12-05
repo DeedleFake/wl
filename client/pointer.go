@@ -3,10 +3,11 @@ package wl
 import "deedles.dev/wl/wire"
 
 type Pointer struct {
+	id[pointerObject]
+
 	Frame      func()
 	AxisSource func(PointerAxisSource)
 
-	id[pointerObject]
 	display *Display
 }
 

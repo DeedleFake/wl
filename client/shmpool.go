@@ -2,6 +2,7 @@ package wl
 
 type ShmPool struct {
 	id[shmPoolObject]
+
 	display *Display
 }
 

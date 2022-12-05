@@ -2,6 +2,7 @@ package wl
 
 type Surface struct {
 	id[surfaceObject]
+
 	display *Display
 }
 

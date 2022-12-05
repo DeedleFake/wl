@@ -33,6 +33,10 @@ func (err UnknownSenderIDError) Error() string {
 
 // id is a convience type that can be embedded into an object wrapper
 // struct to automatically forward the underlying Object's ID method.
+//
+// id should always be embedded as the first field in a struct so that
+// the embedded object can be safely converted back into its wrapper
+// type.
 type id[T interface{ ID() uint32 }] struct {
 	obj T
 }

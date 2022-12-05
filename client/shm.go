@@ -5,9 +5,10 @@ import (
 )
 
 type Shm struct {
+	id[shmObject]
+
 	Format func(ShmFormat)
 
-	id[shmObject]
 	display *Display
 }
 
