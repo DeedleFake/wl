@@ -140,10 +140,11 @@ func (display *Display) RoundTrip() error {
 		select {
 		case <-done:
 			return errors.Join(errs...)
-
-		case queue := <-display.queue.Get():
-			errs = append(errs, display.flush(queue)...)
+		default:
 		}
+
+		queue := <-display.queue.Get()
+		errs = append(errs, display.flush(queue)...)
 	}
 }
 
