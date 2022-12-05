@@ -1,6 +1,15 @@
 package main
 
 import (
+	"image/draw"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
+
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +25,8 @@ import (
 )
 
 type state struct {
+	image image.Image
+
 	display    *wl.Display
 	registry   *wl.Registry
 	shm        *wl.Shm
@@ -95,44 +106,39 @@ func (state *state) global(name uint32, inter wl.Interface) {
 }
 
 func (state *state) drawFrame() *wl.Buffer {
-	const (
-		Width   = 640
-		Height  = 480
-		Stride  = Width * 4
-		ShmSize = Height * Stride
-	)
+	bounds := state.image.Bounds().Canon()
+	stride := bounds.Dx() * 4
+	shmSize := bounds.Dy() * stride
 
 	file, err := shm.Create()
 	if err != nil {
 		log.Fatalf("create shm: %v", err)
 	}
 	defer file.Close()
-	file.Truncate(ShmSize)
+	file.Truncate(int64(shmSize))
 
-	mmap, err := shm.Map(file, ShmSize)
+	mmap, err := shm.Map(file, shmSize)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
 	defer mmap.Close()
 
-	pool := state.shm.CreatePool(file, ShmSize)
+	pool := state.shm.CreatePool(file, int32(shmSize))
 	defer pool.Destroy()
-	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
+	buf := pool.CreateBuffer(
+		0,
+		int32(bounds.Dx()),
+		int32(bounds.Dy()),
+		int32(stride),
+		wl.ShmFormatXrgb8888,
+	)
 
 	img := shmimage.ARGB8888{
 		Pix:    mmap,
-		Stride: Stride,
-		Rect:   image.Rect(0, 0, Width, Height),
+		Stride: stride,
+		Rect:   image.Rect(0, 0, bounds.Dx(), bounds.Dy()),
 	}
-	for y := 0; y < Height; y++ {
-		for x := 0; x < Width; x++ {
-			if (x+y/8*8)%16 < 8 {
-				img.Set(x, y, shmimage.ARGB8888Color(0xFF666666))
-				continue
-			}
-			img.Set(x, y, shmimage.ARGB8888Color(0xFFEEEEEE))
-		}
-	}
+	draw.Draw(&img, img.Rect, state.image, bounds.Min, draw.Src)
 
 	return buf
 }
@@ -143,12 +149,33 @@ func (state *state) configure() {
 	state.surface.Commit()
 }
 
+func loadImage(path string) (image.Image, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	img, _, err := image.Decode(file)
+	return img, err
+}
+
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	var state state
-	err := state.init()
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: imgview <file>")
+		os.Exit(2)
+	}
+
+	img, err := loadImage(os.Args[1])
+	if err != nil {
+		log.Fatalf("load image: %v", err)
+	}
+
+	state := state{image: img}
+	err = state.init()
 	if err != nil {
 		log.Fatalf("init: %v", err)
 	}
