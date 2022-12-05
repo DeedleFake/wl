@@ -131,8 +131,12 @@ func (display *Display) Flush() error {
 }
 
 func (display *Display) RoundTrip() error {
+	get := display.queue.Get()
 	done := make(chan struct{})
-	display.Sync(func() { close(done) })
+	display.Sync(func() {
+		close(done)
+		get = nil
+	})
 
 	var errs []error
 
@@ -140,11 +144,10 @@ func (display *Display) RoundTrip() error {
 		select {
 		case <-done:
 			return errors.Join(errs...)
-		default:
-		}
 
-		queue := <-display.queue.Get()
-		errs = append(errs, display.flush(queue)...)
+		case queue := <-get:
+			errs = append(errs, display.flush(queue)...)
+		}
 	}
 }
 
