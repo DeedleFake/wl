@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"deedles.dev/wl/internal/bin"
 	"golang.org/x/sys/unix"
 )
 
@@ -34,13 +35,13 @@ func ReadMessage(c *net.UnixConn) (*MessageBuffer, error) {
 	var oob bytes.Buffer
 	r := unixTee{c: c, oob: &oob}
 
-	sender, err := read[uint32](r)
+	sender, err := bin.Read[uint32](r)
 	if err != nil {
 		return nil, fmt.Errorf("read message sender: %w", err)
 	}
 	mr.sender = sender
 
-	so, err := read[uint32](r)
+	so, err := bin.Read[uint32](r)
 	if err != nil {
 		return nil, fmt.Errorf("read message size and opcode: %w", err)
 	}
@@ -103,7 +104,7 @@ func (r *MessageBuffer) ReadInt() (v int32) {
 		return
 	}
 
-	v, r.err = read[int32](&r.data)
+	v, r.err = bin.Read[int32](&r.data)
 	r.args = append(r.args, v)
 	return v
 }
@@ -113,7 +114,7 @@ func (r *MessageBuffer) ReadUint() (v uint32) {
 		return
 	}
 
-	v, r.err = read[uint32](&r.data)
+	v, r.err = bin.Read[uint32](&r.data)
 	r.args = append(r.args, v)
 	return v
 }
@@ -131,7 +132,7 @@ func (r *MessageBuffer) ReadFixed() (v Fixed) {
 		return
 	}
 
-	v, r.err = read[Fixed](&r.data)
+	v, r.err = bin.Read[Fixed](&r.data)
 	r.args = append(r.args, v)
 	return v
 }

@@ -3,27 +3,14 @@
 package wire
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net"
-	"unsafe"
 
 	"golang.org/x/sys/unix"
 )
-
-// byteOrder is the host byte order.
-var byteOrder binary.ByteOrder = binary.LittleEndian
-
-func init() {
-	n := uint32(1)
-	b := (*[4]byte)(unsafe.Pointer(&n))
-	if b[0] == 0 {
-		byteOrder = binary.BigEndian
-	}
-}
 
 func padding(length uint32) uint32 {
 	pad := 4 - (length % (32 / 8))
@@ -31,27 +18,6 @@ func padding(length uint32) uint32 {
 		return 0
 	}
 	return pad
-}
-
-func read[T ~int32 | ~uint32](r io.Reader) (T, error) {
-	var data [4]byte
-	_, err := io.ReadFull(r, data[:])
-	if err != nil {
-		return 0, err
-	}
-
-	v := byteOrder.Uint32(data[:])
-	return *(*T)(unsafe.Pointer(&v)), nil
-}
-
-func write[T ~int32 | ~uint32](w io.Writer, v T) error {
-	var data [4]byte
-	byteOrder.PutUint32(data[:], *(*uint32)(unsafe.Pointer(&v)))
-	n, err := w.Write(data[:])
-	if (err == nil) && (n < len(data)) {
-		return io.ErrShortWrite
-	}
-	return err
 }
 
 // unixTee reads from c, but also reads out-of-band data

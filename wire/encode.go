@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"deedles.dev/wl/internal/bin"
 	"golang.org/x/sys/unix"
 )
 
@@ -51,7 +52,7 @@ func (mb *MessageBuilder) WriteInt(v int32) {
 		return
 	}
 
-	write(&mb.data, v)
+	bin.Write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteUint(v uint32) {
@@ -59,7 +60,7 @@ func (mb *MessageBuilder) WriteUint(v uint32) {
 		return
 	}
 
-	write(&mb.data, v)
+	bin.Write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteNewID(v NewID) {
@@ -77,7 +78,7 @@ func (mb *MessageBuilder) WriteFixed(v Fixed) {
 		return
 	}
 
-	write(&mb.data, v)
+	bin.Write(&mb.data, v)
 }
 
 func (mb *MessageBuilder) WriteString(v string) {
@@ -86,7 +87,7 @@ func (mb *MessageBuilder) WriteString(v string) {
 	}
 
 	pad := padding(uint32(len(v) + 1))
-	write(&mb.data, uint32(len(v)+1))
+	bin.Write(&mb.data, uint32(len(v)+1))
 	mb.data.WriteString(v)
 	mb.data.WriteByte(0)
 	for i := uint32(0); i < pad; i++ {
@@ -100,7 +101,7 @@ func (mb *MessageBuilder) WriteArray(v []byte) {
 	}
 
 	pad := padding(uint32(len(v)))
-	write(&mb.data, uint32(len(v)))
+	bin.Write(&mb.data, uint32(len(v)))
 	mb.data.Write(v)
 	for i := uint32(0); i < pad; i++ {
 		mb.data.WriteByte(0)
@@ -130,8 +131,8 @@ func (mb *MessageBuilder) Build(c *net.UnixConn) error {
 
 	length := uint32(8 + mb.data.Len())
 	msg := bytes.NewBuffer(make([]byte, 0, length))
-	write(msg, mb.sender.ID())
-	write(msg, (length<<16)|uint32(mb.op))
+	bin.Write(msg, mb.sender.ID())
+	bin.Write(msg, (length<<16)|uint32(mb.op))
 
 	io.Copy(msg, &mb.data)
 	oob := unix.UnixRights(mb.fds...)
