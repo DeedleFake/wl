@@ -162,16 +162,16 @@ const (
 func (enum DisplayError) String() string {
 	switch enum {
 	case 0:
-		return "wl_display_invalid_object"
+		return "DisplayErrorInvalidObject"
 
 	case 1:
-		return "wl_display_invalid_method"
+		return "DisplayErrorInvalidMethod"
 
 	case 2:
-		return "wl_display_no_memory"
+		return "DisplayErrorNoMemory"
 
 	case 3:
-		return "wl_display_implementation"
+		return "DisplayErrorImplementation"
 	}
 
 	return "<invalid DisplayError>"
@@ -650,13 +650,13 @@ const (
 func (enum ShmError) String() string {
 	switch enum {
 	case 0:
-		return "wl_shm_invalid_format"
+		return "ShmErrorInvalidFormat"
 
 	case 1:
-		return "wl_shm_invalid_stride"
+		return "ShmErrorInvalidStride"
 
 	case 2:
-		return "wl_shm_invalid_fd"
+		return "ShmErrorInvalidFd"
 	}
 
 	return "<invalid ShmError>"
@@ -978,316 +978,316 @@ const (
 func (enum ShmFormat) String() string {
 	switch enum {
 	case 0:
-		return "wl_shm_argb8888"
+		return "ShmFormatArgb8888"
 
 	case 1:
-		return "wl_shm_xrgb8888"
+		return "ShmFormatXrgb8888"
 
 	case 538982467:
-		return "wl_shm_c8"
+		return "ShmFormatC8"
 
 	case 943867730:
-		return "wl_shm_rgb332"
+		return "ShmFormatRgb332"
 
 	case 944916290:
-		return "wl_shm_bgr233"
+		return "ShmFormatBgr233"
 
 	case 842093144:
-		return "wl_shm_xrgb4444"
+		return "ShmFormatXrgb4444"
 
 	case 842089048:
-		return "wl_shm_xbgr4444"
+		return "ShmFormatXbgr4444"
 
 	case 842094674:
-		return "wl_shm_rgbx4444"
+		return "ShmFormatRgbx4444"
 
 	case 842094658:
-		return "wl_shm_bgrx4444"
+		return "ShmFormatBgrx4444"
 
 	case 842093121:
-		return "wl_shm_argb4444"
+		return "ShmFormatArgb4444"
 
 	case 842089025:
-		return "wl_shm_abgr4444"
+		return "ShmFormatAbgr4444"
 
 	case 842088786:
-		return "wl_shm_rgba4444"
+		return "ShmFormatRgba4444"
 
 	case 842088770:
-		return "wl_shm_bgra4444"
+		return "ShmFormatBgra4444"
 
 	case 892424792:
-		return "wl_shm_xrgb1555"
+		return "ShmFormatXrgb1555"
 
 	case 892420696:
-		return "wl_shm_xbgr1555"
+		return "ShmFormatXbgr1555"
 
 	case 892426322:
-		return "wl_shm_rgbx5551"
+		return "ShmFormatRgbx5551"
 
 	case 892426306:
-		return "wl_shm_bgrx5551"
+		return "ShmFormatBgrx5551"
 
 	case 892424769:
-		return "wl_shm_argb1555"
+		return "ShmFormatArgb1555"
 
 	case 892420673:
-		return "wl_shm_abgr1555"
+		return "ShmFormatAbgr1555"
 
 	case 892420434:
-		return "wl_shm_rgba5551"
+		return "ShmFormatRgba5551"
 
 	case 892420418:
-		return "wl_shm_bgra5551"
+		return "ShmFormatBgra5551"
 
 	case 909199186:
-		return "wl_shm_rgb565"
+		return "ShmFormatRgb565"
 
 	case 909199170:
-		return "wl_shm_bgr565"
+		return "ShmFormatBgr565"
 
 	case 875710290:
-		return "wl_shm_rgb888"
+		return "ShmFormatRgb888"
 
 	case 875710274:
-		return "wl_shm_bgr888"
+		return "ShmFormatBgr888"
 
 	case 875709016:
-		return "wl_shm_xbgr8888"
+		return "ShmFormatXbgr8888"
 
 	case 875714642:
-		return "wl_shm_rgbx8888"
+		return "ShmFormatRgbx8888"
 
 	case 875714626:
-		return "wl_shm_bgrx8888"
+		return "ShmFormatBgrx8888"
 
 	case 875708993:
-		return "wl_shm_abgr8888"
+		return "ShmFormatAbgr8888"
 
 	case 875708754:
-		return "wl_shm_rgba8888"
+		return "ShmFormatRgba8888"
 
 	case 875708738:
-		return "wl_shm_bgra8888"
+		return "ShmFormatBgra8888"
 
 	case 808669784:
-		return "wl_shm_xrgb2101010"
+		return "ShmFormatXrgb2101010"
 
 	case 808665688:
-		return "wl_shm_xbgr2101010"
+		return "ShmFormatXbgr2101010"
 
 	case 808671314:
-		return "wl_shm_rgbx1010102"
+		return "ShmFormatRgbx1010102"
 
 	case 808671298:
-		return "wl_shm_bgrx1010102"
+		return "ShmFormatBgrx1010102"
 
 	case 808669761:
-		return "wl_shm_argb2101010"
+		return "ShmFormatArgb2101010"
 
 	case 808665665:
-		return "wl_shm_abgr2101010"
+		return "ShmFormatAbgr2101010"
 
 	case 808665426:
-		return "wl_shm_rgba1010102"
+		return "ShmFormatRgba1010102"
 
 	case 808665410:
-		return "wl_shm_bgra1010102"
+		return "ShmFormatBgra1010102"
 
 	case 1448695129:
-		return "wl_shm_yuyv"
+		return "ShmFormatYuyv"
 
 	case 1431918169:
-		return "wl_shm_yvyu"
+		return "ShmFormatYvyu"
 
 	case 1498831189:
-		return "wl_shm_uyvy"
+		return "ShmFormatUyvy"
 
 	case 1498765654:
-		return "wl_shm_vyuy"
+		return "ShmFormatVyuy"
 
 	case 1448433985:
-		return "wl_shm_ayuv"
+		return "ShmFormatAyuv"
 
 	case 842094158:
-		return "wl_shm_nv12"
+		return "ShmFormatNv12"
 
 	case 825382478:
-		return "wl_shm_nv21"
+		return "ShmFormatNv21"
 
 	case 909203022:
-		return "wl_shm_nv16"
+		return "ShmFormatNv16"
 
 	case 825644622:
-		return "wl_shm_nv61"
+		return "ShmFormatNv61"
 
 	case 961959257:
-		return "wl_shm_yuv410"
+		return "ShmFormatYuv410"
 
 	case 961893977:
-		return "wl_shm_yvu410"
+		return "ShmFormatYvu410"
 
 	case 825316697:
-		return "wl_shm_yuv411"
+		return "ShmFormatYuv411"
 
 	case 825316953:
-		return "wl_shm_yvu411"
+		return "ShmFormatYvu411"
 
 	case 842093913:
-		return "wl_shm_yuv420"
+		return "ShmFormatYuv420"
 
 	case 842094169:
-		return "wl_shm_yvu420"
+		return "ShmFormatYvu420"
 
 	case 909202777:
-		return "wl_shm_yuv422"
+		return "ShmFormatYuv422"
 
 	case 909203033:
-		return "wl_shm_yvu422"
+		return "ShmFormatYvu422"
 
 	case 875713881:
-		return "wl_shm_yuv444"
+		return "ShmFormatYuv444"
 
 	case 875714137:
-		return "wl_shm_yvu444"
+		return "ShmFormatYvu444"
 
 	case 538982482:
-		return "wl_shm_r8"
+		return "ShmFormatR8"
 
 	case 540422482:
-		return "wl_shm_r16"
+		return "ShmFormatR16"
 
 	case 943212370:
-		return "wl_shm_rg88"
+		return "ShmFormatRg88"
 
 	case 943215175:
-		return "wl_shm_gr88"
+		return "ShmFormatGr88"
 
 	case 842221394:
-		return "wl_shm_rg1616"
+		return "ShmFormatRg1616"
 
 	case 842224199:
-		return "wl_shm_gr1616"
+		return "ShmFormatGr1616"
 
 	case 1211388504:
-		return "wl_shm_xrgb16161616f"
+		return "ShmFormatXrgb16161616f"
 
 	case 1211384408:
-		return "wl_shm_xbgr16161616f"
+		return "ShmFormatXbgr16161616f"
 
 	case 1211388481:
-		return "wl_shm_argb16161616f"
+		return "ShmFormatArgb16161616f"
 
 	case 1211384385:
-		return "wl_shm_abgr16161616f"
+		return "ShmFormatAbgr16161616f"
 
 	case 1448434008:
-		return "wl_shm_xyuv8888"
+		return "ShmFormatXyuv8888"
 
 	case 875713878:
-		return "wl_shm_vuy888"
+		return "ShmFormatVuy888"
 
 	case 808670550:
-		return "wl_shm_vuy101010"
+		return "ShmFormatVuy101010"
 
 	case 808530521:
-		return "wl_shm_y210"
+		return "ShmFormatY210"
 
 	case 842084953:
-		return "wl_shm_y212"
+		return "ShmFormatY212"
 
 	case 909193817:
-		return "wl_shm_y216"
+		return "ShmFormatY216"
 
 	case 808531033:
-		return "wl_shm_y410"
+		return "ShmFormatY410"
 
 	case 842085465:
-		return "wl_shm_y412"
+		return "ShmFormatY412"
 
 	case 909194329:
-		return "wl_shm_y416"
+		return "ShmFormatY416"
 
 	case 808670808:
-		return "wl_shm_xvyu2101010"
+		return "ShmFormatXvyu2101010"
 
 	case 909334104:
-		return "wl_shm_xvyu12_16161616"
+		return "ShmFormatXvyu1216161616"
 
 	case 942954072:
-		return "wl_shm_xvyu16161616"
+		return "ShmFormatXvyu16161616"
 
 	case 810299481:
-		return "wl_shm_y0l0"
+		return "ShmFormatY0l0"
 
 	case 810299480:
-		return "wl_shm_x0l0"
+		return "ShmFormatX0l0"
 
 	case 843853913:
-		return "wl_shm_y0l2"
+		return "ShmFormatY0l2"
 
 	case 843853912:
-		return "wl_shm_x0l2"
+		return "ShmFormatX0l2"
 
 	case 942691673:
-		return "wl_shm_yuv420_8bit"
+		return "ShmFormatYuv4208bit"
 
 	case 808539481:
-		return "wl_shm_yuv420_10bit"
+		return "ShmFormatYuv42010bit"
 
 	case 943805016:
-		return "wl_shm_xrgb8888_a8"
+		return "ShmFormatXrgb8888A8"
 
 	case 943800920:
-		return "wl_shm_xbgr8888_a8"
+		return "ShmFormatXbgr8888A8"
 
 	case 943806546:
-		return "wl_shm_rgbx8888_a8"
+		return "ShmFormatRgbx8888A8"
 
 	case 943806530:
-		return "wl_shm_bgrx8888_a8"
+		return "ShmFormatBgrx8888A8"
 
 	case 943798354:
-		return "wl_shm_rgb888_a8"
+		return "ShmFormatRgb888A8"
 
 	case 943798338:
-		return "wl_shm_bgr888_a8"
+		return "ShmFormatBgr888A8"
 
 	case 943797586:
-		return "wl_shm_rgb565_a8"
+		return "ShmFormatRgb565A8"
 
 	case 943797570:
-		return "wl_shm_bgr565_a8"
+		return "ShmFormatBgr565A8"
 
 	case 875714126:
-		return "wl_shm_nv24"
+		return "ShmFormatNv24"
 
 	case 842290766:
-		return "wl_shm_nv42"
+		return "ShmFormatNv42"
 
 	case 808530512:
-		return "wl_shm_p210"
+		return "ShmFormatP210"
 
 	case 808530000:
-		return "wl_shm_p010"
+		return "ShmFormatP010"
 
 	case 842084432:
-		return "wl_shm_p012"
+		return "ShmFormatP012"
 
 	case 909193296:
-		return "wl_shm_p016"
+		return "ShmFormatP016"
 
 	case 808534593:
-		return "wl_shm_axbxgxrx106106106106"
+		return "ShmFormatAxbxgxrx106106106106"
 
 	case 892425806:
-		return "wl_shm_nv15"
+		return "ShmFormatNv15"
 
 	case 808531025:
-		return "wl_shm_q410"
+		return "ShmFormatQ410"
 
 	case 825242705:
-		return "wl_shm_q401"
+		return "ShmFormatQ401"
 	}
 
 	return "<invalid ShmFormat>"
@@ -1658,16 +1658,16 @@ const (
 func (enum DataOfferError) String() string {
 	switch enum {
 	case 0:
-		return "wl_data_offer_invalid_finish"
+		return "DataOfferErrorInvalidFinish"
 
 	case 1:
-		return "wl_data_offer_invalid_action_mask"
+		return "DataOfferErrorInvalidActionMask"
 
 	case 2:
-		return "wl_data_offer_invalid_action"
+		return "DataOfferErrorInvalidAction"
 
 	case 3:
-		return "wl_data_offer_invalid_offer"
+		return "DataOfferErrorInvalidOffer"
 	}
 
 	return "<invalid DataOfferError>"
@@ -1930,10 +1930,10 @@ const (
 func (enum DataSourceError) String() string {
 	switch enum {
 	case 0:
-		return "wl_data_source_invalid_action_mask"
+		return "DataSourceErrorInvalidActionMask"
 
 	case 1:
-		return "wl_data_source_invalid_source"
+		return "DataSourceErrorInvalidSource"
 	}
 
 	return "<invalid DataSourceError>"
@@ -2202,7 +2202,7 @@ const (
 func (enum DataDeviceError) String() string {
 	switch enum {
 	case 0:
-		return "wl_data_device_role"
+		return "DataDeviceErrorRole"
 	}
 
 	return "<invalid DataDeviceError>"
@@ -2329,16 +2329,16 @@ const (
 func (enum DataDeviceManagerDndAction) String() string {
 	switch enum {
 	case 0:
-		return "wl_data_device_manager_none"
+		return "DataDeviceManagerDndActionNone"
 
 	case 1:
-		return "wl_data_device_manager_copy"
+		return "DataDeviceManagerDndActionCopy"
 
 	case 2:
-		return "wl_data_device_manager_move"
+		return "DataDeviceManagerDndActionMove"
 
 	case 4:
-		return "wl_data_device_manager_ask"
+		return "DataDeviceManagerDndActionAsk"
 	}
 
 	return "<invalid DataDeviceManagerDndAction>"
@@ -2424,7 +2424,7 @@ const (
 func (enum ShellError) String() string {
 	switch enum {
 	case 0:
-		return "wl_shell_role"
+		return "ShellErrorRole"
 	}
 
 	return "<invalid ShellError>"
@@ -2808,31 +2808,31 @@ const (
 func (enum ShellSurfaceResize) String() string {
 	switch enum {
 	case 0:
-		return "wl_shell_surface_none"
+		return "ShellSurfaceResizeNone"
 
 	case 1:
-		return "wl_shell_surface_top"
+		return "ShellSurfaceResizeTop"
 
 	case 2:
-		return "wl_shell_surface_bottom"
+		return "ShellSurfaceResizeBottom"
 
 	case 4:
-		return "wl_shell_surface_left"
+		return "ShellSurfaceResizeLeft"
 
 	case 5:
-		return "wl_shell_surface_top_left"
+		return "ShellSurfaceResizeTopLeft"
 
 	case 6:
-		return "wl_shell_surface_bottom_left"
+		return "ShellSurfaceResizeBottomLeft"
 
 	case 8:
-		return "wl_shell_surface_right"
+		return "ShellSurfaceResizeRight"
 
 	case 9:
-		return "wl_shell_surface_top_right"
+		return "ShellSurfaceResizeTopRight"
 
 	case 10:
-		return "wl_shell_surface_bottom_right"
+		return "ShellSurfaceResizeBottomRight"
 	}
 
 	return "<invalid ShellSurfaceResize>"
@@ -2850,7 +2850,7 @@ const (
 func (enum ShellSurfaceTransient) String() string {
 	switch enum {
 	case 1:
-		return "wl_shell_surface_inactive"
+		return "ShellSurfaceTransientInactive"
 	}
 
 	return "<invalid ShellSurfaceTransient>"
@@ -2878,16 +2878,16 @@ const (
 func (enum ShellSurfaceFullscreenMethod) String() string {
 	switch enum {
 	case 0:
-		return "wl_shell_surface_default"
+		return "ShellSurfaceFullscreenMethodDefault"
 
 	case 1:
-		return "wl_shell_surface_scale"
+		return "ShellSurfaceFullscreenMethodScale"
 
 	case 2:
-		return "wl_shell_surface_driver"
+		return "ShellSurfaceFullscreenMethodDriver"
 
 	case 3:
-		return "wl_shell_surface_fill"
+		return "ShellSurfaceFullscreenMethodFill"
 	}
 
 	return "<invalid ShellSurfaceFullscreenMethod>"
@@ -3391,13 +3391,13 @@ const (
 func (enum SurfaceError) String() string {
 	switch enum {
 	case 0:
-		return "wl_surface_invalid_scale"
+		return "SurfaceErrorInvalidScale"
 
 	case 1:
-		return "wl_surface_invalid_transform"
+		return "SurfaceErrorInvalidTransform"
 
 	case 2:
-		return "wl_surface_invalid_size"
+		return "SurfaceErrorInvalidSize"
 	}
 
 	return "<invalid SurfaceError>"
@@ -3591,13 +3591,13 @@ const (
 func (enum SeatCapability) String() string {
 	switch enum {
 	case 1:
-		return "wl_seat_pointer"
+		return "SeatCapabilityPointer"
 
 	case 2:
-		return "wl_seat_keyboard"
+		return "SeatCapabilityKeyboard"
 
 	case 4:
-		return "wl_seat_touch"
+		return "SeatCapabilityTouch"
 	}
 
 	return "<invalid SeatCapability>"
@@ -3614,7 +3614,7 @@ const (
 func (enum SeatError) String() string {
 	switch enum {
 	case 0:
-		return "wl_seat_missing_capability"
+		return "SeatErrorMissingCapability"
 	}
 
 	return "<invalid SeatError>"
@@ -4041,7 +4041,7 @@ const (
 func (enum PointerError) String() string {
 	switch enum {
 	case 0:
-		return "wl_pointer_role"
+		return "PointerErrorRole"
 	}
 
 	return "<invalid PointerError>"
@@ -4062,10 +4062,10 @@ const (
 func (enum PointerButtonState) String() string {
 	switch enum {
 	case 0:
-		return "wl_pointer_released"
+		return "PointerButtonStateReleased"
 
 	case 1:
-		return "wl_pointer_pressed"
+		return "PointerButtonStatePressed"
 	}
 
 	return "<invalid PointerButtonState>"
@@ -4085,10 +4085,10 @@ const (
 func (enum PointerAxis) String() string {
 	switch enum {
 	case 0:
-		return "wl_pointer_vertical_scroll"
+		return "PointerAxisVerticalScroll"
 
 	case 1:
-		return "wl_pointer_horizontal_scroll"
+		return "PointerAxisHorizontalScroll"
 	}
 
 	return "<invalid PointerAxis>"
@@ -4129,16 +4129,16 @@ const (
 func (enum PointerAxisSource) String() string {
 	switch enum {
 	case 0:
-		return "wl_pointer_wheel"
+		return "PointerAxisSourceWheel"
 
 	case 1:
-		return "wl_pointer_finger"
+		return "PointerAxisSourceFinger"
 
 	case 2:
-		return "wl_pointer_continuous"
+		return "PointerAxisSourceContinuous"
 
 	case 3:
-		return "wl_pointer_wheel_tilt"
+		return "PointerAxisSourceWheelTilt"
 	}
 
 	return "<invalid PointerAxisSource>"
@@ -4371,10 +4371,10 @@ const (
 func (enum KeyboardKeymapFormat) String() string {
 	switch enum {
 	case 0:
-		return "wl_keyboard_no_keymap"
+		return "KeyboardKeymapFormatNoKeymap"
 
 	case 1:
-		return "wl_keyboard_xkb_v1"
+		return "KeyboardKeymapFormatXkbV1"
 	}
 
 	return "<invalid KeyboardKeymapFormat>"
@@ -4394,10 +4394,10 @@ const (
 func (enum KeyboardKeyState) String() string {
 	switch enum {
 	case 0:
-		return "wl_keyboard_released"
+		return "KeyboardKeyStateReleased"
 
 	case 1:
-		return "wl_keyboard_pressed"
+		return "KeyboardKeyStatePressed"
 	}
 
 	return "<invalid KeyboardKeyState>"
@@ -4890,22 +4890,22 @@ const (
 func (enum OutputSubpixel) String() string {
 	switch enum {
 	case 0:
-		return "wl_output_unknown"
+		return "OutputSubpixelUnknown"
 
 	case 1:
-		return "wl_output_none"
+		return "OutputSubpixelNone"
 
 	case 2:
-		return "wl_output_horizontal_rgb"
+		return "OutputSubpixelHorizontalRgb"
 
 	case 3:
-		return "wl_output_horizontal_bgr"
+		return "OutputSubpixelHorizontalBgr"
 
 	case 4:
-		return "wl_output_vertical_rgb"
+		return "OutputSubpixelVerticalRgb"
 
 	case 5:
-		return "wl_output_vertical_bgr"
+		return "OutputSubpixelVerticalBgr"
 	}
 
 	return "<invalid OutputSubpixel>"
@@ -4953,28 +4953,28 @@ const (
 func (enum OutputTransform) String() string {
 	switch enum {
 	case 0:
-		return "wl_output_normal"
+		return "OutputTransformNormal"
 
 	case 1:
-		return "wl_output_90"
+		return "OutputTransform90"
 
 	case 2:
-		return "wl_output_180"
+		return "OutputTransform180"
 
 	case 3:
-		return "wl_output_270"
+		return "OutputTransform270"
 
 	case 4:
-		return "wl_output_flipped"
+		return "OutputTransformFlipped"
 
 	case 5:
-		return "wl_output_flipped_90"
+		return "OutputTransformFlipped90"
 
 	case 6:
-		return "wl_output_flipped_180"
+		return "OutputTransformFlipped180"
 
 	case 7:
-		return "wl_output_flipped_270"
+		return "OutputTransformFlipped270"
 	}
 
 	return "<invalid OutputTransform>"
@@ -4995,10 +4995,10 @@ const (
 func (enum OutputMode) String() string {
 	switch enum {
 	case 1:
-		return "wl_output_current"
+		return "OutputModeCurrent"
 
 	case 2:
-		return "wl_output_preferred"
+		return "OutputModePreferred"
 	}
 
 	return "<invalid OutputMode>"
@@ -5204,7 +5204,7 @@ const (
 func (enum SubcompositorError) String() string {
 	switch enum {
 	case 0:
-		return "wl_subcompositor_bad_surface"
+		return "SubcompositorErrorBadSurface"
 	}
 
 	return "<invalid SubcompositorError>"
@@ -5440,7 +5440,7 @@ const (
 func (enum SubsurfaceError) String() string {
 	switch enum {
 	case 0:
-		return "wl_subsurface_bad_surface"
+		return "SubsurfaceErrorBadSurface"
 	}
 
 	return "<invalid SubsurfaceError>"
