@@ -93,18 +93,15 @@ import (
 	{{range $op, $method := $senders}}
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
 		func (obj {{$name}}Object) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
-			builder := wire.MessageBuilder{
-				Sender: &obj,
-				Op: {{$op}},
-				Method: {{$method.Name | printf "%q"}},
-				Args: []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} },
-			}
+			builder := wire.NewMessage(&obj, {{$op}})
+			builder.Method = {{$method.Name | printf "%q"}}
+			builder.Args = []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} }
 
 			{{range $method.Args -}}
 				builder.Write{{. | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
 			{{end}}
 
-			return &builder
+			return builder
 		}
 	{{end}}
 

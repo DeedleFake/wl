@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -14,12 +15,6 @@ import (
 
 // MessageBuilder is a message that is under construction.
 type MessageBuilder struct {
-	// Sender is the object on which a method is being called.
-	Sender Identifier
-
-	// Op is the opcode of the request or event of the message.
-	Op uint16
-
 	// Method is the name of the method being called. It is included
 	// purely for debugging purposes.
 	Method string
@@ -29,9 +24,26 @@ type MessageBuilder struct {
 	// for debugging purposes.
 	Args []any
 
-	data bytes.Buffer
-	fds  []int
-	err  error
+	sender Identifier
+	op     uint16
+	data   bytes.Buffer
+	fds    []int
+	err    error
+}
+
+func NewMessage(sender Identifier, op uint16) *MessageBuilder {
+	return &MessageBuilder{
+		sender: sender,
+		op:     op,
+	}
+}
+
+func (mb *MessageBuilder) Sender() uint32 {
+	return mb.sender.ID()
+}
+
+func (mb *MessageBuilder) Op() uint16 {
+	return mb.op
 }
 
 func (mb *MessageBuilder) WriteInt(v int32) {
@@ -102,33 +114,38 @@ func (mb *MessageBuilder) WriteFile(v *os.File) {
 		return
 	}
 
+	if len(mb.fds) == 0 {
+		runtime.SetFinalizer(mb, (*MessageBuilder).close)
+	}
+
 	mb.fds = append(mb.fds, fd)
 }
 
 // Build builds the message and sends it to c. The MessageBuilder
 // should not be used again after this method is called.
 func (mb *MessageBuilder) Build(c *net.UnixConn) error {
-	defer func() {
-		for _, fd := range mb.fds {
-			unix.Close(fd) // TODO: Handle errors.
-		}
-		mb.fds = nil
-	}()
-
 	if mb.err != nil {
 		return mb.err
 	}
 
 	length := uint32(8 + mb.data.Len())
 	msg := bytes.NewBuffer(make([]byte, 0, length))
-	write(msg, mb.Sender.ID())
-	write(msg, (length<<16)|uint32(mb.Op))
+	write(msg, mb.sender.ID())
+	write(msg, (length<<16)|uint32(mb.op))
 
 	io.Copy(msg, &mb.data)
 	oob := unix.UnixRights(mb.fds...)
 
 	_, _, mb.err = c.WriteMsgUnix(msg.Bytes(), oob, nil)
 	return mb.err
+}
+
+func (mb *MessageBuilder) close() {
+	for _, fd := range mb.fds {
+		unix.Close(fd) // TODO: Handle errors.
+	}
+	mb.fds = nil
+	runtime.SetFinalizer(mb, nil)
 }
 
 func (mb *MessageBuilder) String() string {
@@ -144,5 +161,5 @@ func (mb *MessageBuilder) String() string {
 		}
 	}
 
-	return fmt.Sprintf("%v.%v(%v)", mb.Sender, mb.Method, strings.Join(args, ", "))
+	return fmt.Sprintf("%v.%v(%v)", mb.sender, mb.Method, strings.Join(args, ", "))
 }
