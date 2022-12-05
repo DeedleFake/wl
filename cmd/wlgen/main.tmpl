@@ -118,5 +118,15 @@ import (
 
 			{{end}}
 		)
+
+		func (enum {{$enumName}}) String() string {
+			switch enum {
+			{{- range .Entries}}
+				case {{.Int}}: return {{printf "%s_%s" $interface.Name .Name | printf "%q"}}
+			{{end -}}
+			}
+
+			return {{printf "<invalid %s>" $enumName | printf "%q"}}
+		}
 	{{end}}
 {{end}}

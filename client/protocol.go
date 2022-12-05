@@ -159,6 +159,24 @@ const (
 	DisplayErrorImplementation DisplayError = 3
 )
 
+func (enum DisplayError) String() string {
+	switch enum {
+	case 0:
+		return "wl_display_invalid_object"
+
+	case 1:
+		return "wl_display_invalid_method"
+
+	case 2:
+		return "wl_display_no_memory"
+
+	case 3:
+		return "wl_display_implementation"
+	}
+
+	return "<invalid DisplayError>"
+}
+
 const (
 	registryInterface = "wl_registry"
 	registryVersion   = 1
@@ -629,6 +647,21 @@ const (
 	ShmErrorInvalidFd ShmError = 2
 )
 
+func (enum ShmError) String() string {
+	switch enum {
+	case 0:
+		return "wl_shm_invalid_format"
+
+	case 1:
+		return "wl_shm_invalid_stride"
+
+	case 2:
+		return "wl_shm_invalid_fd"
+	}
+
+	return "<invalid ShmError>"
+}
+
 // This describes the memory layout of an individual pixel.
 //
 // All renderers should support argb8888 and xrgb8888 but any other
@@ -941,6 +974,324 @@ const (
 
 	ShmFormatQ401 ShmFormat = 825242705
 )
+
+func (enum ShmFormat) String() string {
+	switch enum {
+	case 0:
+		return "wl_shm_argb8888"
+
+	case 1:
+		return "wl_shm_xrgb8888"
+
+	case 538982467:
+		return "wl_shm_c8"
+
+	case 943867730:
+		return "wl_shm_rgb332"
+
+	case 944916290:
+		return "wl_shm_bgr233"
+
+	case 842093144:
+		return "wl_shm_xrgb4444"
+
+	case 842089048:
+		return "wl_shm_xbgr4444"
+
+	case 842094674:
+		return "wl_shm_rgbx4444"
+
+	case 842094658:
+		return "wl_shm_bgrx4444"
+
+	case 842093121:
+		return "wl_shm_argb4444"
+
+	case 842089025:
+		return "wl_shm_abgr4444"
+
+	case 842088786:
+		return "wl_shm_rgba4444"
+
+	case 842088770:
+		return "wl_shm_bgra4444"
+
+	case 892424792:
+		return "wl_shm_xrgb1555"
+
+	case 892420696:
+		return "wl_shm_xbgr1555"
+
+	case 892426322:
+		return "wl_shm_rgbx5551"
+
+	case 892426306:
+		return "wl_shm_bgrx5551"
+
+	case 892424769:
+		return "wl_shm_argb1555"
+
+	case 892420673:
+		return "wl_shm_abgr1555"
+
+	case 892420434:
+		return "wl_shm_rgba5551"
+
+	case 892420418:
+		return "wl_shm_bgra5551"
+
+	case 909199186:
+		return "wl_shm_rgb565"
+
+	case 909199170:
+		return "wl_shm_bgr565"
+
+	case 875710290:
+		return "wl_shm_rgb888"
+
+	case 875710274:
+		return "wl_shm_bgr888"
+
+	case 875709016:
+		return "wl_shm_xbgr8888"
+
+	case 875714642:
+		return "wl_shm_rgbx8888"
+
+	case 875714626:
+		return "wl_shm_bgrx8888"
+
+	case 875708993:
+		return "wl_shm_abgr8888"
+
+	case 875708754:
+		return "wl_shm_rgba8888"
+
+	case 875708738:
+		return "wl_shm_bgra8888"
+
+	case 808669784:
+		return "wl_shm_xrgb2101010"
+
+	case 808665688:
+		return "wl_shm_xbgr2101010"
+
+	case 808671314:
+		return "wl_shm_rgbx1010102"
+
+	case 808671298:
+		return "wl_shm_bgrx1010102"
+
+	case 808669761:
+		return "wl_shm_argb2101010"
+
+	case 808665665:
+		return "wl_shm_abgr2101010"
+
+	case 808665426:
+		return "wl_shm_rgba1010102"
+
+	case 808665410:
+		return "wl_shm_bgra1010102"
+
+	case 1448695129:
+		return "wl_shm_yuyv"
+
+	case 1431918169:
+		return "wl_shm_yvyu"
+
+	case 1498831189:
+		return "wl_shm_uyvy"
+
+	case 1498765654:
+		return "wl_shm_vyuy"
+
+	case 1448433985:
+		return "wl_shm_ayuv"
+
+	case 842094158:
+		return "wl_shm_nv12"
+
+	case 825382478:
+		return "wl_shm_nv21"
+
+	case 909203022:
+		return "wl_shm_nv16"
+
+	case 825644622:
+		return "wl_shm_nv61"
+
+	case 961959257:
+		return "wl_shm_yuv410"
+
+	case 961893977:
+		return "wl_shm_yvu410"
+
+	case 825316697:
+		return "wl_shm_yuv411"
+
+	case 825316953:
+		return "wl_shm_yvu411"
+
+	case 842093913:
+		return "wl_shm_yuv420"
+
+	case 842094169:
+		return "wl_shm_yvu420"
+
+	case 909202777:
+		return "wl_shm_yuv422"
+
+	case 909203033:
+		return "wl_shm_yvu422"
+
+	case 875713881:
+		return "wl_shm_yuv444"
+
+	case 875714137:
+		return "wl_shm_yvu444"
+
+	case 538982482:
+		return "wl_shm_r8"
+
+	case 540422482:
+		return "wl_shm_r16"
+
+	case 943212370:
+		return "wl_shm_rg88"
+
+	case 943215175:
+		return "wl_shm_gr88"
+
+	case 842221394:
+		return "wl_shm_rg1616"
+
+	case 842224199:
+		return "wl_shm_gr1616"
+
+	case 1211388504:
+		return "wl_shm_xrgb16161616f"
+
+	case 1211384408:
+		return "wl_shm_xbgr16161616f"
+
+	case 1211388481:
+		return "wl_shm_argb16161616f"
+
+	case 1211384385:
+		return "wl_shm_abgr16161616f"
+
+	case 1448434008:
+		return "wl_shm_xyuv8888"
+
+	case 875713878:
+		return "wl_shm_vuy888"
+
+	case 808670550:
+		return "wl_shm_vuy101010"
+
+	case 808530521:
+		return "wl_shm_y210"
+
+	case 842084953:
+		return "wl_shm_y212"
+
+	case 909193817:
+		return "wl_shm_y216"
+
+	case 808531033:
+		return "wl_shm_y410"
+
+	case 842085465:
+		return "wl_shm_y412"
+
+	case 909194329:
+		return "wl_shm_y416"
+
+	case 808670808:
+		return "wl_shm_xvyu2101010"
+
+	case 909334104:
+		return "wl_shm_xvyu12_16161616"
+
+	case 942954072:
+		return "wl_shm_xvyu16161616"
+
+	case 810299481:
+		return "wl_shm_y0l0"
+
+	case 810299480:
+		return "wl_shm_x0l0"
+
+	case 843853913:
+		return "wl_shm_y0l2"
+
+	case 843853912:
+		return "wl_shm_x0l2"
+
+	case 942691673:
+		return "wl_shm_yuv420_8bit"
+
+	case 808539481:
+		return "wl_shm_yuv420_10bit"
+
+	case 943805016:
+		return "wl_shm_xrgb8888_a8"
+
+	case 943800920:
+		return "wl_shm_xbgr8888_a8"
+
+	case 943806546:
+		return "wl_shm_rgbx8888_a8"
+
+	case 943806530:
+		return "wl_shm_bgrx8888_a8"
+
+	case 943798354:
+		return "wl_shm_rgb888_a8"
+
+	case 943798338:
+		return "wl_shm_bgr888_a8"
+
+	case 943797586:
+		return "wl_shm_rgb565_a8"
+
+	case 943797570:
+		return "wl_shm_bgr565_a8"
+
+	case 875714126:
+		return "wl_shm_nv24"
+
+	case 842290766:
+		return "wl_shm_nv42"
+
+	case 808530512:
+		return "wl_shm_p210"
+
+	case 808530000:
+		return "wl_shm_p010"
+
+	case 842084432:
+		return "wl_shm_p012"
+
+	case 909193296:
+		return "wl_shm_p016"
+
+	case 808534593:
+		return "wl_shm_axbxgxrx106106106106"
+
+	case 892425806:
+		return "wl_shm_nv15"
+
+	case 808531025:
+		return "wl_shm_q410"
+
+	case 825242705:
+		return "wl_shm_q401"
+	}
+
+	return "<invalid ShmFormat>"
+}
 
 const (
 	bufferInterface = "wl_buffer"
@@ -1304,6 +1655,24 @@ const (
 	DataOfferErrorInvalidOffer DataOfferError = 3
 )
 
+func (enum DataOfferError) String() string {
+	switch enum {
+	case 0:
+		return "wl_data_offer_invalid_finish"
+
+	case 1:
+		return "wl_data_offer_invalid_action_mask"
+
+	case 2:
+		return "wl_data_offer_invalid_action"
+
+	case 3:
+		return "wl_data_offer_invalid_offer"
+	}
+
+	return "<invalid DataOfferError>"
+}
+
 const (
 	dataSourceInterface = "wl_data_source"
 	dataSourceVersion   = 3
@@ -1557,6 +1926,18 @@ const (
 	// source doesn't accept this request
 	DataSourceErrorInvalidSource DataSourceError = 1
 )
+
+func (enum DataSourceError) String() string {
+	switch enum {
+	case 0:
+		return "wl_data_source_invalid_action_mask"
+
+	case 1:
+		return "wl_data_source_invalid_source"
+	}
+
+	return "<invalid DataSourceError>"
+}
 
 const (
 	dataDeviceInterface = "wl_data_device"
@@ -1818,6 +2199,15 @@ const (
 	DataDeviceErrorRole DataDeviceError = 0
 )
 
+func (enum DataDeviceError) String() string {
+	switch enum {
+	case 0:
+		return "wl_data_device_role"
+	}
+
+	return "<invalid DataDeviceError>"
+}
+
 const (
 	dataDeviceManagerInterface = "wl_data_device_manager"
 	dataDeviceManagerVersion   = 3
@@ -1936,6 +2326,24 @@ const (
 	DataDeviceManagerDndActionAsk DataDeviceManagerDndAction = 4
 )
 
+func (enum DataDeviceManagerDndAction) String() string {
+	switch enum {
+	case 0:
+		return "wl_data_device_manager_none"
+
+	case 1:
+		return "wl_data_device_manager_copy"
+
+	case 2:
+		return "wl_data_device_manager_move"
+
+	case 4:
+		return "wl_data_device_manager_ask"
+	}
+
+	return "<invalid DataDeviceManagerDndAction>"
+}
+
 const (
 	shellInterface = "wl_shell"
 	shellVersion   = 1
@@ -2012,6 +2420,15 @@ const (
 	// given wl_surface has another role
 	ShellErrorRole ShellError = 0
 )
+
+func (enum ShellError) String() string {
+	switch enum {
+	case 0:
+		return "wl_shell_role"
+	}
+
+	return "<invalid ShellError>"
+}
 
 const (
 	shellSurfaceInterface = "wl_shell_surface"
@@ -2388,6 +2805,39 @@ const (
 	ShellSurfaceResizeBottomRight ShellSurfaceResize = 10
 )
 
+func (enum ShellSurfaceResize) String() string {
+	switch enum {
+	case 0:
+		return "wl_shell_surface_none"
+
+	case 1:
+		return "wl_shell_surface_top"
+
+	case 2:
+		return "wl_shell_surface_bottom"
+
+	case 4:
+		return "wl_shell_surface_left"
+
+	case 5:
+		return "wl_shell_surface_top_left"
+
+	case 6:
+		return "wl_shell_surface_bottom_left"
+
+	case 8:
+		return "wl_shell_surface_right"
+
+	case 9:
+		return "wl_shell_surface_top_right"
+
+	case 10:
+		return "wl_shell_surface_bottom_right"
+	}
+
+	return "<invalid ShellSurfaceResize>"
+}
+
 // These flags specify details of the expected behaviour
 // of transient surfaces. Used in the set_transient request.
 type ShellSurfaceTransient int64
@@ -2396,6 +2846,15 @@ const (
 	// do not set keyboard focus
 	ShellSurfaceTransientInactive ShellSurfaceTransient = 1
 )
+
+func (enum ShellSurfaceTransient) String() string {
+	switch enum {
+	case 1:
+		return "wl_shell_surface_inactive"
+	}
+
+	return "<invalid ShellSurfaceTransient>"
+}
 
 // Hints to indicate to the compositor how to deal with a conflict
 // between the dimensions of the surface and the dimensions of the
@@ -2415,6 +2874,24 @@ const (
 	// no upscaling, center on output and add black borders to compensate size mismatch
 	ShellSurfaceFullscreenMethodFill ShellSurfaceFullscreenMethod = 3
 )
+
+func (enum ShellSurfaceFullscreenMethod) String() string {
+	switch enum {
+	case 0:
+		return "wl_shell_surface_default"
+
+	case 1:
+		return "wl_shell_surface_scale"
+
+	case 2:
+		return "wl_shell_surface_driver"
+
+	case 3:
+		return "wl_shell_surface_fill"
+	}
+
+	return "<invalid ShellSurfaceFullscreenMethod>"
+}
 
 const (
 	surfaceInterface = "wl_surface"
@@ -2911,6 +3388,21 @@ const (
 	SurfaceErrorInvalidSize SurfaceError = 2
 )
 
+func (enum SurfaceError) String() string {
+	switch enum {
+	case 0:
+		return "wl_surface_invalid_scale"
+
+	case 1:
+		return "wl_surface_invalid_transform"
+
+	case 2:
+		return "wl_surface_invalid_size"
+	}
+
+	return "<invalid SurfaceError>"
+}
+
 const (
 	seatInterface = "wl_seat"
 	seatVersion   = 7
@@ -3096,6 +3588,21 @@ const (
 	SeatCapabilityTouch SeatCapability = 4
 )
 
+func (enum SeatCapability) String() string {
+	switch enum {
+	case 1:
+		return "wl_seat_pointer"
+
+	case 2:
+		return "wl_seat_keyboard"
+
+	case 4:
+		return "wl_seat_touch"
+	}
+
+	return "<invalid SeatCapability>"
+}
+
 // These errors can be emitted in response to wl_seat requests.
 type SeatError int64
 
@@ -3103,6 +3610,15 @@ const (
 	// get_pointer, get_keyboard or get_touch called on seat without the matching capability
 	SeatErrorMissingCapability SeatError = 0
 )
+
+func (enum SeatError) String() string {
+	switch enum {
+	case 0:
+		return "wl_seat_missing_capability"
+	}
+
+	return "<invalid SeatError>"
+}
 
 const (
 	pointerInterface = "wl_pointer"
@@ -3522,6 +4038,15 @@ const (
 	PointerErrorRole PointerError = 0
 )
 
+func (enum PointerError) String() string {
+	switch enum {
+	case 0:
+		return "wl_pointer_role"
+	}
+
+	return "<invalid PointerError>"
+}
+
 // Describes the physical state of a button that produced the button
 // event.
 type PointerButtonState int64
@@ -3534,6 +4059,18 @@ const (
 	PointerButtonStatePressed PointerButtonState = 1
 )
 
+func (enum PointerButtonState) String() string {
+	switch enum {
+	case 0:
+		return "wl_pointer_released"
+
+	case 1:
+		return "wl_pointer_pressed"
+	}
+
+	return "<invalid PointerButtonState>"
+}
+
 // Describes the axis types of scroll events.
 type PointerAxis int64
 
@@ -3544,6 +4081,18 @@ const (
 	// horizontal axis
 	PointerAxisHorizontalScroll PointerAxis = 1
 )
+
+func (enum PointerAxis) String() string {
+	switch enum {
+	case 0:
+		return "wl_pointer_vertical_scroll"
+
+	case 1:
+		return "wl_pointer_horizontal_scroll"
+	}
+
+	return "<invalid PointerAxis>"
+}
 
 // Describes the source types for axis events. This indicates to the
 // client how an axis event was physically generated; a client may
@@ -3576,6 +4125,24 @@ const (
 	// a physical wheel tilt
 	PointerAxisSourceWheelTilt PointerAxisSource = 3
 )
+
+func (enum PointerAxisSource) String() string {
+	switch enum {
+	case 0:
+		return "wl_pointer_wheel"
+
+	case 1:
+		return "wl_pointer_finger"
+
+	case 2:
+		return "wl_pointer_continuous"
+
+	case 3:
+		return "wl_pointer_wheel_tilt"
+	}
+
+	return "<invalid PointerAxisSource>"
+}
 
 const (
 	keyboardInterface = "wl_keyboard"
@@ -3801,6 +4368,18 @@ const (
 	KeyboardKeymapFormatXkbV1 KeyboardKeymapFormat = 1
 )
 
+func (enum KeyboardKeymapFormat) String() string {
+	switch enum {
+	case 0:
+		return "wl_keyboard_no_keymap"
+
+	case 1:
+		return "wl_keyboard_xkb_v1"
+	}
+
+	return "<invalid KeyboardKeymapFormat>"
+}
+
 // Describes the physical state of a key that produced the key event.
 type KeyboardKeyState int64
 
@@ -3811,6 +4390,18 @@ const (
 	// key is pressed
 	KeyboardKeyStatePressed KeyboardKeyState = 1
 )
+
+func (enum KeyboardKeyState) String() string {
+	switch enum {
+	case 0:
+		return "wl_keyboard_released"
+
+	case 1:
+		return "wl_keyboard_pressed"
+	}
+
+	return "<invalid KeyboardKeyState>"
+}
 
 const (
 	touchInterface = "wl_touch"
@@ -4296,6 +4887,30 @@ const (
 	OutputSubpixelVerticalBgr OutputSubpixel = 5
 )
 
+func (enum OutputSubpixel) String() string {
+	switch enum {
+	case 0:
+		return "wl_output_unknown"
+
+	case 1:
+		return "wl_output_none"
+
+	case 2:
+		return "wl_output_horizontal_rgb"
+
+	case 3:
+		return "wl_output_horizontal_bgr"
+
+	case 4:
+		return "wl_output_vertical_rgb"
+
+	case 5:
+		return "wl_output_vertical_bgr"
+	}
+
+	return "<invalid OutputSubpixel>"
+}
+
 // This describes the transform that a compositor will apply to a
 // surface to compensate for the rotation or mirroring of an
 // output device.
@@ -4335,6 +4950,36 @@ const (
 	OutputTransformFlipped270 OutputTransform = 7
 )
 
+func (enum OutputTransform) String() string {
+	switch enum {
+	case 0:
+		return "wl_output_normal"
+
+	case 1:
+		return "wl_output_90"
+
+	case 2:
+		return "wl_output_180"
+
+	case 3:
+		return "wl_output_270"
+
+	case 4:
+		return "wl_output_flipped"
+
+	case 5:
+		return "wl_output_flipped_90"
+
+	case 6:
+		return "wl_output_flipped_180"
+
+	case 7:
+		return "wl_output_flipped_270"
+	}
+
+	return "<invalid OutputTransform>"
+}
+
 // These flags describe properties of an output mode.
 // They are used in the flags bitfield of the mode event.
 type OutputMode int64
@@ -4346,6 +4991,18 @@ const (
 	// indicates this is the preferred mode
 	OutputModePreferred OutputMode = 2
 )
+
+func (enum OutputMode) String() string {
+	switch enum {
+	case 1:
+		return "wl_output_current"
+
+	case 2:
+		return "wl_output_preferred"
+	}
+
+	return "<invalid OutputMode>"
+}
 
 const (
 	regionInterface = "wl_region"
@@ -4543,6 +5200,15 @@ const (
 	// the to-be sub-surface is invalid
 	SubcompositorErrorBadSurface SubcompositorError = 0
 )
+
+func (enum SubcompositorError) String() string {
+	switch enum {
+	case 0:
+		return "wl_subcompositor_bad_surface"
+	}
+
+	return "<invalid SubcompositorError>"
+}
 
 const (
 	subsurfaceInterface = "wl_subsurface"
@@ -4770,3 +5436,12 @@ const (
 	// wl_surface is not a sibling or the parent
 	SubsurfaceErrorBadSurface SubsurfaceError = 0
 )
+
+func (enum SubsurfaceError) String() string {
+	switch enum {
+	case 0:
+		return "wl_subsurface_bad_surface"
+	}
+
+	return "<invalid SubsurfaceError>"
+}
