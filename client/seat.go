@@ -23,6 +23,27 @@ func BindSeat(display *Display, name uint32) *Seat {
 	return &seat
 }
 
+func (seat *Seat) Release() {
+	seat.display.Enqueue(seat.obj.Release())
+	seat.display.DeleteObject(seat.obj.id)
+}
+
+func (seat *Seat) GetKeyboard() *Keyboard {
+	keyboard := Keyboard{display: seat.display}
+	keyboard.obj.listener = keyboardListener{kb: &keyboard}
+	seat.display.AddObject(&keyboard.obj)
+	seat.display.Enqueue(seat.obj.GetKeyboard(keyboard.obj.id))
+	return &keyboard
+}
+
+func (seat *Seat) GetPointer() *Pointer {
+	pointer := Pointer{display: seat.display}
+	pointer.obj.listener = pointerListener{p: &pointer}
+	seat.display.AddObject(&pointer.obj)
+	seat.display.Enqueue(seat.obj.GetPointer(pointer.obj.id))
+	return &pointer
+}
+
 type seatListener struct {
 	seat *Seat
 }
