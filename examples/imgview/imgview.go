@@ -32,6 +32,8 @@ type state struct {
 	shm        *wl.Shm
 	compositor *wl.Compositor
 	wmBase     *xdg.WmBase
+	seat       *wl.Seat
+	keyboard   *wl.Keyboard
 
 	surface  *wl.Surface
 	xsurface *xdg.Surface
@@ -65,6 +67,9 @@ func (state *state) init() error {
 	if state.wmBase == nil {
 		return errors.New("no wmbase found")
 	}
+	if state.seat == nil {
+		return errors.New("no seat found")
+	}
 
 	state.surface = state.compositor.CreateSurface()
 
@@ -73,6 +78,8 @@ func (state *state) init() error {
 
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
+
+	state.keyboard = state.seat.GetKeyboard()
 
 	state.surface.Commit()
 
@@ -102,6 +109,8 @@ func (state *state) global(name uint32, inter wl.Interface) {
 		state.shm = wl.BindShm(state.display, name)
 	case xdg.IsWmBase(inter):
 		state.wmBase = xdg.BindWmBase(state.display, name)
+	case wl.IsSeat(inter):
+		state.seat = wl.BindSeat(state.display, name)
 	}
 }
 
