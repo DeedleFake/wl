@@ -4,34 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
 	"log"
 	"os"
 	"os/signal"
-	"time"
-	"unsafe"
 
 	wl "deedles.dev/wl/client"
+	"deedles.dev/wl/shm"
+	"deedles.dev/wl/shm/shmimage"
 	xdg "deedles.dev/xdg/client"
-	"golang.org/x/sys/unix"
 )
-
-func CreateShmFile(size int64) *os.File {
-	path := "/dev/shm/wl-surface-example-" + time.Now().String()
-
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		panic(err)
-	}
-
-	os.Remove(path)
-
-	err = file.Truncate(size)
-	if err != nil {
-		panic(err)
-	}
-
-	return file
-}
 
 type state struct {
 	display    *wl.Display
@@ -120,32 +102,36 @@ func (state *state) drawFrame() *wl.Buffer {
 		ShmSize = Height * Stride
 	)
 
-	file := CreateShmFile(ShmSize)
+	file, err := shm.Create()
+	if err != nil {
+		log.Fatalf("create shm: %v", err)
+	}
 	defer file.Close()
+	file.Truncate(ShmSize)
 
-	mmap, err := unix.Mmap(int(file.Fd()), 0, ShmSize, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
+	mmap, err := shm.Map(file, ShmSize)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
+	defer mmap.Close()
 
 	pool := state.shm.CreatePool(file, ShmSize)
 	defer pool.Destroy()
 	buf := pool.CreateBuffer(0, Width, Height, Stride, wl.ShmFormatXrgb8888)
 
-	data := unsafe.Slice((*uint32)(unsafe.Pointer(&mmap[0])), Width*Height)
+	img := shmimage.ARGB8888{
+		Pix:    mmap,
+		Stride: Stride,
+		Rect:   image.Rect(0, 0, Width, Height),
+	}
 	for y := 0; y < Height; y++ {
 		for x := 0; x < Width; x++ {
 			if (x+y/8*8)%16 < 8 {
-				data[y*Width+x] = 0xFF666666
+				img.Set(x, y, shmimage.ARGB8888Color(0xFF666666))
 				continue
 			}
-			data[y*Width+x] = 0xFFEEEEEE
+			img.Set(x, y, shmimage.ARGB8888Color(0xFFEEEEEE))
 		}
-	}
-
-	err = unix.Munmap(mmap)
-	if err != nil {
-		log.Fatalf("munmap: %v", err)
 	}
 
 	return buf
