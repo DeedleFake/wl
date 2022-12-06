@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -16,6 +17,7 @@ import (
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/shm/shmimage"
+	"deedles.dev/wl/wire"
 	xdg "deedles.dev/xdg/client"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/draw"
@@ -41,6 +43,10 @@ type state struct {
 	surface  *wl.Surface
 	xsurface *xdg.Surface
 	toplevel *xdg.Toplevel
+
+	pointerLoc  image.Point
+	barBounds   image.Rectangle
+	closeBounds image.Rectangle
 }
 
 func (state *state) init() error {
@@ -84,11 +90,12 @@ func (state *state) init() error {
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
 	state.toplevel.Close = state.close
-	state.toplevel.Configure = state.resize
+	//state.toplevel.Configure = state.resize
 
 	state.keyboard = state.seat.GetKeyboard()
 
 	state.pointer = state.seat.GetPointer()
+	state.pointer.Motion = state.pointerMotion
 	state.pointer.Button = state.pointerButton
 
 	state.surface.Commit()
@@ -130,20 +137,45 @@ func (state *state) global(name uint32, inter wl.Interface) {
 	}
 }
 
+func (state *state) pointerMotion(time uint32, x, y wire.Fixed) {
+	state.pointerLoc = image.Pt(x.Int(), y.Int())
+}
+
 func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, bstate wl.PointerButtonState) {
 	switch button {
 	case wl.PointerButtonLeft:
-		state.toplevel.Move(state.seat, serial)
+		if state.pointerLoc.In(state.closeBounds) {
+			state.close()
+			return
+		}
+
+		if state.pointerLoc.In(state.barBounds) {
+			state.toplevel.Move(state.seat, serial)
+			return
+		}
 	}
 }
 
 func (state *state) drawFrame(width, height int32) *wl.Buffer {
-	bounds := image.Rect(0, 0, int(width), int(height))
-	if bounds.Empty() {
-		bounds = state.image.Bounds().Canon()
+	const barHeight = 30
+
+	state.barBounds = image.Rect(0, 0, int(width), barHeight)
+	imgBounds := image.Rect(0, 0, int(width), int(height))
+	if imgBounds.Empty() {
+		imgBounds = state.image.Bounds().Canon()
+		state.barBounds.Max.X = imgBounds.Max.X
 	}
-	stride := bounds.Dx() * 4
-	shmSize := bounds.Dy() * stride
+	state.closeBounds = image.Rect(
+		state.barBounds.Max.X-(state.barBounds.Dy()-8)-4,
+		state.barBounds.Min.Y+4,
+		state.barBounds.Max.X-4,
+		state.barBounds.Max.Y-4,
+	)
+	imgBounds = imgBounds.Add(image.Pt(0, barHeight))
+	winBounds := state.barBounds.Union(imgBounds)
+
+	stride := winBounds.Dx() * 4
+	shmSize := winBounds.Dy() * stride
 
 	file, err := shm.Create()
 	if err != nil {
@@ -162,8 +194,8 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 	defer pool.Destroy()
 	buf := pool.CreateBuffer(
 		0,
-		int32(bounds.Dx()),
-		int32(bounds.Dy()),
+		int32(winBounds.Dx()),
+		int32(winBounds.Dy()),
 		int32(stride),
 		wl.ShmFormatXrgb8888,
 	)
@@ -171,9 +203,11 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 	img := shmimage.ARGB8888{
 		Pix:    mmap,
 		Stride: stride,
-		Rect:   image.Rect(0, 0, bounds.Dx(), bounds.Dy()),
+		Rect:   winBounds,
 	}
-	draw.ApproxBiLinear.Scale(&img, bounds, state.image, state.image.Bounds(), draw.Src, nil)
+	fillRect(&img, state.barBounds, shmimage.NewARGB8888Color(100, 100, 100, 255))
+	fillRect(&img, state.closeBounds, shmimage.NewARGB8888Color(255, 0, 0, 255))
+	draw.ApproxBiLinear.Scale(&img, imgBounds, state.image, state.image.Bounds(), draw.Src, nil)
 
 	return buf
 }
@@ -186,6 +220,15 @@ func (state *state) resize(w, h int32, states []xdg.ToplevelState) {
 	buf := state.drawFrame(0, 0)
 	state.surface.Attach(buf, 0, 0)
 	state.surface.Commit()
+}
+
+func fillRect(img draw.Image, r image.Rectangle, c color.Color) {
+	r = r.Canon()
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		for x := r.Min.X; x < r.Max.X; x++ {
+			img.Set(x, y, c)
+		}
+	}
 }
 
 func loadImage(path string) (image.Image, error) {
