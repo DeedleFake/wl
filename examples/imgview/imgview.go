@@ -34,6 +34,7 @@ type state struct {
 	wmBase     *xdg.WmBase
 	seat       *wl.Seat
 	keyboard   *wl.Keyboard
+	pointer    *wl.Pointer
 
 	surface  *wl.Surface
 	xsurface *xdg.Surface
@@ -81,6 +82,9 @@ func (state *state) init() error {
 
 	state.keyboard = state.seat.GetKeyboard()
 
+	state.pointer = state.seat.GetPointer()
+	state.pointer.Button = state.pointerButton
+
 	state.surface.Commit()
 
 	return nil
@@ -111,6 +115,13 @@ func (state *state) global(name uint32, inter wl.Interface) {
 		state.wmBase = xdg.BindWmBase(state.display, name)
 	case wl.IsSeat(inter):
 		state.seat = wl.BindSeat(state.display, name)
+	}
+}
+
+func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, bstate wl.PointerButtonState) {
+	switch button {
+	case wl.PointerButtonLeft:
+		state.toplevel.Move(state.seat, serial)
 	}
 }
 
