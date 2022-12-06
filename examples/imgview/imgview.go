@@ -1,28 +1,26 @@
 package main
 
 import (
-	"image/draw"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-	"sync"
-
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
-	_ "golang.org/x/image/webp"
-
 	"context"
 	"errors"
 	"fmt"
 	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/shm/shmimage"
 	xdg "deedles.dev/xdg/client"
+	_ "golang.org/x/image/bmp"
+	"golang.org/x/image/draw"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 type state struct {
@@ -86,6 +84,7 @@ func (state *state) init() error {
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
 	state.toplevel.Close = state.close
+	state.toplevel.Configure = state.resize
 
 	state.keyboard = state.seat.GetKeyboard()
 
@@ -138,8 +137,11 @@ func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, 
 	}
 }
 
-func (state *state) drawFrame() *wl.Buffer {
-	bounds := state.image.Bounds().Canon()
+func (state *state) drawFrame(width, height int32) *wl.Buffer {
+	bounds := image.Rect(0, 0, int(width), int(height))
+	if bounds.Empty() {
+		bounds = state.image.Bounds().Canon()
+	}
 	stride := bounds.Dx() * 4
 	shmSize := bounds.Dy() * stride
 
@@ -171,13 +173,17 @@ func (state *state) drawFrame() *wl.Buffer {
 		Stride: stride,
 		Rect:   image.Rect(0, 0, bounds.Dx(), bounds.Dy()),
 	}
-	draw.Draw(&img, img.Rect, state.image, bounds.Min, draw.Src)
+	draw.ApproxBiLinear.Scale(&img, bounds, state.image, state.image.Bounds(), draw.Src, nil)
 
 	return buf
 }
 
 func (state *state) configure() {
-	buf := state.drawFrame()
+	state.resize(0, 0, nil)
+}
+
+func (state *state) resize(w, h int32, states []xdg.ToplevelState) {
+	buf := state.drawFrame(0, 0)
 	state.surface.Attach(buf, 0, 0)
 	state.surface.Commit()
 }
