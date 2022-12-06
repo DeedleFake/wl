@@ -5,6 +5,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"sync"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -27,6 +28,9 @@ import (
 type state struct {
 	image image.Image
 
+	once sync.Once
+	done chan struct{}
+
 	display    *wl.Display
 	registry   *wl.Registry
 	shm        *wl.Shm
@@ -42,6 +46,8 @@ type state struct {
 }
 
 func (state *state) init() error {
+	state.done = make(chan struct{})
+
 	display, err := wl.DialDisplay()
 	if err != nil {
 		return fmt.Errorf("dial display: %w", err)
@@ -79,6 +85,7 @@ func (state *state) init() error {
 
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
+	state.toplevel.Close = state.close
 
 	state.keyboard = state.seat.GetKeyboard()
 
@@ -95,6 +102,8 @@ func (state *state) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case <-state.done:
+			return
 		default:
 		}
 
@@ -103,6 +112,10 @@ func (state *state) run(ctx context.Context) {
 			log.Printf("flush: %v", err)
 		}
 	}
+}
+
+func (state *state) close() {
+	state.once.Do(func() { close(state.done) })
 }
 
 func (state *state) global(name uint32, inter wl.Interface) {
