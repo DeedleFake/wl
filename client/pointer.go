@@ -21,6 +21,15 @@ func (p *Pointer) Object() wire.Object {
 	return &p.obj
 }
 
+func (p *Pointer) Release() {
+	p.display.Enqueue(p.obj.Release())
+	p.display.DeleteObject(p.obj.id)
+}
+
+func (p *Pointer) SetCursor(serial uint32, s *Surface, x, y int32) {
+	p.display.Enqueue(p.obj.SetCursor(serial, s.obj.id, x, y))
+}
+
 type pointerListener struct {
 	p *Pointer
 }
