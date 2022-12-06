@@ -16,13 +16,13 @@ func IsOutput(i Interface) bool {
 	return i.Is(outputInterface, outputVersion)
 }
 
-func BindOutput(display *Display, name uint32) *Output {
+func BindOutput(display *Display, name, version uint32) *Output {
 	output := Output{display: display}
 	output.obj.listener = outputListener{output: &output}
 	display.AddObject(&output)
 
 	registry := display.GetRegistry()
-	registry.Bind(name, outputInterface, outputVersion, output.obj.id)
+	registry.Bind(name, outputInterface, version, output.obj.id)
 
 	return &output
 }

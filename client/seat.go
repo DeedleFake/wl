@@ -14,13 +14,13 @@ func IsSeat(i Interface) bool {
 	return i.Is(seatInterface, seatVersion)
 }
 
-func BindSeat(display *Display, name uint32) *Seat {
+func BindSeat(display *Display, name, version uint32) *Seat {
 	seat := Seat{display: display}
 	seat.obj.listener = seatListener{seat: &seat}
 	display.AddObject(&seat)
 
 	registry := display.GetRegistry()
-	registry.Bind(name, seatInterface, seatVersion, seat.obj.id)
+	registry.Bind(name, seatInterface, version, seat.obj.id)
 
 	return &seat
 }

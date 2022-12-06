@@ -108,13 +108,13 @@ func (state *state) run(ctx context.Context) {
 func (state *state) global(name uint32, inter wl.Interface) {
 	switch {
 	case wl.IsCompositor(inter):
-		state.compositor = wl.BindCompositor(state.display, name)
+		state.compositor = wl.BindCompositor(state.display, name, inter.Version)
 	case wl.IsShm(inter):
-		state.shm = wl.BindShm(state.display, name)
+		state.shm = wl.BindShm(state.display, name, inter.Version)
 	case xdg.IsWmBase(inter):
-		state.wmBase = xdg.BindWmBase(state.display, name)
+		state.wmBase = xdg.BindWmBase(state.display, name, inter.Version)
 	case wl.IsSeat(inter):
-		state.seat = wl.BindSeat(state.display, name)
+		state.seat = wl.BindSeat(state.display, name, inter.Version)
 	}
 }
 

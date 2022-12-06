@@ -17,13 +17,13 @@ func IsShm(i Interface) bool {
 	return i.Is(shmInterface, shmVersion)
 }
 
-func BindShm(display *Display, name uint32) *Shm {
+func BindShm(display *Display, name, version uint32) *Shm {
 	shm := Shm{display: display}
 	shm.obj.listener = shmListener{shm: &shm}
 	display.AddObject(&shm)
 
 	registry := display.GetRegistry()
-	registry.Bind(name, shmInterface, shmVersion, shm.obj.id)
+	registry.Bind(name, shmInterface, version, shm.obj.id)
 
 	return &shm
 }

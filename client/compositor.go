@@ -11,12 +11,12 @@ func IsCompositor(i Interface) bool {
 	return i.Is(compositorInterface, compositorVersion)
 }
 
-func BindCompositor(display *Display, name uint32) *Compositor {
+func BindCompositor(display *Display, name, version uint32) *Compositor {
 	compositor := Compositor{display: display}
 	display.AddObject(&compositor)
 
 	registry := display.GetRegistry()
-	registry.Bind(name, compositorInterface, compositorVersion, compositor.obj.id)
+	registry.Bind(name, compositorInterface, version, compositor.obj.id)
 
 	return &compositor
 }
