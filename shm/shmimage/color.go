@@ -1,6 +1,9 @@
 package shmimage
 
-import "image/color"
+import (
+	"fmt"
+	"image/color"
+)
 
 type ARGB8888Color uint32
 
@@ -9,27 +12,31 @@ func NewARGB8888Color(r, g, b, a uint8) ARGB8888Color {
 }
 
 func (c ARGB8888Color) RGBA() (r, g, b, a uint32) {
-	a = uint32(c.a()) * 0xFFFF / 0xFF
-	r = uint32(c.r()) * a / 0xFF
-	g = uint32(c.g()) * a / 0xFF
-	b = uint32(c.b()) * a / 0xFF
+	a = uint32(c.A()) * 0xFFFF / 0xFF
+	r = uint32(c.R()) * a / 0xFF
+	g = uint32(c.G()) * a / 0xFF
+	b = uint32(c.B()) * a / 0xFF
 	return
 }
 
-func (c ARGB8888Color) r() uint8 {
+func (c ARGB8888Color) R() uint8 {
 	return uint8((c & 0x00FF0000) >> 16)
 }
 
-func (c ARGB8888Color) g() uint8 {
+func (c ARGB8888Color) G() uint8 {
 	return uint8((c & 0x0000FF00) >> 8)
 }
 
-func (c ARGB8888Color) b() uint8 {
+func (c ARGB8888Color) B() uint8 {
 	return uint8(c & 0x000000FF)
 }
 
-func (c ARGB8888Color) a() uint8 {
+func (c ARGB8888Color) A() uint8 {
 	return uint8((c & 0xFF000000) >> 24)
+}
+
+func (c ARGB8888Color) String() string {
+	return fmt.Sprintf("rgba(%v, %v, %v, %v)", c.R(), c.G(), c.B(), c.A())
 }
 
 var ARGB8888Model color.Model = color.ModelFunc(argb8888Model)
