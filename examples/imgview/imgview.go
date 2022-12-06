@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/shm"
@@ -108,18 +109,20 @@ func (state *state) init() error {
 }
 
 func (state *state) run(ctx context.Context) {
+	tick := time.NewTicker(time.Second / 60)
+	defer tick.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-state.done:
 			return
-		default:
-		}
-
-		err := state.display.Flush()
-		if err != nil {
-			log.Printf("flush: %v", err)
+		case <-tick.C:
+			err := state.display.Flush()
+			if err != nil {
+				log.Printf("flush: %v", err)
+			}
 		}
 	}
 }
