@@ -20,6 +20,7 @@ import (
 	"deedles.dev/wl/wire"
 	xdg "deedles.dev/xdg/client"
 	_ "golang.org/x/image/bmp"
+	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -47,6 +48,9 @@ type state struct {
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
 	closeBounds image.Rectangle
+	//maxBounds   image.Rectangle
+	//max         bool
+	minBounds image.Rectangle
 }
 
 func (state *state) init() error {
@@ -144,14 +148,16 @@ func (state *state) pointerMotion(time uint32, x, y wire.Fixed) {
 func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, bstate wl.PointerButtonState) {
 	switch button {
 	case wl.PointerButtonLeft:
-		if state.pointerLoc.In(state.closeBounds) {
+		switch {
+		case state.pointerLoc.In(state.closeBounds):
 			state.close()
-			return
-		}
-
-		if state.pointerLoc.In(state.barBounds) {
+		//case state.pointerLoc.In(state.maxBounds):
+		//	state.toplevel.SetMaximized(!state.max)
+		//	state.max = !state.max
+		case state.pointerLoc.In(state.minBounds):
+			state.toplevel.SetMinimized()
+		case state.pointerLoc.In(state.barBounds):
 			state.toplevel.Move(state.seat, serial)
-			return
 		}
 	}
 }
@@ -166,11 +172,13 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 		state.barBounds.Max.X = imgBounds.Max.X
 	}
 	state.closeBounds = image.Rect(
-		state.barBounds.Max.X-(state.barBounds.Dy()-8)-4,
+		state.barBounds.Max.X-(barHeight-8)-4,
 		state.barBounds.Min.Y+4,
 		state.barBounds.Max.X-4,
 		state.barBounds.Max.Y-4,
 	)
+	//state.maxBounds = state.closeBounds.Sub(image.Pt(barHeight+4, 0))
+	state.minBounds = state.closeBounds.Sub(image.Pt(barHeight+4, 0))
 	imgBounds = imgBounds.Add(image.Pt(0, barHeight))
 	winBounds := state.barBounds.Union(imgBounds)
 
@@ -197,7 +205,7 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 		int32(winBounds.Dx()),
 		int32(winBounds.Dy()),
 		int32(stride),
-		wl.ShmFormatXrgb8888,
+		wl.ShmFormatArgb8888,
 	)
 
 	img := shmimage.ARGB8888{
@@ -205,8 +213,10 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 		Stride: stride,
 		Rect:   winBounds,
 	}
-	fillRect(&img, state.barBounds, shmimage.NewARGB8888Color(100, 100, 100, 255))
-	fillRect(&img, state.closeBounds, shmimage.NewARGB8888Color(255, 0, 0, 255))
+	fillRect(&img, state.barBounds, colornames.Dimgray)
+	fillRect(&img, state.closeBounds, colornames.Red)
+	//fillRect(&img, state.maxBounds, colornames.Limegreen)
+	fillRect(&img, state.minBounds, colornames.Yellow)
 	draw.ApproxBiLinear.Scale(&img, imgBounds, state.image, state.image.Bounds(), draw.Src, nil)
 
 	return buf
