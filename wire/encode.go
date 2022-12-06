@@ -137,7 +137,7 @@ func (mb *MessageBuilder) Build(c *Conn) error {
 	io.Copy(msg, &mb.data)
 	oob := unix.UnixRights(mb.fds...)
 
-	_, _, mb.err = c.WriteMsgUnix(msg.Bytes(), oob, nil)
+	_, _, mb.err = c.conn.WriteMsgUnix(msg.Bytes(), oob, nil)
 	return mb.err
 }
 

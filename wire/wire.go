@@ -34,46 +34,6 @@ func (t unixTee) Read(buf []byte) (int, error) {
 	return n, errors.Join(err, ooberr)
 }
 
-type Conn struct {
-	*net.UnixConn
-	fds []int
-}
-
-func NewConn(c *net.UnixConn) *Conn {
-	return &Conn{
-		UnixConn: c,
-	}
-}
-
-func (c *Conn) readFDs(data []byte) error {
-	cmsgs, err := unix.ParseSocketControlMessage(data)
-	if err != nil {
-		return fmt.Errorf("parse socket control messages: %w", err)
-	}
-	for _, cmsg := range cmsgs {
-		fds, err := unix.ParseUnixRights(&cmsg)
-		if err != nil {
-			if errors.Is(err, unix.EINVAL) {
-				continue
-			}
-			return fmt.Errorf("parse unix control message: %w", err)
-		}
-		c.fds = append(c.fds, fds...)
-	}
-	return nil
-}
-
-func pop[T any, S ~[]T](s S) (v T, ok bool) {
-	if len(s) == 0 {
-		return v, false
-	}
-
-	v = s[0]
-	s = s[:len(s)-1]
-	copy(s, s[1:cap(s)])
-	return v, true
-}
-
 // TODO: Fix this and add some tests for it. It's quite likely that
 // none of this actually works.
 type Fixed int32

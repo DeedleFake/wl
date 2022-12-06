@@ -1,12 +1,26 @@
 package wire
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"golang.org/x/sys/unix"
 )
+
+func pop[T any, S ~[]T](s S) (v T, ok bool) {
+	if len(s) == 0 {
+		return v, false
+	}
+
+	v = s[0]
+	s = s[:len(s)-1]
+	copy(s, s[1:cap(s)])
+	return v, true
+}
 
 // SocketPath determines the path to the Wayland Unix domain socket
 // based on the contents of the $WAYLAND_DISPLAY environment variable.
@@ -27,6 +41,39 @@ func SocketPath() string {
 	}
 
 	return filepath.Join(dir, v)
+}
+
+type Conn struct {
+	conn *net.UnixConn
+	fds  []int
+}
+
+func NewConn(c *net.UnixConn) *Conn {
+	return &Conn{
+		conn: c,
+	}
+}
+
+func (c *Conn) Close() error {
+	return c.conn.Close()
+}
+
+func (c *Conn) readFDs(data []byte) error {
+	cmsgs, err := unix.ParseSocketControlMessage(data)
+	if err != nil {
+		return fmt.Errorf("parse socket control messages: %w", err)
+	}
+	for _, cmsg := range cmsgs {
+		fds, err := unix.ParseUnixRights(&cmsg)
+		if err != nil {
+			if errors.Is(err, unix.EINVAL) {
+				continue
+			}
+			return fmt.Errorf("parse unix control message: %w", err)
+		}
+		c.fds = append(c.fds, fds...)
+	}
+	return nil
 }
 
 // Dial opens a connection to the Wayland socket based on the current

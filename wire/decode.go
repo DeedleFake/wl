@@ -30,7 +30,7 @@ func ReadMessage(c *Conn) (*MessageBuffer, error) {
 	mr := MessageBuffer{conn: c}
 
 	var oob bytes.Buffer
-	r := unixTee{c: c.UnixConn, oob: &oob}
+	r := unixTee{c: c.conn, oob: &oob}
 
 	sender, err := bin.Read[uint32](r)
 	if err != nil {
