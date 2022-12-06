@@ -1,8 +1,9 @@
 package wl
 
-type Compositor struct {
-	id[compositorObject]
+import "deedles.dev/wl/wire"
 
+type Compositor struct {
+	obj     compositorObject
 	display *Display
 }
 
@@ -12,7 +13,7 @@ func IsCompositor(i Interface) bool {
 
 func BindCompositor(display *Display, name uint32) *Compositor {
 	compositor := Compositor{display: display}
-	display.AddObject(&compositor.obj)
+	display.AddObject(&compositor)
 
 	registry := display.GetRegistry()
 	registry.Bind(name, compositorInterface, compositorVersion, compositor.obj.id)
@@ -20,10 +21,14 @@ func BindCompositor(display *Display, name uint32) *Compositor {
 	return &compositor
 }
 
+func (c *Compositor) Object() wire.Object {
+	return &c.obj
+}
+
 func (c *Compositor) CreateSurface() *Surface {
 	s := Surface{display: c.display}
 	s.obj.listener = surfaceListener{surface: &s}
-	c.display.AddObject(&s.obj)
+	c.display.AddObject(&s)
 	c.display.Enqueue(c.obj.CreateSurface(s.obj.id))
 
 	return &s

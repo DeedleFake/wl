@@ -5,12 +5,15 @@ import (
 )
 
 type Registry struct {
-	id[registryObject]
-
 	Global       func(name uint32, inter Interface)
 	GlobalRemove func(name uint32)
 
+	obj     registryObject
 	display *Display
+}
+
+func (registry *Registry) Object() wire.Object {
+	return &registry.obj
 }
 
 func (registry *Registry) Bind(name uint32, inter string, version, id uint32) {

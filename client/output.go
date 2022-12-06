@@ -1,13 +1,14 @@
 package wl
 
-type Output struct {
-	id[outputObject]
+import "deedles.dev/wl/wire"
 
+type Output struct {
 	Geometry func(x, y, physicalWidth, physicalHeight, subpixel int32, make, model string, transform OutputTransform)
 	Mode     func(flags OutputMode, width, height, refresh int32)
 	Done     func()
 	Scale    func(factor int32)
 
+	obj     outputObject
 	display *Display
 }
 
@@ -18,12 +19,16 @@ func IsOutput(i Interface) bool {
 func BindOutput(display *Display, name uint32) *Output {
 	output := Output{display: display}
 	output.obj.listener = outputListener{output: &output}
-	display.AddObject(&output.obj)
+	display.AddObject(&output)
 
 	registry := display.GetRegistry()
 	registry.Bind(name, outputInterface, outputVersion, output.obj.id)
 
 	return &output
+}
+
+func (out *Output) Object() wire.Object {
+	return &out.obj
 }
 
 func (out *Output) Release() {

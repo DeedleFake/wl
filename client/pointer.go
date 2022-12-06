@@ -3,12 +3,15 @@ package wl
 import "deedles.dev/wl/wire"
 
 type Pointer struct {
-	id[pointerObject]
-
 	Frame      func()
 	AxisSource func(PointerAxisSource)
 
+	obj     pointerObject
 	display *Display
+}
+
+func (p *Pointer) Object() wire.Object {
+	return &p.obj
 }
 
 type pointerListener struct {

@@ -10,15 +10,14 @@ import (
 )
 
 type Display struct {
-	id[displayObject]
-
 	Error func(id, code uint32, msg string)
 
+	obj      displayObject
 	done     chan struct{}
 	close    sync.Once
 	conn     *wire.Conn
 	registry *Registry
-	objects  map[uint32]wire.Object
+	objects  map[uint32]wire.Objecter
 	nextID   uint32
 	queue    *cq.Queue[func() error]
 }
@@ -35,16 +34,20 @@ func ConnectDisplay(c *wire.Conn) *Display {
 	display := Display{
 		done:    make(chan struct{}),
 		conn:    c,
-		objects: make(map[uint32]wire.Object),
+		objects: make(map[uint32]wire.Objecter),
 		nextID:  1,
 		queue:   cq.New[func() error](),
 	}
-	display.AddObject(&display.obj)
+	display.AddObject(&display)
 	display.obj.listener = displayListener{display: &display}
 
 	go display.listen()
 
 	return &display
+}
+
+func (display *Display) Object() wire.Object {
+	return &display.obj
 }
 
 func (display *Display) listen() {
@@ -77,15 +80,15 @@ func (display *Display) Close() error {
 	return display.conn.Close()
 }
 
-func (display *Display) AddObject(obj wire.Object) {
+func (display *Display) AddObject(obj wire.Objecter) {
 	id := display.nextID
 	display.nextID++
 
 	display.objects[id] = obj
-	obj.SetID(id)
+	obj.Object().SetID(id)
 }
 
-func (display *Display) GetObject(id uint32) wire.Object {
+func (display *Display) GetObject(id uint32) wire.Objecter {
 	return display.objects[id]
 }
 
@@ -94,7 +97,7 @@ func (display *Display) DeleteObject(id uint32) {
 	if obj == nil {
 		return
 	}
-	obj.Delete()
+	obj.Object().Delete()
 	delete(display.objects, id)
 }
 
@@ -104,8 +107,9 @@ func (display *Display) dispatch(msg *wire.MessageBuffer) error {
 		return UnknownSenderIDError{Msg: msg}
 	}
 
-	err := obj.Dispatch(msg)
-	debug("%v", msg.Debug(obj))
+	o := obj.Object()
+	err := o.Dispatch(msg)
+	debug("%v", msg.Debug(o))
 	return err
 }
 
@@ -165,7 +169,7 @@ func (display *Display) GetRegistry() *Registry {
 		display: display,
 	}
 	registry.obj.listener = registryListener{registry: &registry}
-	display.AddObject(&registry.obj)
+	display.AddObject(&registry)
 	display.Enqueue(display.obj.GetRegistry(registry.obj.id))
 
 	display.registry = &registry
@@ -175,7 +179,7 @@ func (display *Display) GetRegistry() *Registry {
 func (display *Display) Sync(done func()) {
 	callback := callback{Done: func(uint32) { done() }}
 	callback.obj.listener = callbackListener{callback: &callback}
-	display.AddObject(&callback.obj)
+	display.AddObject(&callback)
 	display.Enqueue(display.obj.Sync(callback.obj.id))
 }
 

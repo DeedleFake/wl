@@ -1,11 +1,12 @@
 package wl
 
-type Seat struct {
-	id[seatObject]
+import "deedles.dev/wl/wire"
 
+type Seat struct {
 	Capabilities func(SeatCapability)
 	Name         func(string)
 
+	obj     seatObject
 	display *Display
 }
 
@@ -16,12 +17,16 @@ func IsSeat(i Interface) bool {
 func BindSeat(display *Display, name uint32) *Seat {
 	seat := Seat{display: display}
 	seat.obj.listener = seatListener{seat: &seat}
-	display.AddObject(&seat.obj)
+	display.AddObject(&seat)
 
 	registry := display.GetRegistry()
 	registry.Bind(name, seatInterface, seatVersion, seat.obj.id)
 
 	return &seat
+}
+
+func (seat *Seat) Object() wire.Object {
+	return &seat.obj
 }
 
 func (seat *Seat) Release() {
@@ -32,7 +37,7 @@ func (seat *Seat) Release() {
 func (seat *Seat) GetKeyboard() *Keyboard {
 	keyboard := Keyboard{display: seat.display}
 	keyboard.obj.listener = keyboardListener{kb: &keyboard}
-	seat.display.AddObject(&keyboard.obj)
+	seat.display.AddObject(&keyboard)
 	seat.display.Enqueue(seat.obj.GetKeyboard(keyboard.obj.id))
 	return &keyboard
 }
@@ -40,7 +45,7 @@ func (seat *Seat) GetKeyboard() *Keyboard {
 func (seat *Seat) GetPointer() *Pointer {
 	pointer := Pointer{display: seat.display}
 	pointer.obj.listener = pointerListener{p: &pointer}
-	seat.display.AddObject(&pointer.obj)
+	seat.display.AddObject(&pointer)
 	seat.display.Enqueue(seat.obj.GetPointer(pointer.obj.id))
 	return &pointer
 }

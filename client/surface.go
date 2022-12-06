@@ -1,9 +1,14 @@
 package wl
 
-type Surface struct {
-	id[surfaceObject]
+import "deedles.dev/wl/wire"
 
+type Surface struct {
+	obj     surfaceObject
 	display *Display
+}
+
+func (s *Surface) Object() wire.Object {
+	return &s.obj
 }
 
 func (s *Surface) Attach(buf *Buffer, x, y int32) {

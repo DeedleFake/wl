@@ -2,12 +2,11 @@ package wl
 
 import (
 	"os"
-	"unsafe"
+
+	"deedles.dev/wl/wire"
 )
 
 type Keyboard struct {
-	id[keyboardObject]
-
 	Keymap     func(format KeyboardKeymapFormat, file *os.File, size uint32)
 	Enter      func(serial uint32, surface *Surface, keys []byte)
 	Leave      func(serial uint32, surface *Surface)
@@ -15,7 +14,12 @@ type Keyboard struct {
 	Modifiers  func(serial, depressed, latched, locked, group uint32)
 	RepeatInfo func(rate, delay int32)
 
+	obj     keyboardObject
 	display *Display
+}
+
+func (kb *Keyboard) Object() wire.Object {
+	return &kb.obj
 }
 
 type keyboardListener struct {
@@ -32,10 +36,9 @@ func (lis keyboardListener) Keymap(format uint32, fd *os.File, size uint32) {
 
 func (lis keyboardListener) Enter(serial uint32, surface uint32, keys []byte) {
 	if lis.kb.Enter != nil {
-		sobj := lis.kb.display.GetObject(surface)
 		var s *Surface
-		if sobj, ok := sobj.(*surfaceObject); ok {
-			s = (*Surface)(unsafe.Pointer(sobj))
+		if sobj, ok := lis.kb.display.GetObject(surface).(*Surface); ok {
+			s = sobj
 		}
 		lis.kb.Enter(serial, s, keys)
 	}
@@ -43,10 +46,9 @@ func (lis keyboardListener) Enter(serial uint32, surface uint32, keys []byte) {
 
 func (lis keyboardListener) Leave(serial uint32, surface uint32) {
 	if lis.kb.Leave != nil {
-		sobj := lis.kb.display.GetObject(surface)
 		var s *Surface
-		if sobj, ok := sobj.(*surfaceObject); ok {
-			s = (*Surface)(unsafe.Pointer(sobj))
+		if sobj, ok := lis.kb.display.GetObject(surface).(*Surface); ok {
+			s = sobj
 		}
 		lis.kb.Leave(serial, s)
 	}

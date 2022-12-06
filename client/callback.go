@@ -1,9 +1,15 @@
 package wl
 
+import "deedles.dev/wl/wire"
+
 type callback struct {
 	Done func(data uint32)
 
-	id[callbackObject]
+	obj callbackObject
+}
+
+func (cb *callback) Object() wire.Object {
+	return &cb.obj
 }
 
 type callbackListener struct {

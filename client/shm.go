@@ -2,13 +2,14 @@ package wl
 
 import (
 	"os"
+
+	"deedles.dev/wl/wire"
 )
 
 type Shm struct {
-	id[shmObject]
-
 	Format func(ShmFormat)
 
+	obj     shmObject
 	display *Display
 }
 
@@ -19,7 +20,7 @@ func IsShm(i Interface) bool {
 func BindShm(display *Display, name uint32) *Shm {
 	shm := Shm{display: display}
 	shm.obj.listener = shmListener{shm: &shm}
-	display.AddObject(&shm.obj)
+	display.AddObject(&shm)
 
 	registry := display.GetRegistry()
 	registry.Bind(name, shmInterface, shmVersion, shm.obj.id)
@@ -27,9 +28,13 @@ func BindShm(display *Display, name uint32) *Shm {
 	return &shm
 }
 
+func (shm *Shm) Object() wire.Object {
+	return &shm.obj
+}
+
 func (shm *Shm) CreatePool(file *os.File, size int32) *ShmPool {
 	pool := ShmPool{display: shm.display}
-	shm.display.AddObject(&pool.obj)
+	shm.display.AddObject(&pool)
 	shm.display.Enqueue(shm.obj.CreatePool(pool.obj.id, file, size))
 
 	return &pool
