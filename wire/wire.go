@@ -69,6 +69,11 @@ type NewID struct {
 	ID        uint32
 }
 
+// Objecter is a type that can return an Object representing itself.
+type Objecter interface {
+	Object() Object
+}
+
 // Object represents a Wayland protocol object.
 type Object interface {
 	// ID returns the ID of the object. It returns 0 before the Object
