@@ -24,7 +24,7 @@ func main() {
 
 		switch {
 		case wl.IsOutput(inter):
-			outputs = append(outputs, wl.BindOutput(display, name))
+			outputs = append(outputs, wl.BindOutput(display, name, inter.Version))
 		}
 	}
 
