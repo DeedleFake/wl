@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 
-	"deedles.dev/wl/internal/bin"
+	"deedles.dev/wl/bin"
 )
 
 // ARGB8888 is an in-memory image whose At method returns color.ARGB8888 values.

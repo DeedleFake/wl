@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"deedles.dev/wl/internal/bin"
+	"deedles.dev/wl/bin"
 )
 
 // MessageBuffer holds message data that has been read from the socket

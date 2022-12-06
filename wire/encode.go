@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"deedles.dev/wl/internal/bin"
+	"deedles.dev/wl/bin"
 	"golang.org/x/sys/unix"
 )
 
