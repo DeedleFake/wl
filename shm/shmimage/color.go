@@ -45,7 +45,7 @@ func argb8888Model(c color.Color) color.Color {
 		r = r * 0xFF / a
 		g = g * 0xFF / a
 		b = b * 0xFF / a
-		a = 0xFF / 0xFFFF
+		a = a * 0xFF / 0xFFFF
 		return NewARGB8888Color(uint8(r), uint8(g), uint8(b), uint8(a))
 	}
 }
