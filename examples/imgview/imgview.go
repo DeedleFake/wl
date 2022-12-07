@@ -1,5 +1,11 @@
 package main
 
+/*
+#cgo pkg-config: xkbcommon
+#include <xkbcommon/xkbcommon.h>
+*/
+import "C"
+
 import (
 	"context"
 	"errors"
@@ -14,6 +20,7 @@ import (
 	"os/signal"
 	"sync"
 	"time"
+	"unsafe"
 
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/shm"
@@ -25,6 +32,7 @@ import (
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/sys/unix"
 )
 
 type state struct {
@@ -45,6 +53,9 @@ type state struct {
 	surface  *wl.Surface
 	xsurface *xdg.Surface
 	toplevel *xdg.Toplevel
+
+	xkbContext *C.struct_xkb_context
+	xkbKeymap  *C.struct_xkb_keymap
 
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
@@ -98,6 +109,22 @@ func (state *state) init() error {
 	//state.toplevel.Configure = state.resize
 
 	state.keyboard = state.seat.GetKeyboard()
+	state.keyboard.Keymap = func(format wl.KeyboardKeymapFormat, file *os.File, size uint32) {
+		defer file.Close()
+
+		mmap, err := shm.Map(file, int(size), unix.PROT_READ)
+		if err != nil {
+			log.Fatalf("mmap keymap: %v", err)
+		}
+		defer mmap.Unmap()
+
+		state.xkbKeymap = C.xkb_keymap_new_from_string(
+			state.xkbContext,
+			(*C.char)(unsafe.Pointer(&mmap[0])),
+			C.XKB_KEYMAP_FORMAT_TEXT_V1,
+			C.XKB_KEYMAP_COMPILE_NO_FLAGS,
+		)
+	}
 
 	state.pointer = state.seat.GetPointer()
 	state.pointer.Motion = state.pointerMotion
@@ -195,11 +222,11 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 	defer file.Close()
 	file.Truncate(int64(shmSize))
 
-	mmap, err := shm.Map(file, shmSize)
+	mmap, err := shm.Map(file, shmSize, unix.PROT_READ)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
-	defer mmap.Close()
+	defer mmap.Unmap()
 
 	pool := state.shm.CreatePool(file, int32(shmSize))
 	defer pool.Destroy()
