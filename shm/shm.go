@@ -21,20 +21,20 @@ func Create() (*os.File, error) {
 
 type Mmap []byte
 
-func Map(file *os.File, size int) (mmap Mmap, err error) {
+func Map(file *os.File, size int, prot int) (mmap Mmap, err error) {
 	sc, err := file.SyscallConn()
 	if err != nil {
 		return nil, err
 	}
 
 	sc.Control(func(fd uintptr) {
-		m, merr := unix.Mmap(int(fd), 0, size, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
+		m, merr := unix.Mmap(int(fd), 0, size, prot, unix.MAP_SHARED)
 		mmap, err = Mmap(m), merr
 	})
 
 	return mmap, err
 }
 
-func (mmap Mmap) Close() error {
+func (mmap Mmap) Unmap() error {
 	return unix.Munmap(mmap)
 }

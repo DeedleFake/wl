@@ -25,6 +25,7 @@ import (
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/sys/unix"
 )
 
 type state struct {
@@ -195,11 +196,11 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 	defer file.Close()
 	file.Truncate(int64(shmSize))
 
-	mmap, err := shm.Map(file, shmSize)
+	mmap, err := shm.Map(file, shmSize, unix.PROT_READ|unix.PROT_WRITE)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
-	defer mmap.Close()
+	defer mmap.Unmap()
 
 	pool := state.shm.CreatePool(file, int32(shmSize))
 	defer pool.Destroy()
