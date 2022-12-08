@@ -9,7 +9,7 @@ import (
 	"deedles.dev/wl/wire"
 )
 
-//go:generate go run deedles.dev/wl/cmd/wlgen -client -pkg wl -prefix wl_ -out protocol.go -xml ../protocol/wayland.xml
+//go:generate go run deedles.dev/wl/cmd/wlgen -client -out protocol.go -xml ../protocol/wayland.xml
 
 var debug = func(string, ...any) {}
 
