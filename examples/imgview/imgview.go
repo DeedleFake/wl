@@ -31,9 +31,10 @@ import (
 type state struct {
 	image image.Image
 
-	once sync.Once
-	done chan struct{}
+	close sync.Once
+	done  chan struct{}
 
+	state      *wl.State
 	display    *wl.Display
 	registry   *wl.Registry
 	shm        *wl.Shm
@@ -58,19 +59,19 @@ type state struct {
 func (state *state) init() error {
 	state.done = make(chan struct{})
 
-	display, err := wl.DialDisplay()
+	s, err := wl.Dial()
 	if err != nil {
 		return fmt.Errorf("dial display: %w", err)
 	}
-	display.Error = func(id, code uint32, msg string) {
-		log.Fatalf("display error: id: %v, code: %v, msg: %q", id, code, msg)
-	}
+	state.state = s
 
-	state.display = display
+	state.display = s.Display()
+	state.display.Listener = (*displayListener)(state)
+
 	state.registry = state.display.GetRegistry()
-	state.registry.Global = state.global
+	state.registry.Listener = (*registryListener)(state)
 
-	err = state.display.RoundTrip()
+	err = state.state.RoundTrip()
 	if err != nil {
 		return fmt.Errorf("round trip: %w", err)
 	}
@@ -91,18 +92,16 @@ func (state *state) init() error {
 	state.surface = state.compositor.CreateSurface()
 
 	state.xsurface = state.wmBase.GetXdgSurface(state.surface)
-	state.xsurface.Configure = state.configure
+	state.xsurface.Listener = (*xdgSurfaceListener)(state)
 
 	state.toplevel = state.xsurface.GetToplevel()
 	state.toplevel.SetTitle("Example")
-	state.toplevel.Close = state.close
-	//state.toplevel.Configure = state.resize
+	state.toplevel.Listener = (*xdgToplevelListener)(state)
 
 	state.keyboard = state.seat.GetKeyboard()
 
 	state.pointer = state.seat.GetPointer()
-	state.pointer.Motion = state.pointerMotion
-	state.pointer.Button = state.pointerButton
+	state.pointer.Listener = (*pointerListener)(state)
 
 	state.surface.Commit()
 
@@ -120,7 +119,7 @@ func (state *state) run(ctx context.Context) {
 		case <-state.done:
 			return
 		case <-tick.C:
-			err := state.display.Flush()
+			err := state.state.Flush()
 			if err != nil {
 				log.Printf("flush: %v", err)
 			}
@@ -128,33 +127,57 @@ func (state *state) run(ctx context.Context) {
 	}
 }
 
-func (state *state) close() {
-	state.once.Do(func() { close(state.done) })
+type displayListener state
+
+func (state *displayListener) Error(id, code uint32, msg string) {
+	log.Fatalf("display error: id: %v, code: %v, msg: %q", id, code, msg)
 }
 
-func (state *state) global(name uint32, inter wl.Interface) {
-	switch {
-	case wl.IsCompositor(inter):
-		state.compositor = wl.BindCompositor(state.display, name, inter.Version)
-	case wl.IsShm(inter):
-		state.shm = wl.BindShm(state.display, name, inter.Version)
-	case xdg.IsWmBase(inter):
-		state.wmBase = xdg.BindWmBase(state.display, name, inter.Version)
-	case wl.IsSeat(inter):
-		state.seat = wl.BindSeat(state.display, name, inter.Version)
+func (state *displayListener) DeleteId(id uint32) {
+	state.state.Delete(id)
+}
+
+type registryListener state
+
+func (state *registryListener) Global(name uint32, inter string, version uint32) {
+	switch inter {
+	case wl.CompositorInterface:
+		state.compositor = wl.BindCompositor(state.state, state.registry, name, version)
+	case wl.ShmInterface:
+		state.shm = wl.BindShm(state.state, state.registry, name, version)
+	case xdg.WmBaseInterface:
+		state.wmBase = xdg.BindWmBase(state.state, state.registry, name, version)
+		state.wmBase.Listener = (*wmBaseListener)(state)
+	case wl.SeatInterface:
+		state.seat = wl.BindSeat(state.state, state.registry, name, version)
 	}
 }
 
-func (state *state) pointerMotion(time uint32, x, y wire.Fixed) {
+func (state *registryListener) GlobalRemove(name uint32) {}
+
+type wmBaseListener state
+
+func (state *wmBaseListener) Ping(serial uint32) {
+	state.wmBase.Pong(serial)
+}
+
+type pointerListener state
+
+func (state *pointerListener) Enter(serial uint32, surface *wl.Surface, surfaceX wire.Fixed, surfaceY wire.Fixed) {
+}
+
+func (state *pointerListener) Leave(serial uint32, surface *wl.Surface) {}
+
+func (state *pointerListener) Motion(time uint32, x, y wire.Fixed) {
 	state.pointerLoc = image.Pt(x.Int(), y.Int())
 }
 
-func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, bstate wl.PointerButtonState) {
-	switch button {
+func (state *pointerListener) Button(serial, time uint32, button uint32, bstate wl.PointerButtonState) {
+	switch wl.PointerButton(button) {
 	case wl.PointerButtonLeft:
 		switch {
 		case state.pointerLoc.In(state.closeBounds):
-			state.close()
+			state.close.Do(func() { close(state.done) })
 		//case state.pointerLoc.In(state.maxBounds):
 		//	state.toplevel.SetMaximized(!state.max)
 		//	state.max = !state.max
@@ -166,7 +189,25 @@ func (state *state) pointerButton(serial, time uint32, button wl.PointerButton, 
 	}
 }
 
-func (state *state) drawFrame(width, height int32) *wl.Buffer {
+func (state *pointerListener) Axis(time uint32, axis wl.PointerAxis, value wire.Fixed) {}
+
+func (state *pointerListener) Frame() {}
+
+func (state *pointerListener) AxisSource(axisSource wl.PointerAxisSource) {}
+
+func (state *pointerListener) AxisStop(time uint32, axis wl.PointerAxis) {}
+
+func (state *pointerListener) AxisDiscrete(axis wl.PointerAxis, discrete int32) {}
+
+type xdgSurfaceListener state
+
+func (state *xdgSurfaceListener) Configure(serial uint32) {
+	state.xsurface.AckConfigure(serial)
+}
+
+type xdgToplevelListener state
+
+func (state *xdgToplevelListener) drawFrame(width, height int32) *wl.Buffer {
 	const barHeight = 30
 
 	state.barBounds = image.Rect(0, 0, int(width), barHeight)
@@ -226,15 +267,23 @@ func (state *state) drawFrame(width, height int32) *wl.Buffer {
 	return buf
 }
 
-func (state *state) configure() {
-	state.resize(0, 0, nil)
-}
-
-func (state *state) resize(w, h int32, states []xdg.ToplevelState) {
+func (state *xdgToplevelListener) resize(w, h int32, states []xdg.ToplevelState) {
 	buf := state.drawFrame(0, 0)
 	state.surface.Attach(buf, 0, 0)
 	state.surface.Commit()
 }
+
+func (state *xdgToplevelListener) Configure(w, h int32, states []byte) {
+	state.resize(0, 0, nil)
+}
+
+func (state *xdgToplevelListener) Close() {
+	state.close.Do(func() { close(state.done) })
+}
+
+func (state *xdgToplevelListener) ConfigureBounds(w, h int32) {}
+
+func (state *xdgToplevelListener) WmCapabilities(capabilities []byte) {}
 
 func fillRect(img draw.Image, r image.Rectangle, c color.Color) {
 	r = r.Canon()
@@ -275,7 +324,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("init: %v", err)
 	}
-	defer state.display.Close()
+	defer state.state.Close()
 
 	state.run(ctx)
 }
