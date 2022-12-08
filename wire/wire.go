@@ -100,3 +100,7 @@ type State interface {
 	Set(uint32, Object)
 	Enqueue(*MessageBuilder)
 }
+
+type Binder interface {
+	Bind(name uint32, obj NewID)
+}
