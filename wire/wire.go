@@ -4,7 +4,6 @@ package wire
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"net"
@@ -69,11 +68,6 @@ type NewID struct {
 	ID        uint32
 }
 
-// Objecter is a type that can return an Object representing itself.
-type Objecter interface {
-	Object() Object
-}
-
 // Object represents a Wayland protocol object.
 type Object interface {
 	// ID returns the ID of the object. It returns 0 before the Object
@@ -101,14 +95,12 @@ type DebugObject interface {
 	MethodName(opcode uint16) string
 }
 
-// UnknownOpError is returned by Object.Dispatch if it is given a
-// message with an invalid opcode.
-type UnknownOpError struct {
-	Interface string
-	Type      string
-	Op        uint16
+type State interface {
+	Add(Object)
+	Set(uint32, Object)
+	Enqueue(*MessageBuilder)
 }
 
-func (err UnknownOpError) Error() string {
-	return fmt.Sprintf("unknown %v opcode for %v: %v", err.Type, err.Interface, err.Op)
+type Binder interface {
+	Bind(name uint32, obj NewID)
 }

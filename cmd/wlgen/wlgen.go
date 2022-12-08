@@ -1,19 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"embed"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
+	"go/build"
 	"go/format"
-	"go/token"
 	"log"
 	"os"
 	"strings"
 	"text/template"
-	"unicode"
-	"unicode/utf8"
 
 	"deedles.dev/wl/protocol"
 )
@@ -23,160 +23,34 @@ const baseTmpl = "wlgen.tmpl"
 var (
 	//go:embed *.tmpl
 	tmplFS embed.FS
-	tmpl   = template.Must(template.New(baseTmpl).Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))
-
-	tmplFuncs = map[string]any{
-		"camel": func(v string) string {
-			var buf strings.Builder
-			buf.Grow(len(v))
-			shift := true
-			for _, c := range v {
-				if c == '_' {
-					shift = true
-					continue
-				}
-
-				if shift {
-					c = unicode.ToUpper(c)
-				}
-				buf.WriteRune(c)
-				shift = false
-			}
-			return buf.String()
-		},
-		"snake": func(v string) string {
-			var buf strings.Builder
-			buf.Grow(len(v))
-			for i, c := range v {
-				if unicode.IsUpper(c) && (i > 0) {
-					buf.WriteRune('_')
-				}
-				buf.WriteRune(unicode.ToLower(c))
-			}
-			return buf.String()
-		},
-		"export": func(v string) string {
-			if len(v) == 0 {
-				return ""
-			}
-
-			c, size := utf8.DecodeRuneInString(v)
-			if unicode.IsUpper(c) {
-				return v
-			}
-
-			var buf strings.Builder
-			buf.Grow(len(v))
-			buf.WriteRune(unicode.ToUpper(c))
-			buf.WriteString(v[size:])
-			return buf.String()
-		},
-		"unexport": func(v string) string {
-			if len(v) == 0 {
-				return ""
-			}
-
-			c, size := utf8.DecodeRuneInString(v)
-			if unicode.IsLower(c) {
-				return v
-			}
-
-			var buf strings.Builder
-			buf.Grow(len(v))
-			buf.WriteRune(unicode.ToLower(c))
-			buf.WriteString(v[size:])
-			return buf.String()
-		},
-		"trimPrefix": func(prefix, v string) string {
-			return strings.TrimPrefix(v, prefix)
-		},
-		"trimSpace": strings.TrimSpace,
-		"trimLines": func(v string) string {
-			lines := strings.Split(v, "\n")
-			for i := range lines {
-				lines[i] = strings.TrimSpace(lines[i])
-			}
-			return strings.Join(lines, "\n")
-		},
-		"listeners": func(isClient bool, i protocol.Interface) []protocol.Op {
-			if isClient {
-				return i.Events
-			}
-			return i.Requests
-		},
-		"senders": func(isClient bool, i protocol.Interface) []protocol.Op {
-			if isClient {
-				return i.Requests
-			}
-			return i.Events
-		},
-		"typeFuncSuffix": func(arg protocol.Arg) (string, error) {
-			switch arg.Type {
-			case "uint", "object":
-				return "Uint", nil
-			case "new_id":
-				if arg.Interface == "" {
-					return "NewID", nil
-				}
-				return "Uint", nil
-			case "int":
-				return "Int", nil
-			case "fixed":
-				return "Fixed", nil
-			case "fd":
-				return "File", nil
-			case "string":
-				return "String", nil
-			case "array":
-				return "Array", nil
-			default:
-				return "", fmt.Errorf("unknown type: %q", arg.Type)
-			}
-		},
-		"goType": func(arg protocol.Arg) (string, error) {
-			switch arg.Type {
-			case "uint", "object":
-				return "uint32", nil
-			case "new_id":
-				if arg.Interface == "" {
-					return "wire.NewID", nil
-				}
-				return "uint32", nil
-			case "int":
-				return "int32", nil
-			case "fixed":
-				return "wire.Fixed", nil
-			case "fd":
-				return "*os.File", nil
-			case "string":
-				return "string", nil
-			case "array":
-				return "[]byte", nil
-			default:
-				return "", fmt.Errorf("unknown type: %q", arg.Type)
-			}
-		},
-		"unkeyword": func(v string) string {
-			if token.IsKeyword(v) {
-				return "_" + v
-			}
-			return v
-		},
-		"comment": func(v string) string {
-			if len(v) == 0 {
-				return ""
-			}
-
-			var sb strings.Builder
-			for _, line := range strings.Split(v, "\n") {
-				sb.WriteString("// ")
-				sb.WriteString(line)
-				sb.WriteByte('\n')
-			}
-			return sb.String()
-		},
-	}
 )
+
+func parseTemplates(ctx Context) *template.Template {
+	tmplFuncs := map[string]any{
+		"ident":          ctx.ident,
+		"camel":          ctx.camel,
+		"snake":          ctx.snake,
+		"export":         ctx.export,
+		"unexport":       ctx.unexport,
+		"trimSpace":      strings.TrimSpace,
+		"trimLines":      ctx.trimLines,
+		"listeners":      ctx.listeners,
+		"senders":        ctx.senders,
+		"goType":         ctx.goType,
+		"typeFuncSuffix": ctx.typeFuncSuffix,
+		"unkeyword":      ctx.unkeyword,
+		"comment":        ctx.comment,
+		"partial":        ctx.partial,
+		"args":           ctx.args,
+		"returns":        ctx.returns,
+		"isRet":          ctx.isRet,
+		"package":        ctx.pkg,
+		"trimPackage":    ctx.trimPackage,
+		"enumType":       ctx.enumType,
+	}
+
+	return template.Must(template.New(baseTmpl).Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))
+}
 
 func loadXML(path string) (proto protocol.Protocol, err error) {
 	file, err := os.Open(path)
@@ -190,10 +64,73 @@ func loadXML(path string) (proto protocol.Protocol, err error) {
 	return proto, err
 }
 
-type TemplateContext struct {
+type Import struct {
+	Prefix string
+	Name   string
+}
+
+type Config struct {
+	Package string
+	Prefix  string
+	Imports map[string]Import
+}
+
+func loadConfig(path string, isClient bool) (Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return Config{}, err
+	}
+	defer file.Close()
+
+	conf := Config{
+		Imports: make(map[string]Import),
+	}
+	var errs []error
+
+	s := bufio.NewScanner(file)
+	for s.Scan() {
+		line := strings.TrimSpace(s.Text())
+		if (len(line) == 0) || (line[0] == '#') {
+			continue
+		}
+
+		parts := strings.Fields(line)
+		switch parts[0] {
+		case "package":
+			conf.Package = parts[1]
+			if len(parts) == 3 {
+				conf.Prefix = parts[2]
+			}
+		case "import":
+			path = parts[1]
+			if isClient {
+				path = parts[2]
+			}
+			i := Import{Prefix: parts[3]}
+			if len(parts) == 5 {
+				i.Name = parts[4]
+			}
+			if i.Name == "" {
+				pkg, err := build.Import(path, "", 0)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("import %q: %w", path, err))
+					conf.Imports[path] = i
+					continue
+				}
+				i.Name = pkg.Name
+			}
+			conf.Imports[path] = i
+		}
+	}
+
+	errs = append(errs, s.Err())
+	return conf, errors.Join(errs...)
+}
+
+type Context struct {
+	T            *template.Template
 	Protocol     protocol.Protocol
-	Package      string
-	Prefix       string
+	Config       Config
 	IsClient     bool
 	ExtraImports []string
 }
@@ -201,13 +138,15 @@ type TemplateContext struct {
 func main() {
 	xmlfile := flag.String("xml", "", "protocol XML file")
 	out := flag.String("out", "", "output file (default <xml file>.go)")
-	pkg := flag.String("pkg", "wl", "output package name")
-	prefix := flag.String("prefix", "wl_", "interface prefix name to strip")
+	config := flag.String("config", "", "config file (default <xnl file>.conf)")
 	client := flag.Bool("client", false, "generate code for client usage instead of server")
 	flag.Parse()
 
 	if *out == "" {
 		*out = *xmlfile + ".go"
+	}
+	if *config == "" {
+		*config = *xmlfile + ".conf"
 	}
 
 	proto, err := loadXML(*xmlfile)
@@ -215,35 +154,43 @@ func main() {
 		log.Fatalf("load XML: %v", err)
 	}
 
-	var extraImports []string
-extraImportsLoop:
+	conf, err := loadConfig(*config, *client)
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+
+	ctx := Context{
+		Protocol: proto,
+		Config:   conf,
+		IsClient: *client,
+	}
+
 	for _, i := range proto.Interfaces {
-		for _, req := range i.Requests {
-			for _, arg := range req.Args {
-				if arg.Type == "fd" {
-					extraImports = append(extraImports, "os")
-					break extraImportsLoop
+		if len(ctx.ExtraImports) == 0 {
+			for _, req := range i.Requests {
+				for _, arg := range req.Args {
+					if arg.Type == "fd" {
+						ctx.ExtraImports = append(ctx.ExtraImports, "os")
+					}
 				}
 			}
 		}
-		for _, ev := range i.Events {
-			for _, arg := range ev.Args {
-				if arg.Type == "fd" {
-					extraImports = append(extraImports, "os")
-					break extraImportsLoop
+
+		if len(ctx.ExtraImports) == 0 {
+			for _, ev := range i.Events {
+				for _, arg := range ev.Args {
+					if arg.Type == "fd" {
+						ctx.ExtraImports = append(ctx.ExtraImports, "os")
+					}
 				}
 			}
 		}
 	}
 
+	ctx.T = parseTemplates(ctx)
+
 	var buf bytes.Buffer
-	err = tmpl.ExecuteTemplate(&buf, baseTmpl, TemplateContext{
-		Protocol:     proto,
-		Package:      *pkg,
-		Prefix:       *prefix,
-		IsClient:     *client,
-		ExtraImports: extraImports,
-	})
+	err = ctx.T.ExecuteTemplate(&buf, baseTmpl, ctx)
 	if err != nil {
 		log.Fatalf("execute template: %v", err)
 	}

@@ -1,23 +1,11 @@
 package wl
 
-import "deedles.dev/wl/wire"
-
-type callback struct {
-	Done func(data uint32)
-
-	obj callbackObject
+func (c *Callback) Then(f func(uint32)) {
+	c.Listener = callbackListener(f)
 }
 
-func (cb *callback) Object() wire.Object {
-	return &cb.obj
-}
-
-type callbackListener struct {
-	callback *callback
-}
+type callbackListener func(uint32)
 
 func (lis callbackListener) Done(data uint32) {
-	if lis.callback.Done != nil {
-		lis.callback.Done(data)
-	}
+	lis(data)
 }

@@ -106,6 +106,10 @@ func (r *MessageBuffer) ReadUint() (v uint32) {
 	return v
 }
 
+func (r *MessageBuffer) ReadObject() uint32 {
+	return r.ReadUint()
+}
+
 func (r *MessageBuffer) ReadNewID() NewID {
 	return NewID{
 		Interface: r.ReadString(),

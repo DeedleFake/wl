@@ -9,16 +9,14 @@ import (
 )
 
 const (
-	displayInterface = "wl_display"
-	displayVersion   = 1
+	DisplayInterface = "wl_display"
+	DisplayVersion   = 1
 )
 
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
-type displayObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Display struct {
+	Listener interface {
 		// The error event is sent out when a fatal (non-recoverable)
 		// error has occurred.  The object_id argument is the object
 		// where the error occurred, most often in response to a request
@@ -35,18 +33,48 @@ type displayObject struct {
 		// it will know that it can safely reuse the object ID.
 		DeleteId(id uint32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewDisplay returns a newly instantiated Display. It is
+// primarily intended for use by generated code.
+func NewDisplay(state wire.State) *Display {
+	return &Display{state: state}
+}
+
+func BindDisplay(state wire.State, registry wire.Binder, name, version uint32) *Display {
+	obj := NewDisplay(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DisplayInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Display) State() wire.State {
+	return obj.state
+}
+
+func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		objectId := msg.ReadUint()
+
 		code := msg.ReadUint()
+
 		message := msg.ReadString()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Error(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Error(
 			objectId,
 			code,
 			message,
@@ -54,11 +82,17 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.DeleteId(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.DeleteId(
 			id,
 		)
 		return nil
@@ -71,25 +105,25 @@ func (obj displayObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj displayObject) ID() uint32 {
+func (obj *Display) ID() uint32 {
 	return obj.id
 }
 
-func (obj *displayObject) SetID(id uint32) {
+func (obj *Display) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj displayObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Display) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj displayObject) String() string {
+func (obj *Display) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_display", obj.id)
 }
 
-func (obj displayObject) MethodName(op uint16) string {
+func (obj *Display) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "error"
@@ -112,14 +146,17 @@ func (obj displayObject) MethodName(op uint16) string {
 // attempt to use it after that point.
 //
 // The callback_data passed in the callback is the event serial.
-func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Display) Sync() (callback *Callback) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "sync"
 	builder.Args = []any{callback}
 
-	builder.WriteUint(callback)
+	callback = NewCallback(obj.state)
+	obj.state.Add(callback)
+	builder.WriteObject(callback)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return callback
 }
 
 // This request creates a registry object that allows the client
@@ -131,14 +168,17 @@ func (obj displayObject) Sync(callback uint32) *wire.MessageBuilder {
 // client disconnects, not when the client side proxy is destroyed.
 // Therefore, clients should invoke get_registry as infrequently as
 // possible to avoid wasting memory.
-func (obj displayObject) GetRegistry(registry uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Display) GetRegistry() (registry *Registry) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "get_registry"
 	builder.Args = []any{registry}
 
-	builder.WriteUint(registry)
+	registry = NewRegistry(obj.state)
+	obj.state.Add(registry)
+	builder.WriteObject(registry)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return registry
 }
 
 // These errors are global and can be emitted in response to any
@@ -178,8 +218,8 @@ func (enum DisplayError) String() string {
 }
 
 const (
-	registryInterface = "wl_registry"
-	registryVersion   = 1
+	RegistryInterface = "wl_registry"
+	RegistryVersion   = 1
 )
 
 // The singleton global registry object.  The server has a number of
@@ -202,10 +242,8 @@ const (
 // request.  This creates a client-side handle that lets the object
 // emit events to the client and lets the client invoke requests on
 // the object.
-type registryObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Registry struct {
+	Listener interface {
 		// Notify the client of global objects.
 		//
 		// The event notifies the client that a global object with
@@ -225,18 +263,48 @@ type registryObject struct {
 		// the global going away and a client sending a request to it.
 		GlobalRemove(name uint32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewRegistry returns a newly instantiated Registry. It is
+// primarily intended for use by generated code.
+func NewRegistry(state wire.State) *Registry {
+	return &Registry{state: state}
+}
+
+func BindRegistry(state wire.State, registry wire.Binder, name, version uint32) *Registry {
+	obj := NewRegistry(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: RegistryInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Registry) State() wire.State {
+	return obj.state
+}
+
+func (obj *Registry) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		name := msg.ReadUint()
+
 		_interface := msg.ReadString()
+
 		version := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Global(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Global(
 			name,
 			_interface,
 			version,
@@ -244,11 +312,17 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		name := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.GlobalRemove(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.GlobalRemove(
 			name,
 		)
 		return nil
@@ -261,25 +335,25 @@ func (obj registryObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj registryObject) ID() uint32 {
+func (obj *Registry) ID() uint32 {
 	return obj.id
 }
 
-func (obj *registryObject) SetID(id uint32) {
+func (obj *Registry) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj registryObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Registry) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj registryObject) String() string {
+func (obj *Registry) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_registry", obj.id)
 }
 
-func (obj registryObject) MethodName(op uint16) string {
+func (obj *Registry) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "global"
@@ -293,41 +367,68 @@ func (obj registryObject) MethodName(op uint16) string {
 
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
-func (obj registryObject) Bind(name uint32, id wire.NewID) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Registry) Bind(name uint32, id wire.NewID) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "bind"
 	builder.Args = []any{name, id}
 
 	builder.WriteUint(name)
 	builder.WriteNewID(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 const (
-	callbackInterface = "wl_callback"
-	callbackVersion   = 1
+	CallbackInterface = "wl_callback"
+	CallbackVersion   = 1
 )
 
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
-type callbackObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Callback struct {
+	Listener interface {
 		// Notify the client when the related request is done.
 		Done(callbackData uint32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj callbackObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewCallback returns a newly instantiated Callback. It is
+// primarily intended for use by generated code.
+func NewCallback(state wire.State) *Callback {
+	return &Callback{state: state}
+}
+
+func BindCallback(state wire.State, registry wire.Binder, name, version uint32) *Callback {
+	obj := NewCallback(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: CallbackInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Callback) State() wire.State {
+	return obj.state
+}
+
+func (obj *Callback) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		callbackData := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Done(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Done(
 			callbackData,
 		)
 		return nil
@@ -340,25 +441,25 @@ func (obj callbackObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj callbackObject) ID() uint32 {
+func (obj *Callback) ID() uint32 {
 	return obj.id
 }
 
-func (obj *callbackObject) SetID(id uint32) {
+func (obj *Callback) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj callbackObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Callback) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj callbackObject) String() string {
+func (obj *Callback) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_callback", obj.id)
 }
 
-func (obj callbackObject) MethodName(op uint16) string {
+func (obj *Callback) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "done"
@@ -368,21 +469,38 @@ func (obj callbackObject) MethodName(op uint16) string {
 }
 
 const (
-	compositorInterface = "wl_compositor"
-	compositorVersion   = 4
+	CompositorInterface = "wl_compositor"
+	CompositorVersion   = 4
 )
 
 // A compositor.  This object is a singleton global.  The
 // compositor is in charge of combining the contents of multiple
 // surfaces into one displayable output.
-type compositorObject struct {
-	id     uint32
-	delete func()
+type Compositor struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewCompositor returns a newly instantiated Compositor. It is
+// primarily intended for use by generated code.
+func NewCompositor(state wire.State) *Compositor {
+	return &Compositor{state: state}
+}
+
+func BindCompositor(state wire.State, registry wire.Binder, name, version uint32) *Compositor {
+	obj := NewCompositor(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: CompositorInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Compositor) State() wire.State {
+	return obj.state
+}
+
+func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_compositor",
@@ -391,25 +509,25 @@ func (obj compositorObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj compositorObject) ID() uint32 {
+func (obj *Compositor) ID() uint32 {
 	return obj.id
 }
 
-func (obj *compositorObject) SetID(id uint32) {
+func (obj *Compositor) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj compositorObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Compositor) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj compositorObject) String() string {
+func (obj *Compositor) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_compositor", obj.id)
 }
 
-func (obj compositorObject) MethodName(op uint16) string {
+func (obj *Compositor) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -417,30 +535,36 @@ func (obj compositorObject) MethodName(op uint16) string {
 }
 
 // Ask the compositor to create a new surface.
-func (obj compositorObject) CreateSurface(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Compositor) CreateSurface() (id *Surface) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "create_surface"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewSurface(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // Ask the compositor to create a new region.
-func (obj compositorObject) CreateRegion(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Compositor) CreateRegion() (id *Region) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "create_region"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewRegion(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 const (
-	shmPoolInterface = "wl_shm_pool"
-	shmPoolVersion   = 1
+	ShmPoolInterface = "wl_shm_pool"
+	ShmPoolVersion   = 1
 )
 
 // The wl_shm_pool object encapsulates a piece of memory shared
@@ -450,14 +574,31 @@ const (
 // underlying mapped memory. Reusing the mapped memory avoids the
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
-type shmPoolObject struct {
-	id     uint32
-	delete func()
+type ShmPool struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewShmPool returns a newly instantiated ShmPool. It is
+// primarily intended for use by generated code.
+func NewShmPool(state wire.State) *ShmPool {
+	return &ShmPool{state: state}
+}
+
+func BindShmPool(state wire.State, registry wire.Binder, name, version uint32) *ShmPool {
+	obj := NewShmPool(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShmPoolInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *ShmPool) State() wire.State {
+	return obj.state
+}
+
+func (obj *ShmPool) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_shm_pool",
@@ -466,25 +607,25 @@ func (obj shmPoolObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shmPoolObject) ID() uint32 {
+func (obj *ShmPool) ID() uint32 {
 	return obj.id
 }
 
-func (obj *shmPoolObject) SetID(id uint32) {
+func (obj *ShmPool) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj shmPoolObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *ShmPool) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj shmPoolObject) String() string {
+func (obj *ShmPool) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shm_pool", obj.id)
 }
 
-func (obj shmPoolObject) MethodName(op uint16) string {
+func (obj *ShmPool) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -502,19 +643,22 @@ func (obj shmPoolObject) MethodName(op uint16) string {
 // A buffer will keep a reference to the pool it was created from
 // so it is valid to destroy the pool immediately after creating
 // a buffer from it.
-func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, height int32, stride int32, format uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride int32, format ShmFormat) (id *Buffer) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "create_buffer"
 	builder.Args = []any{id, offset, width, height, stride, format}
 
-	builder.WriteUint(id)
+	id = NewBuffer(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 	builder.WriteInt(offset)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 	builder.WriteInt(stride)
-	builder.WriteUint(format)
+	builder.WriteUint(uint32(format))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // Destroy the shared memory pool.
@@ -522,31 +666,33 @@ func (obj shmPoolObject) CreateBuffer(id uint32, offset int32, width int32, heig
 // The mmapped memory will be released when all
 // buffers that have been created from this pool
 // are gone.
-func (obj shmPoolObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *ShmPool) Destroy() {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request will cause the server to remap the backing memory
 // for the pool from the file descriptor passed when the pool was
 // created, but using the new size.  This request can only be
 // used to make the pool bigger.
-func (obj shmPoolObject) Resize(size int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *ShmPool) Resize(size int32) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "resize"
 	builder.Args = []any{size}
 
 	builder.WriteInt(size)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 const (
-	shmInterface = "wl_shm"
-	shmVersion   = 1
+	ShmInterface = "wl_shm"
+	ShmVersion   = 1
 )
 
 // A singleton global object that provides support for shared
@@ -558,25 +704,51 @@ const (
 // At connection setup time, the wl_shm object emits one or more
 // format events to inform clients about the valid pixel formats
 // that can be used for buffers.
-type shmObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Shm struct {
+	Listener interface {
 		// Informs the client about a valid pixel format that
 		// can be used for buffers. Known formats include
 		// argb8888 and xrgb8888.
-		Format(format uint32)
+		Format(format ShmFormat)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewShm returns a newly instantiated Shm. It is
+// primarily intended for use by generated code.
+func NewShm(state wire.State) *Shm {
+	return &Shm{state: state}
+}
+
+func BindShm(state wire.State, registry wire.Binder, name, version uint32) *Shm {
+	obj := NewShm(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShmInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Shm) State() wire.State {
+	return obj.state
+}
+
+func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		format := msg.ReadUint()
+
+		format := ShmFormat(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Format(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Format(
 			format,
 		)
 		return nil
@@ -589,25 +761,25 @@ func (obj shmObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shmObject) ID() uint32 {
+func (obj *Shm) ID() uint32 {
 	return obj.id
 }
 
-func (obj *shmObject) SetID(id uint32) {
+func (obj *Shm) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj shmObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Shm) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj shmObject) String() string {
+func (obj *Shm) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shm", obj.id)
 }
 
-func (obj shmObject) MethodName(op uint16) string {
+func (obj *Shm) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "format"
@@ -621,16 +793,19 @@ func (obj shmObject) MethodName(op uint16) string {
 // The pool can be used to create shared memory based buffer
 // objects.  The server will mmap size bytes of the passed file
 // descriptor, to use as backing memory for the pool.
-func (obj shmObject) CreatePool(id uint32, fd *os.File, size int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Shm) CreatePool(fd *os.File, size int32) (id *ShmPool) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "create_pool"
 	builder.Args = []any{id, fd, size}
 
-	builder.WriteUint(id)
+	id = NewShmPool(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 	builder.WriteFile(fd)
 	builder.WriteInt(size)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // These errors can be emitted in response to wl_shm requests.
@@ -1294,8 +1469,8 @@ func (enum ShmFormat) String() string {
 }
 
 const (
-	bufferInterface = "wl_buffer"
-	bufferVersion   = 1
+	BufferInterface = "wl_buffer"
+	BufferVersion   = 1
 )
 
 // A buffer provides the content for a wl_surface. Buffers are
@@ -1303,10 +1478,8 @@ const (
 // similar. It has a width and a height and can be attached to a
 // wl_surface, but the mechanism by which a client provides and
 // updates the contents is defined by the buffer factory interface.
-type bufferObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Buffer struct {
+	Listener interface {
 		// Sent when this wl_buffer is no longer used by the compositor.
 		// The client is now free to reuse or destroy this buffer and its
 		// backing storage.
@@ -1321,15 +1494,41 @@ type bufferObject struct {
 		// optimization for GL(ES) compositors with wl_shm clients.
 		Release()
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj bufferObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewBuffer returns a newly instantiated Buffer. It is
+// primarily intended for use by generated code.
+func NewBuffer(state wire.State) *Buffer {
+	return &Buffer{state: state}
+}
+
+func BindBuffer(state wire.State, registry wire.Binder, name, version uint32) *Buffer {
+	obj := NewBuffer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: BufferInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Buffer) State() wire.State {
+	return obj.state
+}
+
+func (obj *Buffer) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Release()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Release()
 		return nil
 	}
 
@@ -1340,25 +1539,25 @@ func (obj bufferObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj bufferObject) ID() uint32 {
+func (obj *Buffer) ID() uint32 {
 	return obj.id
 }
 
-func (obj *bufferObject) SetID(id uint32) {
+func (obj *Buffer) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj bufferObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Buffer) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj bufferObject) String() string {
+func (obj *Buffer) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_buffer", obj.id)
 }
 
-func (obj bufferObject) MethodName(op uint16) string {
+func (obj *Buffer) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "release"
@@ -1371,17 +1570,18 @@ func (obj bufferObject) MethodName(op uint16) string {
 // storage is defined by the buffer factory interface.
 //
 // For possible side-effects to a surface, see wl_surface.attach.
-func (obj bufferObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Buffer) Destroy() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 const (
-	dataOfferInterface = "wl_data_offer"
-	dataOfferVersion   = 3
+	DataOfferInterface = "wl_data_offer"
+	DataOfferVersion   = 3
 )
 
 // A wl_data_offer represents a piece of data offered for transfer
@@ -1390,10 +1590,8 @@ const (
 // describes the different mime types that the data can be
 // converted to and provides the mechanism for transferring the
 // data directly from the source client.
-type dataOfferObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type DataOffer struct {
+	Listener interface {
 		// Sent immediately after creating the wl_data_offer object.  One
 		// event per offered mime type.
 		Offer(mimeType string)
@@ -1401,7 +1599,7 @@ type dataOfferObject struct {
 		// This event indicates the actions offered by the data source. It
 		// will be sent right after wl_data_device.enter, or anytime the source
 		// side changes its offered actions through wl_data_source.set_actions.
-		SourceActions(sourceActions uint32)
+		SourceActions(sourceActions DataDeviceManagerDndAction)
 
 		// This event indicates the action selected by the compositor after
 		// matching the source/destination side actions. Only one action (or
@@ -1438,38 +1636,78 @@ type dataOfferObject struct {
 		// user (e.g. popping up a menu with the available options). The
 		// final wl_data_offer.set_actions and wl_data_offer.accept requests
 		// must happen before the call to wl_data_offer.finish.
-		Action(dndAction uint32)
+		Action(dndAction DataDeviceManagerDndAction)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewDataOffer returns a newly instantiated DataOffer. It is
+// primarily intended for use by generated code.
+func NewDataOffer(state wire.State) *DataOffer {
+	return &DataOffer{state: state}
+}
+
+func BindDataOffer(state wire.State, registry wire.Binder, name, version uint32) *DataOffer {
+	obj := NewDataOffer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataOfferInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *DataOffer) State() wire.State {
+	return obj.state
+}
+
+func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		mimeType := msg.ReadString()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Offer(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Offer(
 			mimeType,
 		)
 		return nil
 
 	case 1:
-		sourceActions := msg.ReadUint()
+
+		sourceActions := DataDeviceManagerDndAction(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.SourceActions(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.SourceActions(
 			sourceActions,
 		)
 		return nil
 
 	case 2:
-		dndAction := msg.ReadUint()
+
+		dndAction := DataDeviceManagerDndAction(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Action(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Action(
 			dndAction,
 		)
 		return nil
@@ -1482,25 +1720,25 @@ func (obj dataOfferObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataOfferObject) ID() uint32 {
+func (obj *DataOffer) ID() uint32 {
 	return obj.id
 }
 
-func (obj *dataOfferObject) SetID(id uint32) {
+func (obj *DataOffer) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj dataOfferObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *DataOffer) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj dataOfferObject) String() string {
+func (obj *DataOffer) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_offer", obj.id)
 }
 
-func (obj dataOfferObject) MethodName(op uint16) string {
+func (obj *DataOffer) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "offer"
@@ -1529,15 +1767,16 @@ func (obj dataOfferObject) MethodName(op uint16) string {
 // will be cancelled and the corresponding drag source will receive
 // wl_data_source.cancelled. Clients may still use this event in
 // conjunction with wl_data_source.action for feedback.
-func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *DataOffer) Accept(serial uint32, mimeType string) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "accept"
 	builder.Args = []any{serial, mimeType}
 
 	builder.WriteUint(serial)
 	builder.WriteString(mimeType)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // To transfer the offered data, the client issues this request
@@ -1555,24 +1794,26 @@ func (obj dataOfferObject) Accept(serial uint32, mimeType string) *wire.MessageB
 // both before and after wl_data_device.drop. Drag-and-drop destination
 // clients may preemptively fetch data or examine it more closely to
 // determine acceptance.
-func (obj dataOfferObject) Receive(mimeType string, fd *os.File) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *DataOffer) Receive(mimeType string, fd *os.File) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "receive"
 	builder.Args = []any{mimeType, fd}
 
 	builder.WriteString(mimeType)
 	builder.WriteFile(fd)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Destroy the data offer.
-func (obj dataOfferObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *DataOffer) Destroy() {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Notifies the compositor that the drag destination successfully
@@ -1589,12 +1830,13 @@ func (obj dataOfferObject) Destroy() *wire.MessageBuilder {
 //
 // If wl_data_offer.finish request is received for a non drag and drop
 // operation, the invalid_finish protocol error is raised.
-func (obj dataOfferObject) Finish() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 3)
+func (obj *DataOffer) Finish() {
+	builder := wire.NewMessage(obj, 3)
 	builder.Method = "finish"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Sets the actions that the destination side client supports for
@@ -1628,15 +1870,16 @@ func (obj dataOfferObject) Finish() *wire.MessageBuilder {
 //
 // This request can only be made on drag-and-drop offers, a protocol error
 // will be raised otherwise.
-func (obj dataOfferObject) SetActions(dndActions uint32, preferredAction uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 4)
+func (obj *DataOffer) SetActions(dndActions DataDeviceManagerDndAction, preferredAction DataDeviceManagerDndAction) {
+	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_actions"
 	builder.Args = []any{dndActions, preferredAction}
 
-	builder.WriteUint(dndActions)
-	builder.WriteUint(preferredAction)
+	builder.WriteUint(uint32(dndActions))
+	builder.WriteUint(uint32(preferredAction))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 type DataOfferError int64
@@ -1674,18 +1917,16 @@ func (enum DataOfferError) String() string {
 }
 
 const (
-	dataSourceInterface = "wl_data_source"
-	dataSourceVersion   = 3
+	DataSourceInterface = "wl_data_source"
+	DataSourceVersion   = 3
 )
 
 // The wl_data_source object is the source side of a wl_data_offer.
 // It is created by the source client in a data transfer and
 // provides a way to describe the offered data and a way to respond
 // to requests to transfer the data.
-type dataSourceObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type DataSource struct {
+	Listener interface {
 		// Sent when a target accepts pointer_focus or motion events.  If
 		// a target does not accept any of the offered types, type is NULL.
 		//
@@ -1763,29 +2004,64 @@ type dataSourceObject struct {
 		//
 		// Clients can trigger cursor surface changes from this point, so
 		// they reflect the current action.
-		Action(dndAction uint32)
+		Action(dndAction DataDeviceManagerDndAction)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewDataSource returns a newly instantiated DataSource. It is
+// primarily intended for use by generated code.
+func NewDataSource(state wire.State) *DataSource {
+	return &DataSource{state: state}
+}
+
+func BindDataSource(state wire.State, registry wire.Binder, name, version uint32) *DataSource {
+	obj := NewDataSource(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataSourceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *DataSource) State() wire.State {
+	return obj.state
+}
+
+func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		mimeType := msg.ReadString()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Target(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Target(
 			mimeType,
 		)
 		return nil
 
 	case 1:
+
 		mimeType := msg.ReadString()
+
 		fd := msg.ReadFile()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Send(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Send(
 			mimeType,
 			fd,
 		)
@@ -1795,29 +2071,47 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Cancelled()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Cancelled()
 		return nil
 
 	case 3:
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.DndDropPerformed()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.DndDropPerformed()
 		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.DndFinished()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.DndFinished()
 		return nil
 
 	case 5:
-		dndAction := msg.ReadUint()
+
+		dndAction := DataDeviceManagerDndAction(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Action(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Action(
 			dndAction,
 		)
 		return nil
@@ -1830,25 +2124,25 @@ func (obj dataSourceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataSourceObject) ID() uint32 {
+func (obj *DataSource) ID() uint32 {
 	return obj.id
 }
 
-func (obj *dataSourceObject) SetID(id uint32) {
+func (obj *DataSource) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj dataSourceObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *DataSource) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj dataSourceObject) String() string {
+func (obj *DataSource) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_source", obj.id)
 }
 
-func (obj dataSourceObject) MethodName(op uint16) string {
+func (obj *DataSource) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "target"
@@ -1875,23 +2169,25 @@ func (obj dataSourceObject) MethodName(op uint16) string {
 // This request adds a mime type to the set of mime types
 // advertised to targets.  Can be called several times to offer
 // multiple types.
-func (obj dataSourceObject) Offer(mimeType string) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *DataSource) Offer(mimeType string) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "offer"
 	builder.Args = []any{mimeType}
 
 	builder.WriteString(mimeType)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Destroy the data source.
-func (obj dataSourceObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *DataSource) Destroy() {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Sets the actions that the source side client supports for this
@@ -1907,14 +2203,15 @@ func (obj dataSourceObject) Destroy() *wire.MessageBuilder {
 // used in drag-and-drop, so it must be performed before
 // wl_data_device.start_drag. Attempting to use the source other than
 // for drag-and-drop will raise a protocol error.
-func (obj dataSourceObject) SetActions(dndActions uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *DataSource) SetActions(dndActions DataDeviceManagerDndAction) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "set_actions"
 	builder.Args = []any{dndActions}
 
-	builder.WriteUint(dndActions)
+	builder.WriteUint(uint32(dndActions))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 type DataSourceError int64
@@ -1940,8 +2237,8 @@ func (enum DataSourceError) String() string {
 }
 
 const (
-	dataDeviceInterface = "wl_data_device"
-	dataDeviceVersion   = 3
+	DataDeviceInterface = "wl_data_device"
+	DataDeviceVersion   = 3
 )
 
 // There is one wl_data_device per seat which can be obtained
@@ -1949,10 +2246,8 @@ const (
 //
 // A wl_data_device provides access to inter-client data transfer
 // mechanisms such as copy-and-paste and drag-and-drop.
-type dataDeviceObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type DataDevice struct {
+	Listener interface {
 		// The data_offer event introduces a new wl_data_offer object,
 		// which will subsequently be used in either the
 		// data_device.enter event (for drag-and-drop) or the
@@ -1966,7 +2261,7 @@ type dataDeviceObject struct {
 		// a surface owned by the client.  The position of the pointer at
 		// enter time is provided by the x and y arguments, in surface-local
 		// coordinates.
-		Enter(serial uint32, surface uint32, x wire.Fixed, y wire.Fixed, id uint32)
+		Enter(serial uint32, surface *Surface, x wire.Fixed, y wire.Fixed, id *DataOffer)
 
 		// This event is sent when the drag-and-drop pointer leaves the
 		// surface and the session ends.  The client must destroy the
@@ -2005,32 +2300,74 @@ type dataDeviceObject struct {
 		// or until the client loses keyboard focus.  The client must
 		// destroy the previous selection data_offer, if any, upon receiving
 		// this event.
-		Selection(id uint32)
+		Selection(id *DataOffer)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewDataDevice returns a newly instantiated DataDevice. It is
+// primarily intended for use by generated code.
+func NewDataDevice(state wire.State) *DataDevice {
+	return &DataDevice{state: state}
+}
+
+func BindDataDevice(state wire.State, registry wire.Binder, name, version uint32) *DataDevice {
+	obj := NewDataDevice(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataDeviceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *DataDevice) State() wire.State {
+	return obj.state
+}
+
+func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.DataOffer(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.DataOffer(
 			id,
 		)
 		return nil
 
 	case 1:
+
 		serial := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		x := msg.ReadFixed()
+
 		y := msg.ReadFixed()
-		id := msg.ReadUint()
+
+		idID := msg.ReadUint()
+		id := NewDataOffer(obj.state)
+		obj.state.Set(idID, id)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Enter(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Enter(
 			serial,
 			surface,
 			x,
@@ -2043,17 +2380,29 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Leave()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Leave()
 		return nil
 
 	case 3:
+
 		time := msg.ReadUint()
+
 		x := msg.ReadFixed()
+
 		y := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Motion(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Motion(
 			time,
 			x,
 			y,
@@ -2064,15 +2413,26 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Drop()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Drop()
 		return nil
 
 	case 5:
-		id := msg.ReadUint()
+		idID := msg.ReadUint()
+		id := NewDataOffer(obj.state)
+		obj.state.Set(idID, id)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Selection(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Selection(
 			id,
 		)
 		return nil
@@ -2085,25 +2445,25 @@ func (obj dataDeviceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataDeviceObject) ID() uint32 {
+func (obj *DataDevice) ID() uint32 {
 	return obj.id
 }
 
-func (obj *dataDeviceObject) SetID(id uint32) {
+func (obj *DataDevice) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj dataDeviceObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *DataDevice) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj dataDeviceObject) String() string {
+func (obj *DataDevice) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_device", obj.id)
 }
 
-func (obj dataDeviceObject) MethodName(op uint16) string {
+func (obj *DataDevice) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "data_offer"
@@ -2155,41 +2515,44 @@ func (obj dataDeviceObject) MethodName(op uint16) string {
 // wl_surface is no longer used as the icon surface. When the use
 // as an icon ends, the current and pending input regions become
 // undefined, and the wl_surface is unmapped.
-func (obj dataDeviceObject) StartDrag(source uint32, origin uint32, icon uint32, serial uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *DataDevice) StartDrag(source *DataSource, origin *Surface, icon *Surface, serial uint32) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "start_drag"
 	builder.Args = []any{source, origin, icon, serial}
 
-	builder.WriteUint(source)
-	builder.WriteUint(origin)
-	builder.WriteUint(icon)
+	builder.WriteObject(source)
+	builder.WriteObject(origin)
+	builder.WriteObject(icon)
 	builder.WriteUint(serial)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request asks the compositor to set the selection
 // to the data from the source on behalf of the client.
 //
 // To unset the selection, set the source to NULL.
-func (obj dataDeviceObject) SetSelection(source uint32, serial uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *DataDevice) SetSelection(source *DataSource, serial uint32) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "set_selection"
 	builder.Args = []any{source, serial}
 
-	builder.WriteUint(source)
+	builder.WriteObject(source)
 	builder.WriteUint(serial)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request destroys the data device.
-func (obj dataDeviceObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *DataDevice) Release() {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 type DataDeviceError int64
@@ -2209,8 +2572,8 @@ func (enum DataDeviceError) String() string {
 }
 
 const (
-	dataDeviceManagerInterface = "wl_data_device_manager"
-	dataDeviceManagerVersion   = 3
+	DataDeviceManagerInterface = "wl_data_device_manager"
+	DataDeviceManagerVersion   = 3
 )
 
 // The wl_data_device_manager is a singleton global object that
@@ -2223,14 +2586,31 @@ const (
 // wl_data_device_manager object will have different requirements for
 // functioning properly. See wl_data_source.set_actions,
 // wl_data_offer.accept and wl_data_offer.finish for details.
-type dataDeviceManagerObject struct {
-	id     uint32
-	delete func()
+type DataDeviceManager struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewDataDeviceManager returns a newly instantiated DataDeviceManager. It is
+// primarily intended for use by generated code.
+func NewDataDeviceManager(state wire.State) *DataDeviceManager {
+	return &DataDeviceManager{state: state}
+}
+
+func BindDataDeviceManager(state wire.State, registry wire.Binder, name, version uint32) *DataDeviceManager {
+	obj := NewDataDeviceManager(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataDeviceManagerInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *DataDeviceManager) State() wire.State {
+	return obj.state
+}
+
+func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_data_device_manager",
@@ -2239,25 +2619,25 @@ func (obj dataDeviceManagerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj dataDeviceManagerObject) ID() uint32 {
+func (obj *DataDeviceManager) ID() uint32 {
 	return obj.id
 }
 
-func (obj *dataDeviceManagerObject) SetID(id uint32) {
+func (obj *DataDeviceManager) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj dataDeviceManagerObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *DataDeviceManager) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj dataDeviceManagerObject) String() string {
+func (obj *DataDeviceManager) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_data_device_manager", obj.id)
 }
 
-func (obj dataDeviceManagerObject) MethodName(op uint16) string {
+func (obj *DataDeviceManager) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -2265,26 +2645,32 @@ func (obj dataDeviceManagerObject) MethodName(op uint16) string {
 }
 
 // Create a new data source.
-func (obj dataDeviceManagerObject) CreateDataSource(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *DataDeviceManager) CreateDataSource() (id *DataSource) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "create_data_source"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewDataSource(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // Create a new data device for a given seat.
-func (obj dataDeviceManagerObject) GetDataDevice(id uint32, seat uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *DataDeviceManager) GetDataDevice(seat *Seat) (id *DataDevice) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "get_data_device"
 	builder.Args = []any{id, seat}
 
-	builder.WriteUint(id)
-	builder.WriteUint(seat)
+	id = NewDataDevice(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
+	builder.WriteObject(seat)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // This is a bitmask of the available/preferred actions in a
@@ -2345,8 +2731,8 @@ func (enum DataDeviceManagerDndAction) String() string {
 }
 
 const (
-	shellInterface = "wl_shell"
-	shellVersion   = 1
+	ShellInterface = "wl_shell"
+	ShellVersion   = 1
 )
 
 // This interface is implemented by servers that provide
@@ -2357,14 +2743,31 @@ const (
 //
 // Note! This protocol is deprecated and not intended for production use.
 // For desktop-style user interfaces, use xdg_shell.
-type shellObject struct {
-	id     uint32
-	delete func()
+type Shell struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewShell returns a newly instantiated Shell. It is
+// primarily intended for use by generated code.
+func NewShell(state wire.State) *Shell {
+	return &Shell{state: state}
+}
+
+func BindShell(state wire.State, registry wire.Binder, name, version uint32) *Shell {
+	obj := NewShell(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShellInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Shell) State() wire.State {
+	return obj.state
+}
+
+func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_shell",
@@ -2373,25 +2776,25 @@ func (obj shellObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shellObject) ID() uint32 {
+func (obj *Shell) ID() uint32 {
 	return obj.id
 }
 
-func (obj *shellObject) SetID(id uint32) {
+func (obj *Shell) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj shellObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Shell) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj shellObject) String() string {
+func (obj *Shell) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shell", obj.id)
 }
 
-func (obj shellObject) MethodName(op uint16) string {
+func (obj *Shell) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -2403,15 +2806,18 @@ func (obj shellObject) MethodName(op uint16) string {
 // already has another role, it raises a protocol error.
 //
 // Only one shell surface can be associated with a given surface.
-func (obj shellObject) GetShellSurface(id uint32, surface uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Shell) GetShellSurface(surface *Surface) (id *ShellSurface) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "get_shell_surface"
 	builder.Args = []any{id, surface}
 
-	builder.WriteUint(id)
-	builder.WriteUint(surface)
+	id = NewShellSurface(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
+	builder.WriteObject(surface)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 type ShellError int64
@@ -2431,8 +2837,8 @@ func (enum ShellError) String() string {
 }
 
 const (
-	shellSurfaceInterface = "wl_shell_surface"
-	shellSurfaceVersion   = 1
+	ShellSurfaceInterface = "wl_shell_surface"
+	ShellSurfaceVersion   = 1
 )
 
 // An interface that may be implemented by a wl_surface, for
@@ -2446,10 +2852,8 @@ const (
 // the related wl_surface is destroyed. On the client side,
 // wl_shell_surface_destroy() must be called before destroying
 // the wl_surface object.
-type shellSurfaceObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type ShellSurface struct {
+	Listener interface {
 		// Ping a client to check if it is receiving events and sending
 		// requests. A client is expected to reply with a pong request.
 		Ping(serial uint32)
@@ -2471,35 +2875,71 @@ type shellSurfaceObject struct {
 		//
 		// The width and height arguments specify the size of the window
 		// in surface-local coordinates.
-		Configure(edges uint32, width int32, height int32)
+		Configure(edges ShellSurfaceResize, width int32, height int32)
 
 		// The popup_done event is sent out when a popup grab is broken,
 		// that is, when the user clicks a surface that doesn't belong
 		// to the client owning the popup surface.
 		PopupDone()
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewShellSurface returns a newly instantiated ShellSurface. It is
+// primarily intended for use by generated code.
+func NewShellSurface(state wire.State) *ShellSurface {
+	return &ShellSurface{state: state}
+}
+
+func BindShellSurface(state wire.State, registry wire.Binder, name, version uint32) *ShellSurface {
+	obj := NewShellSurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShellSurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *ShellSurface) State() wire.State {
+	return obj.state
+}
+
+func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		serial := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Ping(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Ping(
 			serial,
 		)
 		return nil
 
 	case 1:
-		edges := msg.ReadUint()
+
+		edges := ShellSurfaceResize(msg.ReadUint())
+
 		width := msg.ReadInt()
+
 		height := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Configure(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Configure(
 			edges,
 			width,
 			height,
@@ -2510,7 +2950,11 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.PopupDone()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.PopupDone()
 		return nil
 	}
 
@@ -2521,25 +2965,25 @@ func (obj shellSurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj shellSurfaceObject) ID() uint32 {
+func (obj *ShellSurface) ID() uint32 {
 	return obj.id
 }
 
-func (obj *shellSurfaceObject) SetID(id uint32) {
+func (obj *ShellSurface) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj shellSurfaceObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *ShellSurface) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj shellSurfaceObject) String() string {
+func (obj *ShellSurface) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_shell_surface", obj.id)
 }
 
-func (obj shellSurfaceObject) MethodName(op uint16) string {
+func (obj *ShellSurface) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "ping"
@@ -2556,14 +3000,15 @@ func (obj shellSurfaceObject) MethodName(op uint16) string {
 
 // A client must respond to a ping event with a pong request or
 // the client may be deemed unresponsive.
-func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *ShellSurface) Pong(serial uint32) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "pong"
 	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Start a pointer-driven move of the surface.
@@ -2571,15 +3016,16 @@ func (obj shellSurfaceObject) Pong(serial uint32) *wire.MessageBuilder {
 // This request must be used in response to a button press event.
 // The server may ignore move requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
-func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *ShellSurface) Move(seat *Seat, serial uint32) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "move"
 	builder.Args = []any{seat, serial}
 
-	builder.WriteUint(seat)
+	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Start a pointer-driven resizing of the surface.
@@ -2587,27 +3033,29 @@ func (obj shellSurfaceObject) Move(seat uint32, serial uint32) *wire.MessageBuil
 // This request must be used in response to a button press event.
 // The server may ignore resize requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
-func (obj shellSurfaceObject) Resize(seat uint32, serial uint32, edges uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *ShellSurface) Resize(seat *Seat, serial uint32, edges ShellSurfaceResize) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "resize"
 	builder.Args = []any{seat, serial, edges}
 
-	builder.WriteUint(seat)
+	builder.WriteObject(seat)
 	builder.WriteUint(serial)
-	builder.WriteUint(edges)
+	builder.WriteUint(uint32(edges))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Map the surface as a toplevel surface.
 //
 // A toplevel surface is not fullscreen, maximized or transient.
-func (obj shellSurfaceObject) SetToplevel() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 3)
+func (obj *ShellSurface) SetToplevel() {
+	builder := wire.NewMessage(obj, 3)
 	builder.Method = "set_toplevel"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Map the surface relative to an existing surface.
@@ -2617,17 +3065,18 @@ func (obj shellSurfaceObject) SetToplevel() *wire.MessageBuilder {
 // parent surface, in surface-local coordinates.
 //
 // The flags argument controls details of the transient behaviour.
-func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 4)
+func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
+	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_transient"
 	builder.Args = []any{parent, x, y, flags}
 
-	builder.WriteUint(parent)
+	builder.WriteObject(parent)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
-	builder.WriteUint(flags)
+	builder.WriteUint(uint32(flags))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Map the surface as a fullscreen surface.
@@ -2663,16 +3112,17 @@ func (obj shellSurfaceObject) SetTransient(parent uint32, x int32, y int32, flag
 // The compositor must reply to this request with a configure event
 // with the dimensions for the output on which the surface will
 // be made fullscreen.
-func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, output uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 5)
+func (obj *ShellSurface) SetFullscreen(method ShellSurfaceFullscreenMethod, framerate uint32, output *Output) {
+	builder := wire.NewMessage(obj, 5)
 	builder.Method = "set_fullscreen"
 	builder.Args = []any{method, framerate, output}
 
-	builder.WriteUint(method)
+	builder.WriteUint(uint32(method))
 	builder.WriteUint(framerate)
-	builder.WriteUint(output)
+	builder.WriteObject(output)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Map the surface as a popup.
@@ -2694,19 +3144,20 @@ func (obj shellSurfaceObject) SetFullscreen(method uint32, framerate uint32, out
 // The x and y arguments specify the location of the upper left
 // corner of the surface relative to the upper left corner of the
 // parent surface, in surface-local coordinates.
-func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32, x int32, y int32, flags uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 6)
+func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
+	builder := wire.NewMessage(obj, 6)
 	builder.Method = "set_popup"
 	builder.Args = []any{seat, serial, parent, x, y, flags}
 
-	builder.WriteUint(seat)
+	builder.WriteObject(seat)
 	builder.WriteUint(serial)
-	builder.WriteUint(parent)
+	builder.WriteObject(parent)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
-	builder.WriteUint(flags)
+	builder.WriteUint(uint32(flags))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Map the surface as a maximized surface.
@@ -2727,14 +3178,15 @@ func (obj shellSurfaceObject) SetPopup(seat uint32, serial uint32, parent uint32
 // fullscreen shell surface.
 //
 // The details depend on the compositor implementation.
-func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 7)
+func (obj *ShellSurface) SetMaximized(output *Output) {
+	builder := wire.NewMessage(obj, 7)
 	builder.Method = "set_maximized"
 	builder.Args = []any{output}
 
-	builder.WriteUint(output)
+	builder.WriteObject(output)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Set a short title for the surface.
@@ -2744,14 +3196,15 @@ func (obj shellSurfaceObject) SetMaximized(output uint32) *wire.MessageBuilder {
 // compositor.
 //
 // The string must be encoded in UTF-8.
-func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 8)
+func (obj *ShellSurface) SetTitle(title string) {
+	builder := wire.NewMessage(obj, 8)
 	builder.Method = "set_title"
 	builder.Args = []any{title}
 
 	builder.WriteString(title)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Set a class for the surface.
@@ -2760,14 +3213,15 @@ func (obj shellSurfaceObject) SetTitle(title string) *wire.MessageBuilder {
 // to which the surface belongs. A common convention is to use the
 // file name (or the full path if it is a non-standard location) of
 // the application's .desktop file as the class.
-func (obj shellSurfaceObject) SetClass(class string) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 9)
+func (obj *ShellSurface) SetClass(class string) {
+	builder := wire.NewMessage(obj, 9)
 	builder.Method = "set_class"
 	builder.Args = []any{class}
 
 	builder.WriteString(class)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // These values are used to indicate which edge of a surface
@@ -2894,8 +3348,8 @@ func (enum ShellSurfaceFullscreenMethod) String() string {
 }
 
 const (
-	surfaceInterface = "wl_surface"
-	surfaceVersion   = 4
+	SurfaceInterface = "wl_surface"
+	SurfaceVersion   = 4
 )
 
 // A surface is a rectangular area that may be displayed on zero
@@ -2939,16 +3393,14 @@ const (
 // wl_surface again, but it is not allowed to use the wl_surface as
 // a cursor (cursor is a different role than sub-surface, and role
 // switching is not allowed).
-type surfaceObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Surface struct {
+	Listener interface {
 		// This is emitted whenever a surface's creation, movement, or resizing
 		// results in some part of it being within the scanout region of an
 		// output.
 		//
 		// Note that a surface may be overlapping with zero or more outputs.
-		Enter(output uint32)
+		Enter(output *Output)
 
 		// This is emitted whenever a surface's creation, movement, or resizing
 		// results in it no longer having any part of it within the scanout region
@@ -2959,28 +3411,64 @@ type surfaceObject struct {
 		// has been sent, and the compositor might expect new surface content
 		// updates even if no enter event has been sent. The frame event should be
 		// used instead.
-		Leave(output uint32)
+		Leave(output *Output)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewSurface returns a newly instantiated Surface. It is
+// primarily intended for use by generated code.
+func NewSurface(state wire.State) *Surface {
+	return &Surface{state: state}
+}
+
+func BindSurface(state wire.State, registry wire.Binder, name, version uint32) *Surface {
+	obj := NewSurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Surface) State() wire.State {
+	return obj.state
+}
+
+func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		output := msg.ReadUint()
+		outputID := msg.ReadUint()
+		output := NewOutput(obj.state)
+		obj.state.Set(outputID, output)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Enter(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Enter(
 			output,
 		)
 		return nil
 
 	case 1:
-		output := msg.ReadUint()
+		outputID := msg.ReadUint()
+		output := NewOutput(obj.state)
+		obj.state.Set(outputID, output)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Leave(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Leave(
 			output,
 		)
 		return nil
@@ -2993,25 +3481,25 @@ func (obj surfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj surfaceObject) ID() uint32 {
+func (obj *Surface) ID() uint32 {
 	return obj.id
 }
 
-func (obj *surfaceObject) SetID(id uint32) {
+func (obj *Surface) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj surfaceObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Surface) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj surfaceObject) String() string {
+func (obj *Surface) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_surface", obj.id)
 }
 
-func (obj surfaceObject) MethodName(op uint16) string {
+func (obj *Surface) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "enter"
@@ -3024,12 +3512,13 @@ func (obj surfaceObject) MethodName(op uint16) string {
 }
 
 // Deletes the surface and invalidates its object ID.
-func (obj surfaceObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Surface) Destroy() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Set a buffer as the content of this surface.
@@ -3078,16 +3567,17 @@ func (obj surfaceObject) Destroy() *wire.MessageBuilder {
 //
 // If wl_surface.attach is sent with a NULL wl_buffer, the
 // following wl_surface.commit will remove the surface content.
-func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Surface) Attach(buffer *Buffer, x int32, y int32) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "attach"
 	builder.Args = []any{buffer, x, y}
 
-	builder.WriteUint(buffer)
+	builder.WriteObject(buffer)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request is used to describe the regions where the pending
@@ -3111,8 +3601,8 @@ func (obj surfaceObject) Attach(buffer uint32, x int32, y int32) *wire.MessageBu
 // Note! New clients should not use this request. Instead damage can be
 // posted with wl_surface.damage_buffer which uses buffer coordinates
 // instead of surface coordinates.
-func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *Surface) Damage(x int32, y int32, width int32, height int32) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "damage"
 	builder.Args = []any{x, y, width, height}
 
@@ -3121,7 +3611,8 @@ func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wi
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Request a notification when it is a good time to start drawing a new
@@ -3156,14 +3647,17 @@ func (obj surfaceObject) Damage(x int32, y int32, width int32, height int32) *wi
 //
 // The callback_data passed in the callback is the current time, in
 // milliseconds, with an undefined base.
-func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 3)
+func (obj *Surface) Frame() (callback *Callback) {
+	builder := wire.NewMessage(obj, 3)
 	builder.Method = "frame"
 	builder.Args = []any{callback}
 
-	builder.WriteUint(callback)
+	callback = NewCallback(obj.state)
+	obj.state.Add(callback)
+	builder.WriteObject(callback)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return callback
 }
 
 // This request sets the region of the surface that contains
@@ -3190,14 +3684,15 @@ func (obj surfaceObject) Frame(callback uint32) *wire.MessageBuilder {
 // opaque region has copy semantics, and the wl_region object can be
 // destroyed immediately. A NULL wl_region causes the pending opaque
 // region to be set to empty.
-func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 4)
+func (obj *Surface) SetOpaqueRegion(region *Region) {
+	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_opaque_region"
 	builder.Args = []any{region}
 
-	builder.WriteUint(region)
+	builder.WriteObject(region)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request sets the region of the surface that can receive
@@ -3222,14 +3717,15 @@ func (obj surfaceObject) SetOpaqueRegion(region uint32) *wire.MessageBuilder {
 // has copy semantics, and the wl_region object can be destroyed
 // immediately. A NULL wl_region causes the input region to be set
 // to infinite.
-func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 5)
+func (obj *Surface) SetInputRegion(region *Region) {
+	builder := wire.NewMessage(obj, 5)
 	builder.Method = "set_input_region"
 	builder.Args = []any{region}
 
-	builder.WriteUint(region)
+	builder.WriteObject(region)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Surface state (input, opaque, and damage regions, attached buffers,
@@ -3249,12 +3745,13 @@ func (obj surfaceObject) SetInputRegion(region uint32) *wire.MessageBuilder {
 // to affect double-buffered state.
 //
 // Other interfaces may add further double-buffered surface state.
-func (obj surfaceObject) Commit() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 6)
+func (obj *Surface) Commit() {
+	builder := wire.NewMessage(obj, 6)
 	builder.Method = "commit"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request sets an optional transformation on how the compositor
@@ -3286,14 +3783,15 @@ func (obj surfaceObject) Commit() *wire.MessageBuilder {
 // If transform is not one of the values from the
 // wl_output.transform enum the invalid_transform protocol error
 // is raised.
-func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 7)
+func (obj *Surface) SetBufferTransform(transform OutputTransform) {
+	builder := wire.NewMessage(obj, 7)
 	builder.Method = "set_buffer_transform"
 	builder.Args = []any{transform}
 
-	builder.WriteInt(transform)
+	builder.WriteInt(int32(transform))
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request sets an optional scaling factor on how the compositor
@@ -3319,14 +3817,15 @@ func (obj surfaceObject) SetBufferTransform(transform int32) *wire.MessageBuilde
 //
 // If scale is not positive the invalid_scale protocol error is
 // raised.
-func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 8)
+func (obj *Surface) SetBufferScale(scale int32) {
+	builder := wire.NewMessage(obj, 8)
 	builder.Method = "set_buffer_scale"
 	builder.Args = []any{scale}
 
 	builder.WriteInt(scale)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This request is used to describe the regions where the pending
@@ -3361,8 +3860,8 @@ func (obj surfaceObject) SetBufferScale(scale int32) *wire.MessageBuilder {
 // kinds of damage into account will have to accumulate damage from the
 // two requests separately and only transform from one to the other
 // after receiving the wl_surface.commit.
-func (obj surfaceObject) DamageBuffer(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 9)
+func (obj *Surface) DamageBuffer(x int32, y int32, width int32, height int32) {
+	builder := wire.NewMessage(obj, 9)
 	builder.Method = "damage_buffer"
 	builder.Args = []any{x, y, width, height}
 
@@ -3371,7 +3870,8 @@ func (obj surfaceObject) DamageBuffer(x int32, y int32, width int32, height int3
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // These errors can be emitted in response to wl_surface requests.
@@ -3404,18 +3904,16 @@ func (enum SurfaceError) String() string {
 }
 
 const (
-	seatInterface = "wl_seat"
-	seatVersion   = 7
+	SeatInterface = "wl_seat"
+	SeatVersion   = 7
 )
 
 // A seat is a group of keyboards, pointer and touch devices. This
 // object is published as a global during start up, or when such a
 // device is hot plugged.  A seat typically has a pointer and
 // maintains a keyboard focus and a pointer focus.
-type seatObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Seat struct {
+	Listener interface {
 		// This is emitted whenever a seat gains or loses the pointer,
 		// keyboard or touch capabilities.  The argument is a capability
 		// enum containing the complete set of capabilities this seat has.
@@ -3440,33 +3938,67 @@ type seatObject struct {
 		//
 		// The above behavior also applies to wl_keyboard and wl_touch with the
 		// keyboard and touch capabilities, respectively.
-		Capabilities(capabilities uint32)
+		Capabilities(capabilities SeatCapability)
 
 		// In a multiseat configuration this can be used by the client to help
 		// identify which physical devices the seat represents. Based on
 		// the seat configuration used by the compositor.
 		Name(name string)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewSeat returns a newly instantiated Seat. It is
+// primarily intended for use by generated code.
+func NewSeat(state wire.State) *Seat {
+	return &Seat{state: state}
+}
+
+func BindSeat(state wire.State, registry wire.Binder, name, version uint32) *Seat {
+	obj := NewSeat(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SeatInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Seat) State() wire.State {
+	return obj.state
+}
+
+func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		capabilities := msg.ReadUint()
+
+		capabilities := SeatCapability(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Capabilities(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Capabilities(
 			capabilities,
 		)
 		return nil
 
 	case 1:
+
 		name := msg.ReadString()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Name(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Name(
 			name,
 		)
 		return nil
@@ -3479,25 +4011,25 @@ func (obj seatObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj seatObject) ID() uint32 {
+func (obj *Seat) ID() uint32 {
 	return obj.id
 }
 
-func (obj *seatObject) SetID(id uint32) {
+func (obj *Seat) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj seatObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Seat) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj seatObject) String() string {
+func (obj *Seat) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_seat", obj.id)
 }
 
-func (obj seatObject) MethodName(op uint16) string {
+func (obj *Seat) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "capabilities"
@@ -3517,14 +4049,17 @@ func (obj seatObject) MethodName(op uint16) string {
 // It is a protocol violation to issue this request on a seat that has
 // never had the pointer capability. The missing_capability error will
 // be sent in this case.
-func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Seat) GetPointer() (id *Pointer) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "get_pointer"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewPointer(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // The ID provided will be initialized to the wl_keyboard interface
@@ -3535,14 +4070,17 @@ func (obj seatObject) GetPointer(id uint32) *wire.MessageBuilder {
 // It is a protocol violation to issue this request on a seat that has
 // never had the keyboard capability. The missing_capability error will
 // be sent in this case.
-func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Seat) GetKeyboard() (id *Keyboard) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "get_keyboard"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewKeyboard(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // The ID provided will be initialized to the wl_touch interface
@@ -3553,24 +4091,28 @@ func (obj seatObject) GetKeyboard(id uint32) *wire.MessageBuilder {
 // It is a protocol violation to issue this request on a seat that has
 // never had the touch capability. The missing_capability error will
 // be sent in this case.
-func (obj seatObject) GetTouch(id uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *Seat) GetTouch() (id *Touch) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "get_touch"
 	builder.Args = []any{id}
 
-	builder.WriteUint(id)
+	id = NewTouch(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 // Using this request a client can tell the server that it is not going to
 // use the seat object anymore.
-func (obj seatObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 3)
+func (obj *Seat) Release() {
+	builder := wire.NewMessage(obj, 3)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This is a bitmask of capabilities this seat has; if a member is
@@ -3621,8 +4163,8 @@ func (enum SeatError) String() string {
 }
 
 const (
-	pointerInterface = "wl_pointer"
-	pointerVersion   = 7
+	PointerInterface = "wl_pointer"
+	PointerVersion   = 7
 )
 
 // The wl_pointer interface represents one or more input devices,
@@ -3633,24 +4175,22 @@ const (
 // events for the surfaces that the pointer is located over,
 // and button and axis events for button presses, button releases
 // and scrolling.
-type pointerObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Pointer struct {
+	Listener interface {
 		// Notification that this seat's pointer is focused on a certain
 		// surface.
 		//
 		// When a seat's focus enters a surface, the pointer image
 		// is undefined and a client should respond to this event by setting
 		// an appropriate pointer image with the set_cursor request.
-		Enter(serial uint32, surface uint32, surfaceX wire.Fixed, surfaceY wire.Fixed)
+		Enter(serial uint32, surface *Surface, surfaceX wire.Fixed, surfaceY wire.Fixed)
 
 		// Notification that this seat's pointer is no longer focused on
 		// a certain surface.
 		//
 		// The leave notification is sent before the enter notification
 		// for the new focus.
-		Leave(serial uint32, surface uint32)
+		Leave(serial uint32, surface *Surface)
 
 		// Notification of pointer location change. The arguments
 		// surface_x and surface_y are the location relative to the
@@ -3671,7 +4211,7 @@ type pointerObject struct {
 		// kernel's event code list. All other button codes above 0xFFFF are
 		// currently undefined but may be used in future versions of this
 		// protocol.
-		Button(serial uint32, time uint32, button uint32, state uint32)
+		Button(serial uint32, time uint32, button uint32, state PointerButtonState)
 
 		// Scroll and other axis notifications.
 		//
@@ -3689,7 +4229,7 @@ type pointerObject struct {
 		//
 		// When applicable, a client can transform its content relative to the
 		// scroll distance.
-		Axis(time uint32, axis uint32, value wire.Fixed)
+		Axis(time uint32, axis PointerAxis, value wire.Fixed)
 
 		// Indicates the end of a set of events that logically belong together.
 		// A client is expected to accumulate the data in all events within the
@@ -3752,7 +4292,7 @@ type pointerObject struct {
 		//
 		// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 		// not guaranteed.
-		AxisSource(axisSource uint32)
+		AxisSource(axisSource PointerAxisSource)
 
 		// Stop notification for scroll and other axes.
 		//
@@ -3768,7 +4308,7 @@ type pointerObject struct {
 		// The timestamp is to be interpreted identical to the timestamp in the
 		// wl_pointer.axis event. The timestamp value may be the same as a
 		// preceding wl_pointer.axis event.
-		AxisStop(time uint32, axis uint32)
+		AxisStop(time uint32, axis PointerAxis)
 
 		// Discrete step information for scroll and other axes.
 		//
@@ -3796,21 +4336,54 @@ type pointerObject struct {
 		//
 		// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 		// not guaranteed.
-		AxisDiscrete(axis uint32, discrete int32)
+		AxisDiscrete(axis PointerAxis, discrete int32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewPointer returns a newly instantiated Pointer. It is
+// primarily intended for use by generated code.
+func NewPointer(state wire.State) *Pointer {
+	return &Pointer{state: state}
+}
+
+func BindPointer(state wire.State, registry wire.Binder, name, version uint32) *Pointer {
+	obj := NewPointer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: PointerInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Pointer) State() wire.State {
+	return obj.state
+}
+
+func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		serial := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		surfaceX := msg.ReadFixed()
+
 		surfaceY := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Enter(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Enter(
 			serial,
 			surface,
 			surfaceX,
@@ -3819,25 +4392,42 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		serial := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Leave(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Leave(
 			serial,
 			surface,
 		)
 		return nil
 
 	case 2:
+
 		time := msg.ReadUint()
+
 		surfaceX := msg.ReadFixed()
+
 		surfaceY := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Motion(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Motion(
 			time,
 			surfaceX,
 			surfaceY,
@@ -3845,14 +4435,23 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 3:
+
 		serial := msg.ReadUint()
+
 		time := msg.ReadUint()
+
 		button := msg.ReadUint()
-		state := msg.ReadUint()
+
+		state := PointerButtonState(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Button(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Button(
 			serial,
 			time,
 			button,
@@ -3861,13 +4460,21 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
+
 		time := msg.ReadUint()
-		axis := msg.ReadUint()
+
+		axis := PointerAxis(msg.ReadUint())
+
 		value := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Axis(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Axis(
 			time,
 			axis,
 			value,
@@ -3878,38 +4485,62 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Frame()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Frame()
 		return nil
 
 	case 6:
-		axisSource := msg.ReadUint()
+
+		axisSource := PointerAxisSource(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.AxisSource(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.AxisSource(
 			axisSource,
 		)
 		return nil
 
 	case 7:
+
 		time := msg.ReadUint()
-		axis := msg.ReadUint()
+
+		axis := PointerAxis(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.AxisStop(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.AxisStop(
 			time,
 			axis,
 		)
 		return nil
 
 	case 8:
-		axis := msg.ReadUint()
+
+		axis := PointerAxis(msg.ReadUint())
+
 		discrete := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.AxisDiscrete(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.AxisDiscrete(
 			axis,
 			discrete,
 		)
@@ -3923,25 +4554,25 @@ func (obj pointerObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj pointerObject) ID() uint32 {
+func (obj *Pointer) ID() uint32 {
 	return obj.id
 }
 
-func (obj *pointerObject) SetID(id uint32) {
+func (obj *Pointer) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj pointerObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Pointer) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj pointerObject) String() string {
+func (obj *Pointer) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_pointer", obj.id)
 }
 
-func (obj pointerObject) MethodName(op uint16) string {
+func (obj *Pointer) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "enter"
@@ -4005,17 +4636,18 @@ func (obj pointerObject) MethodName(op uint16) string {
 // wl_surface is no longer used as the cursor. When the use as a
 // cursor ends, the current and pending input regions become
 // undefined, and the wl_surface is unmapped.
-func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32, hotspotY int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX int32, hotspotY int32) {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "set_cursor"
 	builder.Args = []any{serial, surface, hotspotX, hotspotY}
 
 	builder.WriteUint(serial)
-	builder.WriteUint(surface)
+	builder.WriteObject(surface)
 	builder.WriteInt(hotspotX)
 	builder.WriteInt(hotspotY)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Using this request a client can tell the server that it is not going to
@@ -4023,12 +4655,13 @@ func (obj pointerObject) SetCursor(serial uint32, surface uint32, hotspotX int32
 //
 // This request destroys the pointer proxy object, so clients must not call
 // wl_pointer_destroy() after using this request.
-func (obj pointerObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Pointer) Release() {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 type PointerError int64
@@ -4145,29 +4778,27 @@ func (enum PointerAxisSource) String() string {
 }
 
 const (
-	keyboardInterface = "wl_keyboard"
-	keyboardVersion   = 7
+	KeyboardInterface = "wl_keyboard"
+	KeyboardVersion   = 7
 )
 
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
-type keyboardObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Keyboard struct {
+	Listener interface {
 		// This event provides a file descriptor to the client which can be
 		// memory-mapped to provide a keyboard mapping description.
 		//
 		// From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
 		// the recipient, as MAP_SHARED may fail.
-		Keymap(format uint32, fd *os.File, size uint32)
+		Keymap(format KeyboardKeymapFormat, fd *os.File, size uint32)
 
 		// Notification that this seat's keyboard focus is on a certain
 		// surface.
 		//
 		// The compositor must send the wl_keyboard.modifiers event after this
 		// event.
-		Enter(serial uint32, surface uint32, keys []byte)
+		Enter(serial uint32, surface *Surface, keys []byte)
 
 		// Notification that this seat's keyboard focus is no longer on
 		// a certain surface.
@@ -4177,7 +4808,7 @@ type keyboardObject struct {
 		//
 		// After this event client must assume that all keys, including modifiers,
 		// are lifted and also it must stop key repeating if there's some going on.
-		Leave(serial uint32, surface uint32)
+		Leave(serial uint32, surface *Surface)
 
 		// A key was pressed or released.
 		// The time argument is a timestamp with millisecond
@@ -4188,7 +4819,7 @@ type keyboardObject struct {
 		//
 		// If this event produces a change in modifiers, then the resulting
 		// wl_keyboard.modifiers event must be sent after this event.
-		Key(serial uint32, time uint32, key uint32, state uint32)
+		Key(serial uint32, time uint32, key uint32, state KeyboardKeyState)
 
 		// Notifies clients that the modifier and/or group state has
 		// changed, and it should update its local state.
@@ -4208,18 +4839,48 @@ type keyboardObject struct {
 		// of wl_keyboard.
 		RepeatInfo(rate int32, delay int32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewKeyboard returns a newly instantiated Keyboard. It is
+// primarily intended for use by generated code.
+func NewKeyboard(state wire.State) *Keyboard {
+	return &Keyboard{state: state}
+}
+
+func BindKeyboard(state wire.State, registry wire.Binder, name, version uint32) *Keyboard {
+	obj := NewKeyboard(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: KeyboardInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Keyboard) State() wire.State {
+	return obj.state
+}
+
+func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		format := msg.ReadUint()
+
+		format := KeyboardKeymapFormat(msg.ReadUint())
+
 		fd := msg.ReadFile()
+
 		size := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Keymap(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Keymap(
 			format,
 			fd,
 			size,
@@ -4227,13 +4888,23 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		serial := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		keys := msg.ReadArray()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Enter(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Enter(
 			serial,
 			surface,
 			keys,
@@ -4241,26 +4912,44 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+
 		serial := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Leave(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Leave(
 			serial,
 			surface,
 		)
 		return nil
 
 	case 3:
+
 		serial := msg.ReadUint()
+
 		time := msg.ReadUint()
+
 		key := msg.ReadUint()
-		state := msg.ReadUint()
+
+		state := KeyboardKeyState(msg.ReadUint())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Key(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Key(
 			serial,
 			time,
 			key,
@@ -4269,15 +4958,25 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
+
 		serial := msg.ReadUint()
+
 		modsDepressed := msg.ReadUint()
+
 		modsLatched := msg.ReadUint()
+
 		modsLocked := msg.ReadUint()
+
 		group := msg.ReadUint()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Modifiers(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Modifiers(
 			serial,
 			modsDepressed,
 			modsLatched,
@@ -4287,12 +4986,19 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
+
 		rate := msg.ReadInt()
+
 		delay := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.RepeatInfo(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.RepeatInfo(
 			rate,
 			delay,
 		)
@@ -4306,25 +5012,25 @@ func (obj keyboardObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj keyboardObject) ID() uint32 {
+func (obj *Keyboard) ID() uint32 {
 	return obj.id
 }
 
-func (obj *keyboardObject) SetID(id uint32) {
+func (obj *Keyboard) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj keyboardObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Keyboard) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj keyboardObject) String() string {
+func (obj *Keyboard) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_keyboard", obj.id)
 }
 
-func (obj keyboardObject) MethodName(op uint16) string {
+func (obj *Keyboard) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "keymap"
@@ -4348,12 +5054,13 @@ func (obj keyboardObject) MethodName(op uint16) string {
 	return "unknown method"
 }
 
-func (obj keyboardObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Keyboard) Release() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This specifies the format of the keymap provided to the
@@ -4404,8 +5111,8 @@ func (enum KeyboardKeyState) String() string {
 }
 
 const (
-	touchInterface = "wl_touch"
-	touchVersion   = 7
+	TouchInterface = "wl_touch"
+	TouchVersion   = 7
 )
 
 // The wl_touch interface represents a touchscreen
@@ -4416,15 +5123,13 @@ const (
 // with a down event, followed by zero or more motion events,
 // and ending with an up event. Events relating to the same
 // contact point can be identified by the ID of the sequence.
-type touchObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Touch struct {
+	Listener interface {
 		// A new touch point has appeared on the surface. This touch point is
 		// assigned a unique ID. Future events from this touch point reference
 		// this ID. The ID ceases to be valid after a touch up event and may be
 		// reused in the future.
-		Down(serial uint32, time uint32, surface uint32, id int32, x wire.Fixed, y wire.Fixed)
+		Down(serial uint32, time uint32, surface *Surface, id int32, x wire.Fixed, y wire.Fixed)
 
 		// The touch point has disappeared. No further events will be sent for
 		// this touch point and the touch point's ID is released and may be
@@ -4504,21 +5209,56 @@ type touchObject struct {
 		// orientation reports.
 		Orientation(id int32, orientation wire.Fixed)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewTouch returns a newly instantiated Touch. It is
+// primarily intended for use by generated code.
+func NewTouch(state wire.State) *Touch {
+	return &Touch{state: state}
+}
+
+func BindTouch(state wire.State, registry wire.Binder, name, version uint32) *Touch {
+	obj := NewTouch(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: TouchInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Touch) State() wire.State {
+	return obj.state
+}
+
+func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		serial := msg.ReadUint()
+
 		time := msg.ReadUint()
-		surface := msg.ReadUint()
+
+		surfaceID := msg.ReadUint()
+		surface := NewSurface(obj.state)
+		obj.state.Set(surfaceID, surface)
+
 		id := msg.ReadInt()
+
 		x := msg.ReadFixed()
+
 		y := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Down(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Down(
 			serial,
 			time,
 			surface,
@@ -4529,13 +5269,21 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		serial := msg.ReadUint()
+
 		time := msg.ReadUint()
+
 		id := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Up(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Up(
 			serial,
 			time,
 			id,
@@ -4543,14 +5291,23 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+
 		time := msg.ReadUint()
+
 		id := msg.ReadInt()
+
 		x := msg.ReadFixed()
+
 		y := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Motion(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Motion(
 			time,
 			id,
 			x,
@@ -4562,24 +5319,40 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Frame()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Frame()
 		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Cancel()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Cancel()
 		return nil
 
 	case 5:
+
 		id := msg.ReadInt()
+
 		major := msg.ReadFixed()
+
 		minor := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Shape(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Shape(
 			id,
 			major,
 			minor,
@@ -4587,12 +5360,19 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 6:
+
 		id := msg.ReadInt()
+
 		orientation := msg.ReadFixed()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Orientation(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Orientation(
 			id,
 			orientation,
 		)
@@ -4606,25 +5386,25 @@ func (obj touchObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj touchObject) ID() uint32 {
+func (obj *Touch) ID() uint32 {
 	return obj.id
 }
 
-func (obj *touchObject) SetID(id uint32) {
+func (obj *Touch) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj touchObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Touch) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj touchObject) String() string {
+func (obj *Touch) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_touch", obj.id)
 }
 
-func (obj touchObject) MethodName(op uint16) string {
+func (obj *Touch) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "down"
@@ -4651,17 +5431,18 @@ func (obj touchObject) MethodName(op uint16) string {
 	return "unknown method"
 }
 
-func (obj touchObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Touch) Release() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 const (
-	outputInterface = "wl_output"
-	outputVersion   = 3
+	OutputInterface = "wl_output"
+	OutputVersion   = 3
 )
 
 // An output describes part of the compositor geometry.  The
@@ -4670,10 +5451,8 @@ const (
 // actually visible.  This typically corresponds to a monitor that
 // displays part of the compositor space.  This object is published
 // as global during start up, or when a monitor is hotplugged.
-type outputObject struct {
-	id       uint32
-	delete   func()
-	listener interface {
+type Output struct {
+	Listener interface {
 		// The geometry event describes geometric properties of the output.
 		// The event is sent when binding to the output object and whenever
 		// any of the properties change.
@@ -4687,7 +5466,7 @@ type outputObject struct {
 		// outputs, might fake this information. Instead of using x and y, clients
 		// should use xdg_output.logical_position. Instead of using make and model,
 		// clients should use xdg_output.name and xdg_output.description.
-		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel int32, make string, model string, transform int32)
+		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel OutputSubpixel, make string, model string, transform OutputTransform)
 
 		// The mode event describes an available mode for the output.
 		//
@@ -4719,7 +5498,7 @@ type outputObject struct {
 		// Note: this information is not always meaningful for all outputs. Some
 		// compositors, such as those exposing virtual outputs, might fake the
 		// refresh rate or the size.
-		Mode(flags uint32, width int32, height int32, refresh int32)
+		Mode(flags OutputMode, width int32, height int32, refresh int32)
 
 		// This event is sent after all other properties have been
 		// sent after binding to the output object and after any
@@ -4748,23 +5527,58 @@ type outputObject struct {
 		// a higher detail image.
 		Scale(factor int32)
 	}
+
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
+// NewOutput returns a newly instantiated Output. It is
+// primarily intended for use by generated code.
+func NewOutput(state wire.State) *Output {
+	return &Output{state: state}
+}
+
+func BindOutput(state wire.State, registry wire.Binder, name, version uint32) *Output {
+	obj := NewOutput(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: OutputInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Output) State() wire.State {
+	return obj.state
+}
+
+func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		x := msg.ReadInt()
+
 		y := msg.ReadInt()
+
 		physicalWidth := msg.ReadInt()
+
 		physicalHeight := msg.ReadInt()
-		subpixel := msg.ReadInt()
+
+		subpixel := OutputSubpixel(msg.ReadInt())
+
 		make := msg.ReadString()
+
 		model := msg.ReadString()
-		transform := msg.ReadInt()
+
+		transform := OutputTransform(msg.ReadInt())
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Geometry(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Geometry(
 			x,
 			y,
 			physicalWidth,
@@ -4777,14 +5591,23 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		flags := msg.ReadUint()
+
+		flags := OutputMode(msg.ReadUint())
+
 		width := msg.ReadInt()
+
 		height := msg.ReadInt()
+
 		refresh := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Mode(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Mode(
 			flags,
 			width,
 			height,
@@ -4796,15 +5619,25 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Done()
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Done()
 		return nil
 
 	case 3:
+
 		factor := msg.ReadInt()
+
 		if err := msg.Err(); err != nil {
 			return err
 		}
-		obj.listener.Scale(
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Scale(
 			factor,
 		)
 		return nil
@@ -4817,25 +5650,25 @@ func (obj outputObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj outputObject) ID() uint32 {
+func (obj *Output) ID() uint32 {
 	return obj.id
 }
 
-func (obj *outputObject) SetID(id uint32) {
+func (obj *Output) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj outputObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Output) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj outputObject) String() string {
+func (obj *Output) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_output", obj.id)
 }
 
-func (obj outputObject) MethodName(op uint16) string {
+func (obj *Output) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "geometry"
@@ -4855,12 +5688,13 @@ func (obj outputObject) MethodName(op uint16) string {
 
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
-func (obj outputObject) Release() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Output) Release() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "release"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This enumeration describes how the physical
@@ -5005,22 +5839,39 @@ func (enum OutputMode) String() string {
 }
 
 const (
-	regionInterface = "wl_region"
-	regionVersion   = 1
+	RegionInterface = "wl_region"
+	RegionVersion   = 1
 )
 
 // A region object describes an area.
 //
 // Region objects are used to describe the opaque and input
 // regions of a surface.
-type regionObject struct {
-	id     uint32
-	delete func()
+type Region struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewRegion returns a newly instantiated Region. It is
+// primarily intended for use by generated code.
+func NewRegion(state wire.State) *Region {
+	return &Region{state: state}
+}
+
+func BindRegion(state wire.State, registry wire.Binder, name, version uint32) *Region {
+	obj := NewRegion(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: RegionInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Region) State() wire.State {
+	return obj.state
+}
+
+func (obj *Region) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_region",
@@ -5029,25 +5880,25 @@ func (obj regionObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj regionObject) ID() uint32 {
+func (obj *Region) ID() uint32 {
 	return obj.id
 }
 
-func (obj *regionObject) SetID(id uint32) {
+func (obj *Region) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj regionObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Region) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj regionObject) String() string {
+func (obj *Region) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_region", obj.id)
 }
 
-func (obj regionObject) MethodName(op uint16) string {
+func (obj *Region) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -5055,17 +5906,18 @@ func (obj regionObject) MethodName(op uint16) string {
 }
 
 // Destroy the region.  This will invalidate the object ID.
-func (obj regionObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Region) Destroy() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Add the specified rectangle to the region.
-func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Region) Add(x int32, y int32, width int32, height int32) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "add"
 	builder.Args = []any{x, y, width, height}
 
@@ -5074,12 +5926,13 @@ func (obj regionObject) Add(x int32, y int32, width int32, height int32) *wire.M
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Subtract the specified rectangle from the region.
-func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *Region) Subtract(x int32, y int32, width int32, height int32) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "subtract"
 	builder.Args = []any{x, y, width, height}
 
@@ -5088,12 +5941,13 @@ func (obj regionObject) Subtract(x int32, y int32, width int32, height int32) *w
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 const (
-	subcompositorInterface = "wl_subcompositor"
-	subcompositorVersion   = 1
+	SubcompositorInterface = "wl_subcompositor"
+	SubcompositorVersion   = 1
 )
 
 // The global interface exposing sub-surface compositing capabilities.
@@ -5115,14 +5969,31 @@ const (
 // a video player with decorations and video in separate wl_surface
 // objects. This should allow the compositor to pass YUV video buffer
 // processing to dedicated overlay hardware when possible.
-type subcompositorObject struct {
-	id     uint32
-	delete func()
+type Subcompositor struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewSubcompositor returns a newly instantiated Subcompositor. It is
+// primarily intended for use by generated code.
+func NewSubcompositor(state wire.State) *Subcompositor {
+	return &Subcompositor{state: state}
+}
+
+func BindSubcompositor(state wire.State, registry wire.Binder, name, version uint32) *Subcompositor {
+	obj := NewSubcompositor(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SubcompositorInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Subcompositor) State() wire.State {
+	return obj.state
+}
+
+func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_subcompositor",
@@ -5131,25 +6002,25 @@ func (obj subcompositorObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj subcompositorObject) ID() uint32 {
+func (obj *Subcompositor) ID() uint32 {
 	return obj.id
 }
 
-func (obj *subcompositorObject) SetID(id uint32) {
+func (obj *Subcompositor) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj subcompositorObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Subcompositor) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj subcompositorObject) String() string {
+func (obj *Subcompositor) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_subcompositor", obj.id)
 }
 
-func (obj subcompositorObject) MethodName(op uint16) string {
+func (obj *Subcompositor) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -5159,12 +6030,13 @@ func (obj subcompositorObject) MethodName(op uint16) string {
 // Informs the server that the client will not be using this
 // protocol object anymore. This does not affect any other
 // objects, wl_subsurface objects included.
-func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Subcompositor) Destroy() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Create a sub-surface interface for the given surface, and
@@ -5182,16 +6054,19 @@ func (obj subcompositorObject) Destroy() *wire.MessageBuilder {
 //
 // This request modifies the behaviour of wl_surface.commit request on
 // the sub-surface, see the documentation on wl_subsurface interface.
-func (obj subcompositorObject) GetSubsurface(id uint32, surface uint32, parent uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Subcompositor) GetSubsurface(surface *Surface, parent *Surface) (id *Subsurface) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "get_subsurface"
 	builder.Args = []any{id, surface, parent}
 
-	builder.WriteUint(id)
-	builder.WriteUint(surface)
-	builder.WriteUint(parent)
+	id = NewSubsurface(obj.state)
+	obj.state.Add(id)
+	builder.WriteObject(id)
+	builder.WriteObject(surface)
+	builder.WriteObject(parent)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return id
 }
 
 type SubcompositorError int64
@@ -5211,8 +6086,8 @@ func (enum SubcompositorError) String() string {
 }
 
 const (
-	subsurfaceInterface = "wl_subsurface"
-	subsurfaceVersion   = 1
+	SubsurfaceInterface = "wl_subsurface"
+	SubsurfaceVersion   = 1
 )
 
 // An additional interface to a wl_surface object, which has been
@@ -5264,14 +6139,31 @@ const (
 //
 // If the parent wl_surface object is destroyed, the sub-surface is
 // unmapped.
-type subsurfaceObject struct {
-	id     uint32
-	delete func()
+type Subsurface struct {
+	OnDelete func()
+
+	state wire.State
+	id    uint32
 }
 
-func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
-	switch msg.Op() {
-	}
+// NewSubsurface returns a newly instantiated Subsurface. It is
+// primarily intended for use by generated code.
+func NewSubsurface(state wire.State) *Subsurface {
+	return &Subsurface{state: state}
+}
+
+func BindSubsurface(state wire.State, registry wire.Binder, name, version uint32) *Subsurface {
+	obj := NewSubsurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SubsurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
+func (obj *Subsurface) State() wire.State {
+	return obj.state
+}
+
+func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	return wire.UnknownOpError{
 		Interface: "wl_subsurface",
@@ -5280,25 +6172,25 @@ func (obj subsurfaceObject) Dispatch(msg *wire.MessageBuffer) error {
 	}
 }
 
-func (obj subsurfaceObject) ID() uint32 {
+func (obj *Subsurface) ID() uint32 {
 	return obj.id
 }
 
-func (obj *subsurfaceObject) SetID(id uint32) {
+func (obj *Subsurface) SetID(id uint32) {
 	obj.id = id
 }
 
-func (obj subsurfaceObject) Delete() {
-	if obj.delete != nil {
-		obj.delete()
+func (obj *Subsurface) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
 	}
 }
 
-func (obj subsurfaceObject) String() string {
+func (obj *Subsurface) String() string {
 	return fmt.Sprintf("%v(%v)", "wl_subsurface", obj.id)
 }
 
-func (obj subsurfaceObject) MethodName(op uint16) string {
+func (obj *Subsurface) MethodName(op uint16) string {
 	switch op {
 	}
 
@@ -5310,12 +6202,13 @@ func (obj subsurfaceObject) MethodName(op uint16) string {
 // wl_subcompositor.get_subsurface request. The wl_surface's association
 // to the parent is deleted, and the wl_surface loses its role as
 // a sub-surface. The wl_surface is unmapped immediately.
-func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 0)
+func (obj *Subsurface) Destroy() {
+	builder := wire.NewMessage(obj, 0)
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This schedules a sub-surface position change.
@@ -5334,15 +6227,16 @@ func (obj subsurfaceObject) Destroy() *wire.MessageBuilder {
 // replaces the scheduled position from any previous request.
 //
 // The initial position is 0, 0.
-func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 1)
+func (obj *Subsurface) SetPosition(x int32, y int32) {
+	builder := wire.NewMessage(obj, 1)
 	builder.Method = "set_position"
 	builder.Args = []any{x, y}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // This sub-surface is taken from the stack, and put back just
@@ -5360,26 +6254,28 @@ func (obj subsurfaceObject) SetPosition(x int32, y int32) *wire.MessageBuilder {
 //
 // A new sub-surface is initially added as the top-most in the stack
 // of its siblings and parent.
-func (obj subsurfaceObject) PlaceAbove(sibling uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 2)
+func (obj *Subsurface) PlaceAbove(sibling *Surface) {
+	builder := wire.NewMessage(obj, 2)
 	builder.Method = "place_above"
 	builder.Args = []any{sibling}
 
-	builder.WriteUint(sibling)
+	builder.WriteObject(sibling)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // The sub-surface is placed just below the reference surface.
 // See wl_subsurface.place_above.
-func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 3)
+func (obj *Subsurface) PlaceBelow(sibling *Surface) {
+	builder := wire.NewMessage(obj, 3)
 	builder.Method = "place_below"
 	builder.Args = []any{sibling}
 
-	builder.WriteUint(sibling)
+	builder.WriteObject(sibling)
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Change the commit behaviour of the sub-surface to synchronized
@@ -5395,12 +6291,13 @@ func (obj subsurfaceObject) PlaceBelow(sibling uint32) *wire.MessageBuilder {
 // parent surface commits do not (re-)apply old state.
 //
 // See wl_subsurface for the recursive effect of this mode.
-func (obj subsurfaceObject) SetSync() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 4)
+func (obj *Subsurface) SetSync() {
+	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_sync"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 // Change the commit behaviour of the sub-surface to desynchronized
@@ -5422,12 +6319,13 @@ func (obj subsurfaceObject) SetSync() *wire.MessageBuilder {
 //
 // If a surface's parent surface behaves as desynchronized, then
 // the cached state is applied on set_desync.
-func (obj subsurfaceObject) SetDesync() *wire.MessageBuilder {
-	builder := wire.NewMessage(&obj, 5)
+func (obj *Subsurface) SetDesync() {
+	builder := wire.NewMessage(obj, 5)
 	builder.Method = "set_desync"
 	builder.Args = []any{}
 
-	return builder
+	obj.state.Enqueue(builder)
+	return
 }
 
 type SubsurfaceError int64

@@ -40,6 +40,7 @@ type Arg struct {
 	Type      string `xml:"type,attr"`
 	Interface string `xml:"interface,attr"`
 	Version   int    `xml:"version,attr"`
+	Enum      string `xml:"enum,attr"`
 }
 
 type Enum struct {
