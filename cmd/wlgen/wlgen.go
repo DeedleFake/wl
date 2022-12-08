@@ -18,10 +18,12 @@ import (
 	"deedles.dev/wl/protocol"
 )
 
+const baseTmpl = "wlgen.tmpl"
+
 var (
 	//go:embed *.tmpl
 	tmplFS embed.FS
-	tmpl   = template.Must(template.New("base").Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))
+	tmpl   = template.Must(template.New(baseTmpl).Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))
 
 	tmplFuncs = map[string]any{
 		"camel": func(v string) string {
@@ -235,7 +237,7 @@ extraImportsLoop:
 	}
 
 	var buf bytes.Buffer
-	err = tmpl.ExecuteTemplate(&buf, "main.tmpl", TemplateContext{
+	err = tmpl.ExecuteTemplate(&buf, baseTmpl, TemplateContext{
 		Protocol:     proto,
 		Package:      *pkg,
 		Prefix:       *prefix,
