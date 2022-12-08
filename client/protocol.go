@@ -276,13 +276,6 @@ func NewRegistry(state wire.State) *Registry {
 	return &Registry{state: state}
 }
 
-func BindRegistry(state wire.State, registry wire.Binder, name, version uint32) *Registry {
-	obj := NewRegistry(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: RegistryInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Registry) State() wire.State {
 	return obj.state
 }
@@ -402,13 +395,6 @@ type Callback struct {
 // primarily intended for use by generated code.
 func NewCallback(state wire.State) *Callback {
 	return &Callback{state: state}
-}
-
-func BindCallback(state wire.State, registry wire.Binder, name, version uint32) *Callback {
-	obj := NewCallback(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: CallbackInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Callback) State() wire.State {
@@ -585,13 +571,6 @@ type ShmPool struct {
 // primarily intended for use by generated code.
 func NewShmPool(state wire.State) *ShmPool {
 	return &ShmPool{state: state}
-}
-
-func BindShmPool(state wire.State, registry wire.Binder, name, version uint32) *ShmPool {
-	obj := NewShmPool(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: ShmPoolInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *ShmPool) State() wire.State {
@@ -1507,13 +1486,6 @@ func NewBuffer(state wire.State) *Buffer {
 	return &Buffer{state: state}
 }
 
-func BindBuffer(state wire.State, registry wire.Binder, name, version uint32) *Buffer {
-	obj := NewBuffer(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: BufferInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Buffer) State() wire.State {
 	return obj.state
 }
@@ -1649,13 +1621,6 @@ type DataOffer struct {
 // primarily intended for use by generated code.
 func NewDataOffer(state wire.State) *DataOffer {
 	return &DataOffer{state: state}
-}
-
-func BindDataOffer(state wire.State, registry wire.Binder, name, version uint32) *DataOffer {
-	obj := NewDataOffer(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: DataOfferInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *DataOffer) State() wire.State {
@@ -2019,13 +1984,6 @@ func NewDataSource(state wire.State) *DataSource {
 	return &DataSource{state: state}
 }
 
-func BindDataSource(state wire.State, registry wire.Binder, name, version uint32) *DataSource {
-	obj := NewDataSource(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: DataSourceInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *DataSource) State() wire.State {
 	return obj.state
 }
@@ -2313,13 +2271,6 @@ type DataDevice struct {
 // primarily intended for use by generated code.
 func NewDataDevice(state wire.State) *DataDevice {
 	return &DataDevice{state: state}
-}
-
-func BindDataDevice(state wire.State, registry wire.Binder, name, version uint32) *DataDevice {
-	obj := NewDataDevice(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: DataDeviceInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *DataDevice) State() wire.State {
@@ -2895,13 +2846,6 @@ func NewShellSurface(state wire.State) *ShellSurface {
 	return &ShellSurface{state: state}
 }
 
-func BindShellSurface(state wire.State, registry wire.Binder, name, version uint32) *ShellSurface {
-	obj := NewShellSurface(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: ShellSurfaceInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *ShellSurface) State() wire.State {
 	return obj.state
 }
@@ -3424,13 +3368,6 @@ type Surface struct {
 // primarily intended for use by generated code.
 func NewSurface(state wire.State) *Surface {
 	return &Surface{state: state}
-}
-
-func BindSurface(state wire.State, registry wire.Binder, name, version uint32) *Surface {
-	obj := NewSurface(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: SurfaceInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Surface) State() wire.State {
@@ -4351,13 +4288,6 @@ func NewPointer(state wire.State) *Pointer {
 	return &Pointer{state: state}
 }
 
-func BindPointer(state wire.State, registry wire.Binder, name, version uint32) *Pointer {
-	obj := NewPointer(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: PointerInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Pointer) State() wire.State {
 	return obj.state
 }
@@ -4852,13 +4782,6 @@ func NewKeyboard(state wire.State) *Keyboard {
 	return &Keyboard{state: state}
 }
 
-func BindKeyboard(state wire.State, registry wire.Binder, name, version uint32) *Keyboard {
-	obj := NewKeyboard(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: KeyboardInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Keyboard) State() wire.State {
 	return obj.state
 }
@@ -5220,13 +5143,6 @@ type Touch struct {
 // primarily intended for use by generated code.
 func NewTouch(state wire.State) *Touch {
 	return &Touch{state: state}
-}
-
-func BindTouch(state wire.State, registry wire.Binder, name, version uint32) *Touch {
-	obj := NewTouch(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: TouchInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Touch) State() wire.State {
@@ -5860,13 +5776,6 @@ func NewRegion(state wire.State) *Region {
 	return &Region{state: state}
 }
 
-func BindRegion(state wire.State, registry wire.Binder, name, version uint32) *Region {
-	obj := NewRegion(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: RegionInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Region) State() wire.State {
 	return obj.state
 }
@@ -6150,13 +6059,6 @@ type Subsurface struct {
 // primarily intended for use by generated code.
 func NewSubsurface(state wire.State) *Subsurface {
 	return &Subsurface{state: state}
-}
-
-func BindSubsurface(state wire.State, registry wire.Binder, name, version uint32) *Subsurface {
-	obj := NewSubsurface(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: SubsurfaceInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Subsurface) State() wire.State {

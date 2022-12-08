@@ -15,7 +15,9 @@ import (
 	"strings"
 	"text/template"
 
+	"deedles.dev/wl/internal/set"
 	"deedles.dev/wl/protocol"
+	"golang.org/x/exp/maps"
 )
 
 const baseTmpl = "wlgen.tmpl"
@@ -132,6 +134,7 @@ type Context struct {
 	Protocol     protocol.Protocol
 	Config       Config
 	IsClient     bool
+	Locals       set.Set[string]
 	ExtraImports []string
 }
 
@@ -163,29 +166,38 @@ func main() {
 		Protocol: proto,
 		Config:   conf,
 		IsClient: *client,
+		Locals:   make(set.Set[string]),
 	}
 
+	extraImports := make(set.Set[string])
 	for _, i := range proto.Interfaces {
-		if len(ctx.ExtraImports) == 0 {
-			for _, req := range i.Requests {
-				for _, arg := range req.Args {
-					if arg.Type == "fd" {
-						ctx.ExtraImports = append(ctx.ExtraImports, "os")
+		for _, req := range i.Requests {
+			for _, arg := range req.Args {
+				switch arg.Type {
+				case "new_id":
+					if arg.Interface != "" {
+						ctx.Locals.Add(arg.Interface)
 					}
+				case "fd":
+					extraImports.Add("os")
 				}
 			}
 		}
 
-		if len(ctx.ExtraImports) == 0 {
-			for _, ev := range i.Events {
-				for _, arg := range ev.Args {
-					if arg.Type == "fd" {
-						ctx.ExtraImports = append(ctx.ExtraImports, "os")
+		for _, ev := range i.Events {
+			for _, arg := range ev.Args {
+				switch arg.Type {
+				case "new_id":
+					if arg.Interface != "" {
+						ctx.Locals.Add(arg.Interface)
 					}
+				case "fd":
+					extraImports.Add("os")
 				}
 			}
 		}
 	}
+	ctx.ExtraImports = maps.Keys(extraImports)
 
 	ctx.T = parseTemplates(ctx)
 

@@ -48,7 +48,7 @@ import (
 		return &{{$name}}{state: state}
 	}
 
-	{{if $.IsClient}}
+	{{if and $.IsClient ($.Locals.Has $interface.Name | not)}}
 		func Bind{{$name}}(state wire.State, registry wire.Binder, name, version uint32) *{{$name}} {
 			obj := New{{$name}}(state)
 			state.Add(obj)

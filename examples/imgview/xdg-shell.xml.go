@@ -272,13 +272,6 @@ func NewPositioner(state wire.State) *Positioner {
 	return &Positioner{state: state}
 }
 
-func BindPositioner(state wire.State, registry wire.Binder, name, version uint32) *Positioner {
-	obj := NewPositioner(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: PositionerInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Positioner) State() wire.State {
 	return obj.state
 }
@@ -764,13 +757,6 @@ func NewSurface(state wire.State) *Surface {
 	return &Surface{state: state}
 }
 
-func BindSurface(state wire.State, registry wire.Binder, name, version uint32) *Surface {
-	obj := NewSurface(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: SurfaceInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Surface) State() wire.State {
 	return obj.state
 }
@@ -1118,13 +1104,6 @@ type Toplevel struct {
 // primarily intended for use by generated code.
 func NewToplevel(state wire.State) *Toplevel {
 	return &Toplevel{state: state}
-}
-
-func BindToplevel(state wire.State, registry wire.Binder, name, version uint32) *Toplevel {
-	obj := NewToplevel(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: ToplevelInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Toplevel) State() wire.State {
@@ -1923,13 +1902,6 @@ type Popup struct {
 // primarily intended for use by generated code.
 func NewPopup(state wire.State) *Popup {
 	return &Popup{state: state}
-}
-
-func BindPopup(state wire.State, registry wire.Binder, name, version uint32) *Popup {
-	obj := NewPopup(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: PopupInterface, Version: version, ID: obj.ID()})
-	return obj
 }
 
 func (obj *Popup) State() wire.State {
