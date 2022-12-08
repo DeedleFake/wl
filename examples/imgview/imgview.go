@@ -1,5 +1,7 @@
 package main
 
+//go:generate go run deedles.dev/wl/cmd/wlgen -client -xml xdg-shell.xml
+
 import (
 	"context"
 	"errors"
@@ -19,7 +21,6 @@ import (
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/shm/shmimage"
 	"deedles.dev/wl/wire"
-	xdg "deedles.dev/xdg/client"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
@@ -39,14 +40,14 @@ type state struct {
 	registry   *wl.Registry
 	shm        *wl.Shm
 	compositor *wl.Compositor
-	wmBase     *xdg.WmBase
+	wmBase     *WmBase
 	seat       *wl.Seat
 	keyboard   *wl.Keyboard
 	pointer    *wl.Pointer
 
 	surface  *wl.Surface
-	xsurface *xdg.Surface
-	toplevel *xdg.Toplevel
+	xsurface *Surface
+	toplevel *Toplevel
 
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
@@ -145,8 +146,8 @@ func (state *registryListener) Global(name uint32, inter string, version uint32)
 		state.compositor = wl.BindCompositor(state.state, state.registry, name, version)
 	case wl.ShmInterface:
 		state.shm = wl.BindShm(state.state, state.registry, name, version)
-	case xdg.WmBaseInterface:
-		state.wmBase = xdg.BindWmBase(state.state, state.registry, name, version)
+	case WmBaseInterface:
+		state.wmBase = BindWmBase(state.state, state.registry, name, version)
 		state.wmBase.Listener = (*wmBaseListener)(state)
 	case wl.SeatInterface:
 		state.seat = wl.BindSeat(state.state, state.registry, name, version)
@@ -267,7 +268,7 @@ func (state *xdgToplevelListener) drawFrame(width, height int32) *wl.Buffer {
 	return buf
 }
 
-func (state *xdgToplevelListener) resize(w, h int32, states []xdg.ToplevelState) {
+func (state *xdgToplevelListener) resize(w, h int32, states []ToplevelState) {
 	buf := state.drawFrame(0, 0)
 	state.surface.Attach(buf, 0, 0)
 	state.surface.Commit()
