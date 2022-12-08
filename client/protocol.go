@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	displayInterface = "wl_display"
-	displayVersion   = 1
+	DisplayInterface = "wl_display"
+	DisplayVersion   = 1
 )
 
 // The core global object.  This is a special singleton object.  It
@@ -44,6 +44,13 @@ type Display struct {
 // primarily intended for use by generated code.
 func NewDisplay(state wire.State) *Display {
 	return &Display{state: state}
+}
+
+func BindDisplay(state wire.State, registry wire.Binder, name, version uint32) *Display {
+	obj := NewDisplay(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DisplayInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Display) State() wire.State {
@@ -144,6 +151,7 @@ func (obj *Display) Sync() (callback *Callback) {
 	obj.state.Add(callback)
 	builder.WriteObject(callback)
 
+	obj.state.Enqueue(builder)
 	return callback
 }
 
@@ -165,6 +173,7 @@ func (obj *Display) GetRegistry() (registry *Registry) {
 	obj.state.Add(registry)
 	builder.WriteObject(registry)
 
+	obj.state.Enqueue(builder)
 	return registry
 }
 
@@ -205,8 +214,8 @@ func (enum DisplayError) String() string {
 }
 
 const (
-	registryInterface = "wl_registry"
-	registryVersion   = 1
+	RegistryInterface = "wl_registry"
+	RegistryVersion   = 1
 )
 
 // The singleton global registry object.  The server has a number of
@@ -261,6 +270,13 @@ type Registry struct {
 // primarily intended for use by generated code.
 func NewRegistry(state wire.State) *Registry {
 	return &Registry{state: state}
+}
+
+func BindRegistry(state wire.State, registry wire.Binder, name, version uint32) *Registry {
+	obj := NewRegistry(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: RegistryInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Registry) State() wire.State {
@@ -351,12 +367,13 @@ func (obj *Registry) Bind(name uint32, id wire.NewID) {
 	builder.WriteUint(name)
 	builder.WriteNewID(id)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
 const (
-	callbackInterface = "wl_callback"
-	callbackVersion   = 1
+	CallbackInterface = "wl_callback"
+	CallbackVersion   = 1
 )
 
 // Clients can handle the 'done' event to get notified when
@@ -377,6 +394,13 @@ type Callback struct {
 // primarily intended for use by generated code.
 func NewCallback(state wire.State) *Callback {
 	return &Callback{state: state}
+}
+
+func BindCallback(state wire.State, registry wire.Binder, name, version uint32) *Callback {
+	obj := NewCallback(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: CallbackInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Callback) State() wire.State {
@@ -437,8 +461,8 @@ func (obj *Callback) MethodName(op uint16) string {
 }
 
 const (
-	compositorInterface = "wl_compositor"
-	compositorVersion   = 4
+	CompositorInterface = "wl_compositor"
+	CompositorVersion   = 4
 )
 
 // A compositor.  This object is a singleton global.  The
@@ -455,6 +479,13 @@ type Compositor struct {
 // primarily intended for use by generated code.
 func NewCompositor(state wire.State) *Compositor {
 	return &Compositor{state: state}
+}
+
+func BindCompositor(state wire.State, registry wire.Binder, name, version uint32) *Compositor {
+	obj := NewCompositor(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: CompositorInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Compositor) State() wire.State {
@@ -505,6 +536,7 @@ func (obj *Compositor) CreateSurface() (id *Surface) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -518,12 +550,13 @@ func (obj *Compositor) CreateRegion() (id *Region) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
 const (
-	shmPoolInterface = "wl_shm_pool"
-	shmPoolVersion   = 1
+	ShmPoolInterface = "wl_shm_pool"
+	ShmPoolVersion   = 1
 )
 
 // The wl_shm_pool object encapsulates a piece of memory shared
@@ -544,6 +577,13 @@ type ShmPool struct {
 // primarily intended for use by generated code.
 func NewShmPool(state wire.State) *ShmPool {
 	return &ShmPool{state: state}
+}
+
+func BindShmPool(state wire.State, registry wire.Binder, name, version uint32) *ShmPool {
+	obj := NewShmPool(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShmPoolInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *ShmPool) State() wire.State {
@@ -595,7 +635,7 @@ func (obj *ShmPool) MethodName(op uint16) string {
 // A buffer will keep a reference to the pool it was created from
 // so it is valid to destroy the pool immediately after creating
 // a buffer from it.
-func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride int32, format uint32) (id *Buffer) {
+func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride int32, format ShmFormat) (id *Buffer) {
 	builder := wire.NewMessage(obj, 0)
 	builder.Method = "create_buffer"
 	builder.Args = []any{id, offset, width, height, stride, format}
@@ -607,8 +647,9 @@ func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 	builder.WriteInt(stride)
-	builder.WriteUint(format)
+	builder.WriteUint(uint32(format))
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -622,6 +663,7 @@ func (obj *ShmPool) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -636,12 +678,13 @@ func (obj *ShmPool) Resize(size int32) {
 
 	builder.WriteInt(size)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
 const (
-	shmInterface = "wl_shm"
-	shmVersion   = 1
+	ShmInterface = "wl_shm"
+	ShmVersion   = 1
 )
 
 // A singleton global object that provides support for shared
@@ -658,7 +701,7 @@ type Shm struct {
 		// Informs the client about a valid pixel format that
 		// can be used for buffers. Known formats include
 		// argb8888 and xrgb8888.
-		Format(format uint32)
+		Format(format ShmFormat)
 	}
 
 	OnDelete func()
@@ -673,6 +716,13 @@ func NewShm(state wire.State) *Shm {
 	return &Shm{state: state}
 }
 
+func BindShm(state wire.State, registry wire.Binder, name, version uint32) *Shm {
+	obj := NewShm(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShmInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
 func (obj *Shm) State() wire.State {
 	return obj.state
 }
@@ -685,7 +735,7 @@ func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 
-		format := msg.ReadUint()
+		format := ShmFormat(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -746,6 +796,7 @@ func (obj *Shm) CreatePool(fd *os.File, size int32) (id *ShmPool) {
 	builder.WriteFile(fd)
 	builder.WriteInt(size)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -1410,8 +1461,8 @@ func (enum ShmFormat) String() string {
 }
 
 const (
-	bufferInterface = "wl_buffer"
-	bufferVersion   = 1
+	BufferInterface = "wl_buffer"
+	BufferVersion   = 1
 )
 
 // A buffer provides the content for a wl_surface. Buffers are
@@ -1446,6 +1497,13 @@ type Buffer struct {
 // primarily intended for use by generated code.
 func NewBuffer(state wire.State) *Buffer {
 	return &Buffer{state: state}
+}
+
+func BindBuffer(state wire.State, registry wire.Binder, name, version uint32) *Buffer {
+	obj := NewBuffer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: BufferInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Buffer) State() wire.State {
@@ -1509,12 +1567,13 @@ func (obj *Buffer) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
 const (
-	dataOfferInterface = "wl_data_offer"
-	dataOfferVersion   = 3
+	DataOfferInterface = "wl_data_offer"
+	DataOfferVersion   = 3
 )
 
 // A wl_data_offer represents a piece of data offered for transfer
@@ -1532,7 +1591,7 @@ type DataOffer struct {
 		// This event indicates the actions offered by the data source. It
 		// will be sent right after wl_data_device.enter, or anytime the source
 		// side changes its offered actions through wl_data_source.set_actions.
-		SourceActions(sourceActions uint32)
+		SourceActions(sourceActions DataDeviceManagerDndAction)
 
 		// This event indicates the action selected by the compositor after
 		// matching the source/destination side actions. Only one action (or
@@ -1569,7 +1628,7 @@ type DataOffer struct {
 		// user (e.g. popping up a menu with the available options). The
 		// final wl_data_offer.set_actions and wl_data_offer.accept requests
 		// must happen before the call to wl_data_offer.finish.
-		Action(dndAction uint32)
+		Action(dndAction DataDeviceManagerDndAction)
 	}
 
 	OnDelete func()
@@ -1582,6 +1641,13 @@ type DataOffer struct {
 // primarily intended for use by generated code.
 func NewDataOffer(state wire.State) *DataOffer {
 	return &DataOffer{state: state}
+}
+
+func BindDataOffer(state wire.State, registry wire.Binder, name, version uint32) *DataOffer {
+	obj := NewDataOffer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataOfferInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *DataOffer) State() wire.State {
@@ -1608,7 +1674,7 @@ func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		sourceActions := msg.ReadUint()
+		sourceActions := DataDeviceManagerDndAction(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -1620,7 +1686,7 @@ func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 
-		dndAction := msg.ReadUint()
+		dndAction := DataDeviceManagerDndAction(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -1693,6 +1759,7 @@ func (obj *DataOffer) Accept(serial uint32, mimeType string) {
 	builder.WriteUint(serial)
 	builder.WriteString(mimeType)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -1719,6 +1786,7 @@ func (obj *DataOffer) Receive(mimeType string, fd *os.File) {
 	builder.WriteString(mimeType)
 	builder.WriteFile(fd)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -1728,6 +1796,7 @@ func (obj *DataOffer) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -1750,6 +1819,7 @@ func (obj *DataOffer) Finish() {
 	builder.Method = "finish"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -1784,14 +1854,15 @@ func (obj *DataOffer) Finish() {
 //
 // This request can only be made on drag-and-drop offers, a protocol error
 // will be raised otherwise.
-func (obj *DataOffer) SetActions(dndActions uint32, preferredAction uint32) {
+func (obj *DataOffer) SetActions(dndActions DataDeviceManagerDndAction, preferredAction DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_actions"
 	builder.Args = []any{dndActions, preferredAction}
 
-	builder.WriteUint(dndActions)
-	builder.WriteUint(preferredAction)
+	builder.WriteUint(uint32(dndActions))
+	builder.WriteUint(uint32(preferredAction))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -1830,8 +1901,8 @@ func (enum DataOfferError) String() string {
 }
 
 const (
-	dataSourceInterface = "wl_data_source"
-	dataSourceVersion   = 3
+	DataSourceInterface = "wl_data_source"
+	DataSourceVersion   = 3
 )
 
 // The wl_data_source object is the source side of a wl_data_offer.
@@ -1917,7 +1988,7 @@ type DataSource struct {
 		//
 		// Clients can trigger cursor surface changes from this point, so
 		// they reflect the current action.
-		Action(dndAction uint32)
+		Action(dndAction DataDeviceManagerDndAction)
 	}
 
 	OnDelete func()
@@ -1930,6 +2001,13 @@ type DataSource struct {
 // primarily intended for use by generated code.
 func NewDataSource(state wire.State) *DataSource {
 	return &DataSource{state: state}
+}
+
+func BindDataSource(state wire.State, registry wire.Binder, name, version uint32) *DataSource {
+	obj := NewDataSource(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataSourceInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *DataSource) State() wire.State {
@@ -1992,7 +2070,7 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 5:
 
-		dndAction := msg.ReadUint()
+		dndAction := DataDeviceManagerDndAction(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -2062,6 +2140,7 @@ func (obj *DataSource) Offer(mimeType string) {
 
 	builder.WriteString(mimeType)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2071,6 +2150,7 @@ func (obj *DataSource) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2087,13 +2167,14 @@ func (obj *DataSource) Destroy() {
 // used in drag-and-drop, so it must be performed before
 // wl_data_device.start_drag. Attempting to use the source other than
 // for drag-and-drop will raise a protocol error.
-func (obj *DataSource) SetActions(dndActions uint32) {
+func (obj *DataSource) SetActions(dndActions DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 2)
 	builder.Method = "set_actions"
 	builder.Args = []any{dndActions}
 
-	builder.WriteUint(dndActions)
+	builder.WriteUint(uint32(dndActions))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2120,8 +2201,8 @@ func (enum DataSourceError) String() string {
 }
 
 const (
-	dataDeviceInterface = "wl_data_device"
-	dataDeviceVersion   = 3
+	DataDeviceInterface = "wl_data_device"
+	DataDeviceVersion   = 3
 )
 
 // There is one wl_data_device per seat which can be obtained
@@ -2196,6 +2277,13 @@ type DataDevice struct {
 // primarily intended for use by generated code.
 func NewDataDevice(state wire.State) *DataDevice {
 	return &DataDevice{state: state}
+}
+
+func BindDataDevice(state wire.State, registry wire.Binder, name, version uint32) *DataDevice {
+	obj := NewDataDevice(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataDeviceInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *DataDevice) State() wire.State {
@@ -2381,6 +2469,7 @@ func (obj *DataDevice) StartDrag(source *DataSource, origin *Surface, icon *Surf
 	builder.WriteObject(icon)
 	builder.WriteUint(serial)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2396,6 +2485,7 @@ func (obj *DataDevice) SetSelection(source *DataSource, serial uint32) {
 	builder.WriteObject(source)
 	builder.WriteUint(serial)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2405,6 +2495,7 @@ func (obj *DataDevice) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2425,8 +2516,8 @@ func (enum DataDeviceError) String() string {
 }
 
 const (
-	dataDeviceManagerInterface = "wl_data_device_manager"
-	dataDeviceManagerVersion   = 3
+	DataDeviceManagerInterface = "wl_data_device_manager"
+	DataDeviceManagerVersion   = 3
 )
 
 // The wl_data_device_manager is a singleton global object that
@@ -2450,6 +2541,13 @@ type DataDeviceManager struct {
 // primarily intended for use by generated code.
 func NewDataDeviceManager(state wire.State) *DataDeviceManager {
 	return &DataDeviceManager{state: state}
+}
+
+func BindDataDeviceManager(state wire.State, registry wire.Binder, name, version uint32) *DataDeviceManager {
+	obj := NewDataDeviceManager(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: DataDeviceManagerInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *DataDeviceManager) State() wire.State {
@@ -2500,6 +2598,7 @@ func (obj *DataDeviceManager) CreateDataSource() (id *DataSource) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -2514,6 +2613,7 @@ func (obj *DataDeviceManager) GetDataDevice(seat *Seat) (id *DataDevice) {
 	builder.WriteObject(id)
 	builder.WriteObject(seat)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -2575,8 +2675,8 @@ func (enum DataDeviceManagerDndAction) String() string {
 }
 
 const (
-	shellInterface = "wl_shell"
-	shellVersion   = 1
+	ShellInterface = "wl_shell"
+	ShellVersion   = 1
 )
 
 // This interface is implemented by servers that provide
@@ -2598,6 +2698,13 @@ type Shell struct {
 // primarily intended for use by generated code.
 func NewShell(state wire.State) *Shell {
 	return &Shell{state: state}
+}
+
+func BindShell(state wire.State, registry wire.Binder, name, version uint32) *Shell {
+	obj := NewShell(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShellInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Shell) State() wire.State {
@@ -2653,6 +2760,7 @@ func (obj *Shell) GetShellSurface(surface *Surface) (id *ShellSurface) {
 	builder.WriteObject(id)
 	builder.WriteObject(surface)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -2673,8 +2781,8 @@ func (enum ShellError) String() string {
 }
 
 const (
-	shellSurfaceInterface = "wl_shell_surface"
-	shellSurfaceVersion   = 1
+	ShellSurfaceInterface = "wl_shell_surface"
+	ShellSurfaceVersion   = 1
 )
 
 // An interface that may be implemented by a wl_surface, for
@@ -2711,7 +2819,7 @@ type ShellSurface struct {
 		//
 		// The width and height arguments specify the size of the window
 		// in surface-local coordinates.
-		Configure(edges uint32, width int32, height int32)
+		Configure(edges ShellSurfaceResize, width int32, height int32)
 
 		// The popup_done event is sent out when a popup grab is broken,
 		// that is, when the user clicks a surface that doesn't belong
@@ -2729,6 +2837,13 @@ type ShellSurface struct {
 // primarily intended for use by generated code.
 func NewShellSurface(state wire.State) *ShellSurface {
 	return &ShellSurface{state: state}
+}
+
+func BindShellSurface(state wire.State, registry wire.Binder, name, version uint32) *ShellSurface {
+	obj := NewShellSurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: ShellSurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *ShellSurface) State() wire.State {
@@ -2755,7 +2870,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		edges := msg.ReadUint()
+		edges := ShellSurfaceResize(msg.ReadUint())
 
 		width := msg.ReadInt()
 
@@ -2828,6 +2943,7 @@ func (obj *ShellSurface) Pong(serial uint32) {
 
 	builder.WriteUint(serial)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2844,6 +2960,7 @@ func (obj *ShellSurface) Move(seat *Seat, serial uint32) {
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2852,15 +2969,16 @@ func (obj *ShellSurface) Move(seat *Seat, serial uint32) {
 // This request must be used in response to a button press event.
 // The server may ignore resize requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
-func (obj *ShellSurface) Resize(seat *Seat, serial uint32, edges uint32) {
+func (obj *ShellSurface) Resize(seat *Seat, serial uint32, edges ShellSurfaceResize) {
 	builder := wire.NewMessage(obj, 2)
 	builder.Method = "resize"
 	builder.Args = []any{seat, serial, edges}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
-	builder.WriteUint(edges)
+	builder.WriteUint(uint32(edges))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2872,6 +2990,7 @@ func (obj *ShellSurface) SetToplevel() {
 	builder.Method = "set_toplevel"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2882,7 +3001,7 @@ func (obj *ShellSurface) SetToplevel() {
 // parent surface, in surface-local coordinates.
 //
 // The flags argument controls details of the transient behaviour.
-func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags uint32) {
+func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
 	builder := wire.NewMessage(obj, 4)
 	builder.Method = "set_transient"
 	builder.Args = []any{parent, x, y, flags}
@@ -2890,8 +3009,9 @@ func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags u
 	builder.WriteObject(parent)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
-	builder.WriteUint(flags)
+	builder.WriteUint(uint32(flags))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2928,15 +3048,16 @@ func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags u
 // The compositor must reply to this request with a configure event
 // with the dimensions for the output on which the surface will
 // be made fullscreen.
-func (obj *ShellSurface) SetFullscreen(method uint32, framerate uint32, output *Output) {
+func (obj *ShellSurface) SetFullscreen(method ShellSurfaceFullscreenMethod, framerate uint32, output *Output) {
 	builder := wire.NewMessage(obj, 5)
 	builder.Method = "set_fullscreen"
 	builder.Args = []any{method, framerate, output}
 
-	builder.WriteUint(method)
+	builder.WriteUint(uint32(method))
 	builder.WriteUint(framerate)
 	builder.WriteObject(output)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2959,7 +3080,7 @@ func (obj *ShellSurface) SetFullscreen(method uint32, framerate uint32, output *
 // The x and y arguments specify the location of the upper left
 // corner of the surface relative to the upper left corner of the
 // parent surface, in surface-local coordinates.
-func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x int32, y int32, flags uint32) {
+func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
 	builder := wire.NewMessage(obj, 6)
 	builder.Method = "set_popup"
 	builder.Args = []any{seat, serial, parent, x, y, flags}
@@ -2969,8 +3090,9 @@ func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x 
 	builder.WriteObject(parent)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
-	builder.WriteUint(flags)
+	builder.WriteUint(uint32(flags))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -2999,6 +3121,7 @@ func (obj *ShellSurface) SetMaximized(output *Output) {
 
 	builder.WriteObject(output)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3016,6 +3139,7 @@ func (obj *ShellSurface) SetTitle(title string) {
 
 	builder.WriteString(title)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3032,6 +3156,7 @@ func (obj *ShellSurface) SetClass(class string) {
 
 	builder.WriteString(class)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3159,8 +3284,8 @@ func (enum ShellSurfaceFullscreenMethod) String() string {
 }
 
 const (
-	surfaceInterface = "wl_surface"
-	surfaceVersion   = 4
+	SurfaceInterface = "wl_surface"
+	SurfaceVersion   = 4
 )
 
 // A surface is a rectangular area that may be displayed on zero
@@ -3235,6 +3360,13 @@ type Surface struct {
 // primarily intended for use by generated code.
 func NewSurface(state wire.State) *Surface {
 	return &Surface{state: state}
+}
+
+func BindSurface(state wire.State, registry wire.Binder, name, version uint32) *Surface {
+	obj := NewSurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Surface) State() wire.State {
@@ -3317,6 +3449,7 @@ func (obj *Surface) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3375,6 +3508,7 @@ func (obj *Surface) Attach(buffer *Buffer, x int32, y int32) {
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3409,6 +3543,7 @@ func (obj *Surface) Damage(x int32, y int32, width int32, height int32) {
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3453,6 +3588,7 @@ func (obj *Surface) Frame() (callback *Callback) {
 	obj.state.Add(callback)
 	builder.WriteObject(callback)
 
+	obj.state.Enqueue(builder)
 	return callback
 }
 
@@ -3487,6 +3623,7 @@ func (obj *Surface) SetOpaqueRegion(region *Region) {
 
 	builder.WriteObject(region)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3519,6 +3656,7 @@ func (obj *Surface) SetInputRegion(region *Region) {
 
 	builder.WriteObject(region)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3544,6 +3682,7 @@ func (obj *Surface) Commit() {
 	builder.Method = "commit"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3576,13 +3715,14 @@ func (obj *Surface) Commit() {
 // If transform is not one of the values from the
 // wl_output.transform enum the invalid_transform protocol error
 // is raised.
-func (obj *Surface) SetBufferTransform(transform int32) {
+func (obj *Surface) SetBufferTransform(transform OutputTransform) {
 	builder := wire.NewMessage(obj, 7)
 	builder.Method = "set_buffer_transform"
 	builder.Args = []any{transform}
 
-	builder.WriteInt(transform)
+	builder.WriteInt(int32(transform))
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3616,6 +3756,7 @@ func (obj *Surface) SetBufferScale(scale int32) {
 
 	builder.WriteInt(scale)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3661,6 +3802,7 @@ func (obj *Surface) DamageBuffer(x int32, y int32, width int32, height int32) {
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3694,8 +3836,8 @@ func (enum SurfaceError) String() string {
 }
 
 const (
-	seatInterface = "wl_seat"
-	seatVersion   = 7
+	SeatInterface = "wl_seat"
+	SeatVersion   = 7
 )
 
 // A seat is a group of keyboards, pointer and touch devices. This
@@ -3728,7 +3870,7 @@ type Seat struct {
 		//
 		// The above behavior also applies to wl_keyboard and wl_touch with the
 		// keyboard and touch capabilities, respectively.
-		Capabilities(capabilities uint32)
+		Capabilities(capabilities SeatCapability)
 
 		// In a multiseat configuration this can be used by the client to help
 		// identify which physical devices the seat represents. Based on
@@ -3748,6 +3890,13 @@ func NewSeat(state wire.State) *Seat {
 	return &Seat{state: state}
 }
 
+func BindSeat(state wire.State, registry wire.Binder, name, version uint32) *Seat {
+	obj := NewSeat(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SeatInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
 func (obj *Seat) State() wire.State {
 	return obj.state
 }
@@ -3760,7 +3909,7 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 
-		capabilities := msg.ReadUint()
+		capabilities := SeatCapability(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3837,6 +3986,7 @@ func (obj *Seat) GetPointer() (id *Pointer) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -3857,6 +4007,7 @@ func (obj *Seat) GetKeyboard() (id *Keyboard) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -3877,6 +4028,7 @@ func (obj *Seat) GetTouch() (id *Touch) {
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -3887,6 +4039,7 @@ func (obj *Seat) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -3938,8 +4091,8 @@ func (enum SeatError) String() string {
 }
 
 const (
-	pointerInterface = "wl_pointer"
-	pointerVersion   = 7
+	PointerInterface = "wl_pointer"
+	PointerVersion   = 7
 )
 
 // The wl_pointer interface represents one or more input devices,
@@ -3986,7 +4139,7 @@ type Pointer struct {
 		// kernel's event code list. All other button codes above 0xFFFF are
 		// currently undefined but may be used in future versions of this
 		// protocol.
-		Button(serial uint32, time uint32, button uint32, state uint32)
+		Button(serial uint32, time uint32, button uint32, state PointerButtonState)
 
 		// Scroll and other axis notifications.
 		//
@@ -4004,7 +4157,7 @@ type Pointer struct {
 		//
 		// When applicable, a client can transform its content relative to the
 		// scroll distance.
-		Axis(time uint32, axis uint32, value wire.Fixed)
+		Axis(time uint32, axis PointerAxis, value wire.Fixed)
 
 		// Indicates the end of a set of events that logically belong together.
 		// A client is expected to accumulate the data in all events within the
@@ -4067,7 +4220,7 @@ type Pointer struct {
 		//
 		// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 		// not guaranteed.
-		AxisSource(axisSource uint32)
+		AxisSource(axisSource PointerAxisSource)
 
 		// Stop notification for scroll and other axes.
 		//
@@ -4083,7 +4236,7 @@ type Pointer struct {
 		// The timestamp is to be interpreted identical to the timestamp in the
 		// wl_pointer.axis event. The timestamp value may be the same as a
 		// preceding wl_pointer.axis event.
-		AxisStop(time uint32, axis uint32)
+		AxisStop(time uint32, axis PointerAxis)
 
 		// Discrete step information for scroll and other axes.
 		//
@@ -4111,7 +4264,7 @@ type Pointer struct {
 		//
 		// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 		// not guaranteed.
-		AxisDiscrete(axis uint32, discrete int32)
+		AxisDiscrete(axis PointerAxis, discrete int32)
 	}
 
 	OnDelete func()
@@ -4124,6 +4277,13 @@ type Pointer struct {
 // primarily intended for use by generated code.
 func NewPointer(state wire.State) *Pointer {
 	return &Pointer{state: state}
+}
+
+func BindPointer(state wire.State, registry wire.Binder, name, version uint32) *Pointer {
+	obj := NewPointer(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: PointerInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Pointer) State() wire.State {
@@ -4202,7 +4362,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		button := msg.ReadUint()
 
-		state := msg.ReadUint()
+		state := PointerButtonState(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4219,7 +4379,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		time := msg.ReadUint()
 
-		axis := msg.ReadUint()
+		axis := PointerAxis(msg.ReadUint())
 
 		value := msg.ReadFixed()
 
@@ -4242,7 +4402,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 6:
 
-		axisSource := msg.ReadUint()
+		axisSource := PointerAxisSource(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4256,7 +4416,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		time := msg.ReadUint()
 
-		axis := msg.ReadUint()
+		axis := PointerAxis(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4269,7 +4429,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 8:
 
-		axis := msg.ReadUint()
+		axis := PointerAxis(msg.ReadUint())
 
 		discrete := msg.ReadInt()
 
@@ -4382,6 +4542,7 @@ func (obj *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX int32, h
 	builder.WriteInt(hotspotX)
 	builder.WriteInt(hotspotY)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -4395,6 +4556,7 @@ func (obj *Pointer) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -4512,8 +4674,8 @@ func (enum PointerAxisSource) String() string {
 }
 
 const (
-	keyboardInterface = "wl_keyboard"
-	keyboardVersion   = 7
+	KeyboardInterface = "wl_keyboard"
+	KeyboardVersion   = 7
 )
 
 // The wl_keyboard interface represents one or more keyboards
@@ -4525,7 +4687,7 @@ type Keyboard struct {
 		//
 		// From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
 		// the recipient, as MAP_SHARED may fail.
-		Keymap(format uint32, fd *os.File, size uint32)
+		Keymap(format KeyboardKeymapFormat, fd *os.File, size uint32)
 
 		// Notification that this seat's keyboard focus is on a certain
 		// surface.
@@ -4553,7 +4715,7 @@ type Keyboard struct {
 		//
 		// If this event produces a change in modifiers, then the resulting
 		// wl_keyboard.modifiers event must be sent after this event.
-		Key(serial uint32, time uint32, key uint32, state uint32)
+		Key(serial uint32, time uint32, key uint32, state KeyboardKeyState)
 
 		// Notifies clients that the modifier and/or group state has
 		// changed, and it should update its local state.
@@ -4586,6 +4748,13 @@ func NewKeyboard(state wire.State) *Keyboard {
 	return &Keyboard{state: state}
 }
 
+func BindKeyboard(state wire.State, registry wire.Binder, name, version uint32) *Keyboard {
+	obj := NewKeyboard(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: KeyboardInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
 func (obj *Keyboard) State() wire.State {
 	return obj.state
 }
@@ -4598,7 +4767,7 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 
-		format := msg.ReadUint()
+		format := KeyboardKeymapFormat(msg.ReadUint())
 
 		fd := msg.ReadFile()
 
@@ -4659,7 +4828,7 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		key := msg.ReadUint()
 
-		state := msg.ReadUint()
+		state := KeyboardKeyState(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4766,6 +4935,7 @@ func (obj *Keyboard) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -4817,8 +4987,8 @@ func (enum KeyboardKeyState) String() string {
 }
 
 const (
-	touchInterface = "wl_touch"
-	touchVersion   = 7
+	TouchInterface = "wl_touch"
+	TouchVersion   = 7
 )
 
 // The wl_touch interface represents a touchscreen
@@ -4926,6 +5096,13 @@ type Touch struct {
 // primarily intended for use by generated code.
 func NewTouch(state wire.State) *Touch {
 	return &Touch{state: state}
+}
+
+func BindTouch(state wire.State, registry wire.Binder, name, version uint32) *Touch {
+	obj := NewTouch(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: TouchInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Touch) State() wire.State {
@@ -5111,12 +5288,13 @@ func (obj *Touch) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
 const (
-	outputInterface = "wl_output"
-	outputVersion   = 3
+	OutputInterface = "wl_output"
+	OutputVersion   = 3
 )
 
 // An output describes part of the compositor geometry.  The
@@ -5140,7 +5318,7 @@ type Output struct {
 		// outputs, might fake this information. Instead of using x and y, clients
 		// should use xdg_output.logical_position. Instead of using make and model,
 		// clients should use xdg_output.name and xdg_output.description.
-		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel int32, make string, model string, transform int32)
+		Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel OutputSubpixel, make string, model string, transform OutputTransform)
 
 		// The mode event describes an available mode for the output.
 		//
@@ -5172,7 +5350,7 @@ type Output struct {
 		// Note: this information is not always meaningful for all outputs. Some
 		// compositors, such as those exposing virtual outputs, might fake the
 		// refresh rate or the size.
-		Mode(flags uint32, width int32, height int32, refresh int32)
+		Mode(flags OutputMode, width int32, height int32, refresh int32)
 
 		// This event is sent after all other properties have been
 		// sent after binding to the output object and after any
@@ -5214,6 +5392,13 @@ func NewOutput(state wire.State) *Output {
 	return &Output{state: state}
 }
 
+func BindOutput(state wire.State, registry wire.Binder, name, version uint32) *Output {
+	obj := NewOutput(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: OutputInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
 func (obj *Output) State() wire.State {
 	return obj.state
 }
@@ -5234,13 +5419,13 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 
 		physicalHeight := msg.ReadInt()
 
-		subpixel := msg.ReadInt()
+		subpixel := OutputSubpixel(msg.ReadInt())
 
 		make := msg.ReadString()
 
 		model := msg.ReadString()
 
-		transform := msg.ReadInt()
+		transform := OutputTransform(msg.ReadInt())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -5259,7 +5444,7 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		flags := msg.ReadUint()
+		flags := OutputMode(msg.ReadUint())
 
 		width := msg.ReadInt()
 
@@ -5348,6 +5533,7 @@ func (obj *Output) Release() {
 	builder.Method = "release"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5493,8 +5679,8 @@ func (enum OutputMode) String() string {
 }
 
 const (
-	regionInterface = "wl_region"
-	regionVersion   = 1
+	RegionInterface = "wl_region"
+	RegionVersion   = 1
 )
 
 // A region object describes an area.
@@ -5512,6 +5698,13 @@ type Region struct {
 // primarily intended for use by generated code.
 func NewRegion(state wire.State) *Region {
 	return &Region{state: state}
+}
+
+func BindRegion(state wire.State, registry wire.Binder, name, version uint32) *Region {
+	obj := NewRegion(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: RegionInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Region) State() wire.State {
@@ -5558,6 +5751,7 @@ func (obj *Region) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5572,6 +5766,7 @@ func (obj *Region) Add(x int32, y int32, width int32, height int32) {
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5586,12 +5781,13 @@ func (obj *Region) Subtract(x int32, y int32, width int32, height int32) {
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
 const (
-	subcompositorInterface = "wl_subcompositor"
-	subcompositorVersion   = 1
+	SubcompositorInterface = "wl_subcompositor"
+	SubcompositorVersion   = 1
 )
 
 // The global interface exposing sub-surface compositing capabilities.
@@ -5624,6 +5820,13 @@ type Subcompositor struct {
 // primarily intended for use by generated code.
 func NewSubcompositor(state wire.State) *Subcompositor {
 	return &Subcompositor{state: state}
+}
+
+func BindSubcompositor(state wire.State, registry wire.Binder, name, version uint32) *Subcompositor {
+	obj := NewSubcompositor(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SubcompositorInterface, Version: version, ID: obj.ID()})
+	return obj
 }
 
 func (obj *Subcompositor) State() wire.State {
@@ -5672,6 +5875,7 @@ func (obj *Subcompositor) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5701,6 +5905,7 @@ func (obj *Subcompositor) GetSubsurface(surface *Surface, parent *Surface) (id *
 	builder.WriteObject(surface)
 	builder.WriteObject(parent)
 
+	obj.state.Enqueue(builder)
 	return id
 }
 
@@ -5721,8 +5926,8 @@ func (enum SubcompositorError) String() string {
 }
 
 const (
-	subsurfaceInterface = "wl_subsurface"
-	subsurfaceVersion   = 1
+	SubsurfaceInterface = "wl_subsurface"
+	SubsurfaceVersion   = 1
 )
 
 // An additional interface to a wl_surface object, which has been
@@ -5787,6 +5992,13 @@ func NewSubsurface(state wire.State) *Subsurface {
 	return &Subsurface{state: state}
 }
 
+func BindSubsurface(state wire.State, registry wire.Binder, name, version uint32) *Subsurface {
+	obj := NewSubsurface(state)
+	state.Add(obj)
+	registry.Bind(name, wire.NewID{Interface: SubsurfaceInterface, Version: version, ID: obj.ID()})
+	return obj
+}
+
 func (obj *Subsurface) State() wire.State {
 	return obj.state
 }
@@ -5835,6 +6047,7 @@ func (obj *Subsurface) Destroy() {
 	builder.Method = "destroy"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5862,6 +6075,7 @@ func (obj *Subsurface) SetPosition(x int32, y int32) {
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5887,6 +6101,7 @@ func (obj *Subsurface) PlaceAbove(sibling *Surface) {
 
 	builder.WriteObject(sibling)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5899,6 +6114,7 @@ func (obj *Subsurface) PlaceBelow(sibling *Surface) {
 
 	builder.WriteObject(sibling)
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5920,6 +6136,7 @@ func (obj *Subsurface) SetSync() {
 	builder.Method = "set_sync"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 
@@ -5947,6 +6164,7 @@ func (obj *Subsurface) SetDesync() {
 	builder.Method = "set_desync"
 	builder.Args = []any{}
 
+	obj.state.Enqueue(builder)
 	return
 }
 

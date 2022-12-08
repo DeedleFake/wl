@@ -36,12 +36,21 @@ type State struct {
 	queue   *cq.Queue[func() error]
 }
 
+func Dial() (*State, error) {
+	c, err := wire.Dial()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewState(c), nil
+}
+
 func NewState(conn *wire.Conn) *State {
 	state := State{
 		done:    make(chan struct{}),
 		conn:    conn,
 		objects: make(map[uint32]wire.Object),
-		nextID:  2,
+		nextID:  1,
 		queue:   cq.New[func() error](),
 	}
 	state.Add(NewDisplay(&state))
@@ -72,6 +81,10 @@ func (state *State) listen() {
 		case state.queue.Add() <- func() error { return state.dispatch(msg) }:
 		}
 	}
+}
+
+func (state *State) Display() *Display {
+	return state.objects[1].(*Display)
 }
 
 func (state *State) Close() error {
@@ -135,7 +148,7 @@ func (state *State) Flush() error {
 func (state *State) RoundTrip() error {
 	get := state.queue.Get()
 	done := make(chan struct{})
-	state.objects[1].(*Display).Sync().Then(func(uint32) {
+	state.Display().Sync().Then(func(uint32) {
 		close(done)
 		get = nil
 	})
