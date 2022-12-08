@@ -58,10 +58,6 @@ func (obj *Display) State() wire.State {
 }
 
 func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -73,6 +69,10 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Error(
 			objectId,
@@ -87,6 +87,10 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.DeleteId(
 			id,
@@ -284,10 +288,6 @@ func (obj *Registry) State() wire.State {
 }
 
 func (obj *Registry) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -299,6 +299,10 @@ func (obj *Registry) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Global(
 			name,
@@ -313,6 +317,10 @@ func (obj *Registry) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.GlobalRemove(
 			name,
@@ -408,10 +416,6 @@ func (obj *Callback) State() wire.State {
 }
 
 func (obj *Callback) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -419,6 +423,10 @@ func (obj *Callback) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Done(
 			callbackData,
@@ -728,10 +736,6 @@ func (obj *Shm) State() wire.State {
 }
 
 func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -739,6 +743,10 @@ func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Format(
 			format,
@@ -1511,14 +1519,14 @@ func (obj *Buffer) State() wire.State {
 }
 
 func (obj *Buffer) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Release()
 		return nil
@@ -1655,10 +1663,6 @@ func (obj *DataOffer) State() wire.State {
 }
 
 func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -1666,6 +1670,10 @@ func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Offer(
 			mimeType,
@@ -1679,6 +1687,10 @@ func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.SourceActions(
 			sourceActions,
 		)
@@ -1690,6 +1702,10 @@ func (obj *DataOffer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Action(
 			dndAction,
@@ -2015,10 +2031,6 @@ func (obj *DataSource) State() wire.State {
 }
 
 func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -2026,6 +2038,10 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Target(
 			mimeType,
@@ -2041,6 +2057,10 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Send(
 			mimeType,
 			fd,
@@ -2051,6 +2071,10 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Cancelled()
 		return nil
 
@@ -2058,12 +2082,20 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.DndDropPerformed()
 		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.DndFinished()
 		return nil
@@ -2074,6 +2106,10 @@ func (obj *DataSource) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Action(
 			dndAction,
@@ -2291,10 +2327,6 @@ func (obj *DataDevice) State() wire.State {
 }
 
 func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -2302,6 +2334,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.DataOffer(
 			id,
@@ -2327,6 +2363,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Enter(
 			serial,
 			surface,
@@ -2339,6 +2379,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Leave()
 		return nil
@@ -2354,6 +2398,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Motion(
 			time,
 			x,
@@ -2365,6 +2413,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Drop()
 		return nil
 
@@ -2375,6 +2427,10 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Selection(
 			id,
@@ -2851,10 +2907,6 @@ func (obj *ShellSurface) State() wire.State {
 }
 
 func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -2862,6 +2914,10 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Ping(
 			serial,
@@ -2879,6 +2935,10 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Configure(
 			edges,
 			width,
@@ -2889,6 +2949,10 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 2:
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.PopupDone()
 		return nil
@@ -3374,10 +3438,6 @@ func (obj *Surface) State() wire.State {
 }
 
 func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 		outputID := msg.ReadUint()
@@ -3386,6 +3446,10 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Enter(
 			output,
@@ -3399,6 +3463,10 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Leave(
 			output,
@@ -3902,10 +3970,6 @@ func (obj *Seat) State() wire.State {
 }
 
 func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -3913,6 +3977,10 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Capabilities(
 			capabilities,
@@ -3925,6 +3993,10 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Name(
 			name,
@@ -4291,10 +4363,6 @@ func (obj *Pointer) State() wire.State {
 }
 
 func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -4310,6 +4378,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Enter(
 			serial,
@@ -4330,6 +4402,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Leave(
 			serial,
 			surface,
@@ -4346,6 +4422,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Motion(
 			time,
@@ -4367,6 +4447,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Button(
 			serial,
 			time,
@@ -4386,6 +4470,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Axis(
 			time,
 			axis,
@@ -4397,6 +4485,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Frame()
 		return nil
 
@@ -4406,6 +4498,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.AxisSource(
 			axisSource,
@@ -4421,6 +4517,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.AxisStop(
 			time,
 			axis,
@@ -4435,6 +4535,10 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.AxisDiscrete(
 			axis,
@@ -4760,10 +4864,6 @@ func (obj *Keyboard) State() wire.State {
 }
 
 func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -4775,6 +4875,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Keymap(
 			format,
@@ -4796,6 +4900,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Enter(
 			serial,
 			surface,
@@ -4813,6 +4921,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Leave(
 			serial,
@@ -4832,6 +4944,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Key(
 			serial,
@@ -4856,6 +4972,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Modifiers(
 			serial,
 			modsDepressed,
@@ -4873,6 +4993,10 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.RepeatInfo(
 			rate,
@@ -5110,10 +5234,6 @@ func (obj *Touch) State() wire.State {
 }
 
 func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -5133,6 +5253,10 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Down(
 			serial,
@@ -5155,6 +5279,10 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Up(
 			serial,
 			time,
@@ -5175,6 +5303,10 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Motion(
 			time,
 			id,
@@ -5187,12 +5319,20 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Frame()
 		return nil
 
 	case 4:
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Cancel()
 		return nil
@@ -5207,6 +5347,10 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Shape(
 			id,
@@ -5223,6 +5367,10 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Orientation(
 			id,
@@ -5404,10 +5552,6 @@ func (obj *Output) State() wire.State {
 }
 
 func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
-	if obj.Listener == nil {
-		return wire.ErrNilListener
-	}
-
 	switch msg.Op() {
 	case 0:
 
@@ -5429,6 +5573,10 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Geometry(
 			x,
@@ -5455,6 +5603,10 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Mode(
 			flags,
 			width,
@@ -5467,6 +5619,10 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 		if err := msg.Err(); err != nil {
 			return err
 		}
+
+		if obj.Listener == nil {
+			return nil
+		}
 		obj.Listener.Done()
 		return nil
 
@@ -5476,6 +5632,10 @@ func (obj *Output) Dispatch(msg *wire.MessageBuffer) error {
 
 		if err := msg.Err(); err != nil {
 			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
 		}
 		obj.Listener.Scale(
 			factor,

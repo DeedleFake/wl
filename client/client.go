@@ -136,10 +136,10 @@ func (state *State) Enqueue(msg *wire.MessageBuilder) {
 	}
 }
 
-func (state *State) Flush() error {
+func (state *State) Flush() []error {
 	select {
 	case queue := <-state.queue.Get():
-		return errors.Join(cq.Flush(queue)...)
+		return flushQueue(queue)
 	default:
 		return nil
 	}
@@ -161,9 +161,19 @@ func (state *State) RoundTrip() error {
 			return errors.Join(errs...)
 
 		case queue := <-get:
-			errs = append(errs, cq.Flush(queue)...)
+			errs = append(errs, flushQueue(queue)...)
 		}
 	}
+}
+
+func flushQueue(queue []func() error) (errs []error) {
+	for _, ev := range queue {
+		err := ev()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }
 
 type UnknownSenderIDError struct {

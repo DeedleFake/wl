@@ -63,10 +63,6 @@ import (
 
 	func (obj *{{$name}}) Dispatch(msg *wire.MessageBuffer) error {
 		{{if len $listeners -}}
-			if obj.Listener == nil {
-				return wire.ErrNilListener
-			}
-
 			switch msg.Op() {
 			{{- range $op, $method := $listeners}}
 				case {{$op}}:
@@ -89,6 +85,10 @@ import (
 					{{end -}}
 					if err := msg.Err(); err != nil {
 						return err
+					}
+
+					if obj.Listener == nil {
+						return nil
 					}
 					obj.Listener.{{.Name | camel | export}}(
 						{{range $method.Args -}}
