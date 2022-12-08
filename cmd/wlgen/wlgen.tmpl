@@ -14,7 +14,7 @@ import (
 )
 
 {{range $interface := .Protocol.Interfaces}}
-	{{- $name := .Name | ident | unexport -}}
+	{{- $name := .Name | ident | export -}}
 	{{- $listeners := listeners . -}}
 	{{- $senders := senders . -}}
 
@@ -25,38 +25,68 @@ import (
 
 	{{.Description.Full | trimSpace | trimLines | comment -}}
 	type {{$name}} struct {
-		id uint32
-		delete func()
-		{{if ne (len $listeners) 0 -}}
-			listener interface {
+		{{if len $listeners -}}
+			Listener interface {
 				{{range $listeners -}}
 					{{.Description.Full | trimSpace | trimLines | comment -}}
 					{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
 
 				{{end}}
 			}
+
 		{{end}}
+
+		OnDelete func()
+
+		state wire.State
+		id uint32
 	}
 
-	func (obj {{$name}}) Dispatch(msg *wire.MessageBuffer) error {
-		switch msg.Op() {
-		{{- range $op, $method := $listeners}}
-			case {{$op}}:
-				{{range $method.Args -}}
-				{{.Name | camel | unexport | unkeyword}} := msg.Read{{. | typeFuncSuffix}}()
-				{{end -}}
-				if err := msg.Err(); err != nil {
-					return err
-				}
-				obj.listener.{{.Name | camel | export}}(
-					{{range $method.Args -}}
-						{{.Name | camel | unexport | unkeyword}},
-					{{end -}}
-				)
-				return nil
-		{{end -}}
-		}
+	// New{{$name}} returns a newly instantiated {{$name}}. It is
+	// primarily intended for use by generated code.
+	func New{{$name}}(state wire.State) *{{$name}} {
+		return &{{$name}}{state: state}
+	}
 
+	func (obj *{{$name}}) State() wire.State {
+		return obj.state
+	}
+
+	func (obj *{{$name}}) Dispatch(msg *wire.MessageBuffer) error {
+		{{if len $listeners -}}
+			if obj.Listener == nil {
+				return wire.ErrNilListener
+			}
+
+			switch msg.Op() {
+			{{- range $op, $method := $listeners}}
+				case {{$op}}:
+					{{range $method.Args -}}
+						{{- $argName := .Name | camel | unexport | unkeyword -}}
+
+						{{if and (eq .Type "object") .Interface}}
+							{{- $type := .Interface | ident -}}
+
+							{{$argName}}ID := msg.ReadUint()
+							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
+							obj.state.Set({{$argName}}ID, {{$argName}})
+						{{else}}
+							{{$argName}} := msg.Read{{. | typeFuncSuffix}}()
+						{{end}}
+					{{end -}}
+					if err := msg.Err(); err != nil {
+						return err
+					}
+					obj.Listener.{{.Name | camel | export}}(
+						{{range $method.Args -}}
+							{{.Name | camel | unexport | unkeyword}},
+						{{end -}}
+					)
+					return nil
+			{{end -}}
+			}
+
+		{{end}}
 		return wire.UnknownOpError{
 			Interface: {{.Name | printf "%q"}},
 			Type: {{if $.IsClient -}} "event" {{- else -}} "request" {{- end}},
@@ -64,7 +94,7 @@ import (
 		}
 	}
 
-	func (obj {{$name}}) ID() uint32 {
+	func (obj *{{$name}}) ID() uint32 {
 		return obj.id
 	}
 
@@ -72,17 +102,17 @@ import (
 		obj.id = id
 	}
 
-	func (obj {{$name}}) Delete() {
-		if obj.delete != nil {
-			obj.delete()
+	func (obj *{{$name}}) Delete() {
+		if obj.OnDelete != nil {
+			obj.OnDelete()
 		}
 	}
 
-	func (obj {{$name}}) String() string {
+	func (obj *{{$name}}) String() string {
 		return fmt.Sprintf("%v(%v)", {{$interface.Name | printf "%q"}}, obj.id)
 	}
 
-	func (obj {{$name}}) MethodName(op uint16) string {
+	func (obj *{{$name}}) MethodName(op uint16) string {
 		switch op {
 		{{- range $op, $method := $listeners}}
 			case {{$op}}:
@@ -94,22 +124,31 @@ import (
 	}
 
 	{{range $op, $method := $senders}}
+		{{- $args := args $method -}}
+		{{- $rets := returns $method -}}
+
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
-		func (obj {{$name}}) {{$method.Name | camel | export}}({{range $method.Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) *wire.MessageBuilder {
-			builder := wire.NewMessage(&obj, {{$op}})
+		func (obj *{{$name}}) {{$method.Name | camel | export}}({{range $args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) ({{range $rets}}{{.Name | camel | unexport | unkeyword}} *{{.Interface | ident}}, {{end}}) {
+			builder := wire.NewMessage(obj, {{$op}})
 			builder.Method = {{$method.Name | printf "%q"}}
 			builder.Args = []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} }
 
 			{{range $method.Args -}}
-				builder.Write{{. | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
+				{{if isRet . -}}
+					{{.Name | camel | unexport | unkeyword}} = New{{.Interface | ident}}(obj.state)
+					obj.state.Add({{.Name | camel | unexport | unkeyword}})
+					builder.WriteObject({{.Name | camel | unexport | unkeyword}})
+				{{else -}}
+					builder.Write{{. | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
+				{{end -}}
 			{{end}}
 
-			return builder
+			return {{range $i, $_ := $rets}}{{if $i}}, {{end}}{{.Name | camel | unexport | unkeyword}}{{end}}
 		}
 	{{end}}
 
 	{{range $enum := .Enums}}
-		{{- $enumName := printf "%s%s" ($name | export) (.Name | camel | export) | export -}}
+		{{- $enumName := printf "%s%s" $name (.Name | camel | export) -}}
 
 		{{$enum.Description.Full | trimSpace | trimLines | comment -}}
 		type {{$enumName}} int64

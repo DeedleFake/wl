@@ -41,6 +41,11 @@ func parseTemplates(ctx Context) *template.Template {
 		"unkeyword":      ctx.unkeyword,
 		"comment":        ctx.comment,
 		"partial":        ctx.partial,
+		"args":           ctx.args,
+		"returns":        ctx.returns,
+		"isRet":          ctx.isRet,
+		"package":        ctx.pkg,
+		"trimPackage":    ctx.trimPackage,
 	}
 
 	return template.Must(template.New(baseTmpl).Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))
@@ -69,7 +74,7 @@ type Config struct {
 	Imports map[string]Import
 }
 
-func loadConfig(path string) (Config, error) {
+func loadConfig(path string, isClient bool) (Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Config{}, err
@@ -96,20 +101,24 @@ func loadConfig(path string) (Config, error) {
 				conf.Prefix = parts[2]
 			}
 		case "import":
-			i := Import{Prefix: parts[2]}
-			if len(parts) == 4 {
-				i.Name = parts[3]
+			path = parts[1]
+			if isClient {
+				path = parts[2]
+			}
+			i := Import{Prefix: parts[3]}
+			if len(parts) == 5 {
+				i.Name = parts[4]
 			}
 			if i.Name == "" {
-				pkg, err := build.Import(parts[1], ".", 0)
+				pkg, err := build.Import(path, "", 0)
 				if err != nil {
-					errs = append(errs, fmt.Errorf("import %q: %w", parts[1], err))
-					conf.Imports[parts[1]] = i
+					errs = append(errs, fmt.Errorf("import %q: %w", path, err))
+					conf.Imports[path] = i
 					continue
 				}
 				i.Name = pkg.Name
 			}
-			conf.Imports[parts[1]] = i
+			conf.Imports[path] = i
 		}
 	}
 
@@ -144,7 +153,7 @@ func main() {
 		log.Fatalf("load XML: %v", err)
 	}
 
-	conf, err := loadConfig(*config)
+	conf, err := loadConfig(*config, *client)
 	if err != nil {
 		log.Fatalf("load config: %v", err)
 	}

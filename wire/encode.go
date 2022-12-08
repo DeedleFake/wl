@@ -63,6 +63,14 @@ func (mb *MessageBuilder) WriteUint(v uint32) {
 	bin.Write(&mb.data, v)
 }
 
+func (mb *MessageBuilder) WriteObject(v Object) {
+	var id uint32
+	if v != nil {
+		id = v.ID()
+	}
+	mb.WriteUint(id)
+}
+
 func (mb *MessageBuilder) WriteNewID(v NewID) {
 	if mb.err != nil {
 		return

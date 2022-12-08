@@ -3,6 +3,16 @@ package cq
 
 import "sync"
 
+func Flush(queue []func() error) (errs []error) {
+	for _, ev := range queue {
+		err := ev()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
 type Queue[T any] struct {
 	done  chan struct{}
 	close sync.Once

@@ -7,10 +7,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"deedles.dev/wl/internal/xslices"
 	"deedles.dev/wl/protocol"
 )
 
 func (ctx Context) ident(v string) string {
+	var pkg string
 	v, ok := strings.CutPrefix(v, ctx.Config.Prefix)
 	if !ok {
 		for _, i := range ctx.Config.Imports {
@@ -18,12 +20,13 @@ func (ctx Context) ident(v string) string {
 			// protocols with the same prefix.
 			v, ok = strings.CutPrefix(v, i.Prefix)
 			if ok {
+				pkg = i.Name + "."
 				break
 			}
 		}
 	}
 
-	return ctx.export(ctx.camel(v))
+	return pkg + ctx.camel(v)
 }
 
 func (ctx Context) camel(v string) string {
@@ -144,23 +147,28 @@ func (ctx Context) goType(arg protocol.Arg) (string, error) {
 
 func (ctx Context) typeFuncSuffix(arg protocol.Arg) (string, error) {
 	switch arg.Type {
-	case "uint", "object":
+	case "uint":
+		return "Uint", nil
+	case "int":
+		return "Int", nil
+	case "fixed":
+		return "Fixed", nil
+	case "object":
+		if arg.Interface != "" {
+			return "Object", nil
+		}
 		return "Uint", nil
 	case "new_id":
 		if arg.Interface == "" {
 			return "NewID", nil
 		}
 		return "Uint", nil
-	case "int":
-		return "Int", nil
-	case "fixed":
-		return "Fixed", nil
-	case "fd":
-		return "File", nil
 	case "string":
 		return "String", nil
 	case "array":
 		return "Array", nil
+	case "fd":
+		return "File", nil
 	default:
 		return "", fmt.Errorf("unknown type: %q", arg.Type)
 	}
@@ -191,4 +199,32 @@ func (ctx Context) partial(name string, data any) (string, error) {
 	var sb strings.Builder
 	err := ctx.T.ExecuteTemplate(&sb, name, data)
 	return sb.String(), err
+}
+
+func (ctx Context) args(op protocol.Op) (args []protocol.Arg) {
+	return xslices.Filter(op.Args, func(arg protocol.Arg) bool { return !ctx.isRet(arg) })
+}
+
+func (ctx Context) returns(op protocol.Op) (rets []protocol.Arg) {
+	return xslices.Filter(op.Args, ctx.isRet)
+}
+
+func (ctx Context) isRet(arg protocol.Arg) bool {
+	return (arg.Type == "new_id") && (arg.Interface != "")
+}
+
+func (ctx Context) pkg(v string) string {
+	before, _, ok := strings.Cut(v, ".")
+	if ok {
+		return before + "."
+	}
+	return ""
+}
+
+func (ctx Context) trimPackage(v string) string {
+	before, after, ok := strings.Cut(v, ".")
+	if ok {
+		return after
+	}
+	return before
 }
