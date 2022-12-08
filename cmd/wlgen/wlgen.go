@@ -46,6 +46,7 @@ func parseTemplates(ctx Context) *template.Template {
 		"isRet":          ctx.isRet,
 		"package":        ctx.pkg,
 		"trimPackage":    ctx.trimPackage,
+		"enumType":       ctx.enumType,
 	}
 
 	return template.Must(template.New(baseTmpl).Funcs(tmplFuncs).ParseFS(tmplFS, "*.tmpl"))

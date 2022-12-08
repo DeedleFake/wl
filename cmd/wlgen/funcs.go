@@ -26,7 +26,7 @@ func (ctx Context) ident(v string) string {
 		}
 	}
 
-	return pkg + ctx.camel(v)
+	return pkg + ctx.export(ctx.camel(v))
 }
 
 func (ctx Context) camel(v string) string {
@@ -227,4 +227,13 @@ func (ctx Context) trimPackage(v string) string {
 		return after
 	}
 	return before
+}
+
+func (ctx Context) enumType(inter, v string) string {
+	before, after, ok := strings.Cut(v, ".")
+	if ok {
+		inter = before
+		v = after
+	}
+	return ctx.ident(inter) + ctx.export(ctx.camel(v))
 }

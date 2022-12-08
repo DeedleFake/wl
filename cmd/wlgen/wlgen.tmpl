@@ -14,13 +14,13 @@ import (
 )
 
 {{range $interface := .Protocol.Interfaces}}
-	{{- $name := .Name | ident | export -}}
+	{{- $name := .Name | ident -}}
 	{{- $listeners := listeners . -}}
 	{{- $senders := senders . -}}
 
 	const (
-		{{$name | unexport}}Interface = {{.Name | printf "%q"}}
-		{{$name | unexport}}Version = {{.Version}}
+		{{$name}}Interface = {{.Name | printf "%q"}}
+		{{$name}}Version = {{.Version}}
 	)
 
 	{{.Description.Full | trimSpace | trimLines | comment -}}
@@ -29,7 +29,7 @@ import (
 			Listener interface {
 				{{range $listeners -}}
 					{{.Description.Full | trimSpace | trimLines | comment -}}
-					{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}})
+					{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{with .Enum}}{{. | enumType $interface.Name}}{{else}}{{. | goType}}{{end}}, {{end}})
 
 				{{end}}
 			}
@@ -47,6 +47,15 @@ import (
 	func New{{$name}}(state wire.State) *{{$name}} {
 		return &{{$name}}{state: state}
 	}
+
+	{{if $.IsClient}}
+		func Bind{{$name}}(state wire.State, registry wire.Binder, name, version uint32) *{{$name}} {
+			obj := New{{$name}}(state)
+			state.Add(obj)
+			registry.Bind(name, wire.NewID{Interface: {{$name}}Interface, Version: version, ID: obj.ID()})
+			return obj
+		}
+	{{end}}
 
 	func (obj *{{$name}}) State() wire.State {
 		return obj.state
@@ -71,7 +80,11 @@ import (
 							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
 							obj.state.Set({{$argName}}ID, {{$argName}})
 						{{else}}
-							{{$argName}} := msg.Read{{. | typeFuncSuffix}}()
+							{{if .Enum}}
+								{{$argName}} := {{.Enum | enumType $interface.Name}}(msg.Read{{. | typeFuncSuffix}}())
+							{{else}}
+								{{$argName}} := msg.Read{{. | typeFuncSuffix}}()
+							{{end}}
 						{{end}}
 					{{end -}}
 					if err := msg.Err(); err != nil {
@@ -128,8 +141,8 @@ import (
 		{{- $rets := returns $method -}}
 
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
-		func (obj *{{$name}}) {{$method.Name | camel | export}}({{range $args}}{{.Name | camel | unexport | unkeyword}} {{. | goType}}, {{end}}) ({{range $rets}}{{.Name | camel | unexport | unkeyword}} *{{.Interface | ident}}, {{end}}) {
-			builder := wire.NewMessage(obj, {{$op}})
+		func (obj *{{$name}}) {{$method.Name | camel | export}}({{range $args}}{{.Name | camel | unexport | unkeyword}} {{with .Enum}}{{. | enumType $interface.Name}}{{else}}{{. | goType}}{{end}}, {{end}}) ({{range $rets}}{{.Name | camel | unexport | unkeyword}} *{{.Interface | ident}}, {{end}}) {
+		builder := wire.NewMessage(obj, {{$op}})
 			builder.Method = {{$method.Name | printf "%q"}}
 			builder.Args = []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} }
 
@@ -139,16 +152,17 @@ import (
 					obj.state.Add({{.Name | camel | unexport | unkeyword}})
 					builder.WriteObject({{.Name | camel | unexport | unkeyword}})
 				{{else -}}
-					builder.Write{{. | typeFuncSuffix}}({{.Name | camel | unexport | unkeyword}})
+					builder.Write{{. | typeFuncSuffix}}({{if .Enum}}{{. | goType}}({{end}}{{.Name | camel | unexport | unkeyword}}{{if .Enum}}){{end}})
 				{{end -}}
 			{{end}}
 
+			obj.state.Enqueue(builder)
 			return {{range $i, $_ := $rets}}{{if $i}}, {{end}}{{.Name | camel | unexport | unkeyword}}{{end}}
 		}
 	{{end}}
 
 	{{range $enum := .Enums}}
-		{{- $enumName := printf "%s%s" $name (.Name | camel | export) -}}
+		{{- $enumName := .Name | enumType $interface.Name -}}
 
 		{{$enum.Description.Full | trimSpace | trimLines | comment -}}
 		type {{$enumName}} int64
