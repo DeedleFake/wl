@@ -1,7 +1,9 @@
 package wl
 
+// PointerButton indicates a mouse button.
 type PointerButton uint32
 
+// These values were pulled from linux/input-event-codes.h.
 const (
 	PointerButtonLeft PointerButton = 0x110 + iota
 	PointerButtonRight
