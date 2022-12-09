@@ -13,29 +13,38 @@ const (
 	WmBaseVersion   = 5
 )
 
+// WmBaseListener is a type that can respond to incoming
+// messages for a WmBase object.
+type WmBaseListener interface {
+	// The ping event asks the client if it's still alive. Pass the
+	// serial specified in the event back to the compositor by sending
+	// a "pong" request back with the specified serial. See xdg_wm_base.pong.
+	//
+	// Compositors can use this to determine if the client is still
+	// alive. It's unspecified what will happen if the client doesn't
+	// respond to the ping request, or in what timeframe. Clients should
+	// try to respond in a reasonable amount of time. The “unresponsive”
+	// error is provided for compositors that wish to disconnect unresponsive
+	// clients.
+	//
+	// A compositor is free to ping in any way it wants, but a client must
+	// always respond to any xdg_wm_base object it created.
+	Ping(serial uint32)
+}
+
 // The xdg_wm_base interface is exposed as a global object enabling clients
 // to turn their wl_surfaces into windows in a desktop environment. It
 // defines the basic functionality needed for clients and the compositor to
 // create windows that can be dragged, resized, maximized, etc, as well as
 // creating transient windows such as popup menus.
 type WmBase struct {
-	Listener interface {
-		// The ping event asks the client if it's still alive. Pass the
-		// serial specified in the event back to the compositor by sending
-		// a "pong" request back with the specified serial. See xdg_wm_base.pong.
-		//
-		// Compositors can use this to determine if the client is still
-		// alive. It's unspecified what will happen if the client doesn't
-		// respond to the ping request, or in what timeframe. Clients should
-		// try to respond in a reasonable amount of time. The “unresponsive”
-		// error is provided for compositors that wish to disconnect unresponsive
-		// clients.
-		//
-		// A compositor is free to ping in any way it wants, but a client must
-		// always respond to any xdg_wm_base object it created.
-		Ping(serial uint32)
-	}
+	// Listener's methods are called by incoming messages from the
+	// remote end via Dispatch. If it is nil, messages are silently
+	// ignored.
+	Listener WmBaseListener
 
+	// OnDelete is called when the object is removed from the tracking
+	// system.
 	OnDelete func()
 
 	state wire.State
@@ -260,6 +269,9 @@ const (
 // set_anchor_rect. Passing an incomplete xdg_positioner object when
 // positioning a surface raises an invalid_positioner error.
 type Positioner struct {
+
+	// OnDelete is called when the object is removed from the tracking
+	// system.
 	OnDelete func()
 
 	state wire.State
@@ -679,6 +691,28 @@ const (
 	SurfaceVersion   = 5
 )
 
+// SurfaceListener is a type that can respond to incoming
+// messages for a Surface object.
+type SurfaceListener interface {
+	// The configure event marks the end of a configure sequence. A configure
+	// sequence is a set of one or more events configuring the state of the
+	// xdg_surface, including the final xdg_surface.configure event.
+	//
+	// Where applicable, xdg_surface surface roles will during a configure
+	// sequence extend this event as a latched state sent as events before the
+	// xdg_surface.configure event. Such events should be considered to make up
+	// a set of atomically applied configuration states, where the
+	// xdg_surface.configure commits the accumulated state.
+	//
+	// Clients should arrange their surface for the new states, and then send
+	// an ack_configure request with the serial sent in this configure event at
+	// some point before committing the new surface.
+	//
+	// If the client receives multiple configure events before it can respond
+	// to one, it is free to discard all but the last event it received.
+	Configure(serial uint32)
+}
+
 // An interface that may be implemented by a wl_surface, for
 // implementations that provide a desktop-style user interface.
 //
@@ -725,26 +759,13 @@ const (
 // has not been destroyed, i.e. the client must perform the initial commit
 // again before attaching a buffer.
 type Surface struct {
-	Listener interface {
-		// The configure event marks the end of a configure sequence. A configure
-		// sequence is a set of one or more events configuring the state of the
-		// xdg_surface, including the final xdg_surface.configure event.
-		//
-		// Where applicable, xdg_surface surface roles will during a configure
-		// sequence extend this event as a latched state sent as events before the
-		// xdg_surface.configure event. Such events should be considered to make up
-		// a set of atomically applied configuration states, where the
-		// xdg_surface.configure commits the accumulated state.
-		//
-		// Clients should arrange their surface for the new states, and then send
-		// an ack_configure request with the serial sent in this configure event at
-		// some point before committing the new surface.
-		//
-		// If the client receives multiple configure events before it can respond
-		// to one, it is free to discard all but the last event it received.
-		Configure(serial uint32)
-	}
+	// Listener's methods are called by incoming messages from the
+	// remote end via Dispatch. If it is nil, messages are silently
+	// ignored.
+	Listener SurfaceListener
 
+	// OnDelete is called when the object is removed from the tracking
+	// system.
 	OnDelete func()
 
 	state wire.State
@@ -1004,6 +1025,80 @@ const (
 	ToplevelVersion   = 5
 )
 
+// ToplevelListener is a type that can respond to incoming
+// messages for a Toplevel object.
+type ToplevelListener interface {
+	// This configure event asks the client to resize its toplevel surface or
+	// to change its state. The configured state should not be applied
+	// immediately. See xdg_surface.configure for details.
+	//
+	// The width and height arguments specify a hint to the window
+	// about how its surface should be resized in window geometry
+	// coordinates. See set_window_geometry.
+	//
+	// If the width or height arguments are zero, it means the client
+	// should decide its own window dimension. This may happen when the
+	// compositor needs to configure the state of the surface but doesn't
+	// have any information about any previous or expected dimension.
+	//
+	// The states listed in the event specify how the width/height
+	// arguments should be interpreted, and possibly how it should be
+	// drawn.
+	//
+	// Clients must send an ack_configure in response to this event. See
+	// xdg_surface.configure and xdg_surface.ack_configure for details.
+	Configure(width int32, height int32, states []byte)
+
+	// The close event is sent by the compositor when the user
+	// wants the surface to be closed. This should be equivalent to
+	// the user clicking the close button in client-side decorations,
+	// if your application has any.
+	//
+	// This is only a request that the user intends to close the
+	// window. The client may choose to ignore this request, or show
+	// a dialog to ask the user to save their data, etc.
+	Close()
+
+	// The configure_bounds event may be sent prior to a xdg_toplevel.configure
+	// event to communicate the bounds a window geometry size is recommended
+	// to constrain to.
+	//
+	// The passed width and height are in surface coordinate space. If width
+	// and height are 0, it means bounds is unknown and equivalent to as if no
+	// configure_bounds event was ever sent for this surface.
+	//
+	// The bounds can for example correspond to the size of a monitor excluding
+	// any panels or other shell components, so that a surface isn't created in
+	// a way that it cannot fit.
+	//
+	// The bounds may change at any point, and in such a case, a new
+	// xdg_toplevel.configure_bounds will be sent, followed by
+	// xdg_toplevel.configure and xdg_surface.configure.
+	ConfigureBounds(width int32, height int32)
+
+	// This event advertises the capabilities supported by the compositor. If
+	// a capability isn't supported, clients should hide or disable the UI
+	// elements that expose this functionality. For instance, if the
+	// compositor doesn't advertise support for minimized toplevels, a button
+	// triggering the set_minimized request should not be displayed.
+	//
+	// The compositor will ignore requests it doesn't support. For instance,
+	// a compositor which doesn't advertise support for minimized will ignore
+	// set_minimized requests.
+	//
+	// Compositors must send this event once before the first
+	// xdg_surface.configure event. When the capabilities change, compositors
+	// must send this event again and then send an xdg_surface.configure
+	// event.
+	//
+	// The configured state should not be applied immediately. See
+	// xdg_surface.configure for details.
+	//
+	// The capabilities are sent as an array of 32-bit unsigned integers in
+	// native endianness.
+	WmCapabilities(capabilities []byte)
+}
+
 // This interface defines an xdg_surface role which allows a surface to,
 // among other things, set window-like properties such as maximize,
 // fullscreen, and minimize, set application-specific metadata like title and
@@ -1022,78 +1117,13 @@ const (
 //
 // Attaching a null buffer to a toplevel unmaps the surface.
 type Toplevel struct {
-	Listener interface {
-		// This configure event asks the client to resize its toplevel surface or
-		// to change its state. The configured state should not be applied
-		// immediately. See xdg_surface.configure for details.
-		//
-		// The width and height arguments specify a hint to the window
-		// about how its surface should be resized in window geometry
-		// coordinates. See set_window_geometry.
-		//
-		// If the width or height arguments are zero, it means the client
-		// should decide its own window dimension. This may happen when the
-		// compositor needs to configure the state of the surface but doesn't
-		// have any information about any previous or expected dimension.
-		//
-		// The states listed in the event specify how the width/height
-		// arguments should be interpreted, and possibly how it should be
-		// drawn.
-		//
-		// Clients must send an ack_configure in response to this event. See
-		// xdg_surface.configure and xdg_surface.ack_configure for details.
-		Configure(width int32, height int32, states []byte)
+	// Listener's methods are called by incoming messages from the
+	// remote end via Dispatch. If it is nil, messages are silently
+	// ignored.
+	Listener ToplevelListener
 
-		// The close event is sent by the compositor when the user
-		// wants the surface to be closed. This should be equivalent to
-		// the user clicking the close button in client-side decorations,
-		// if your application has any.
-		//
-		// This is only a request that the user intends to close the
-		// window. The client may choose to ignore this request, or show
-		// a dialog to ask the user to save their data, etc.
-		Close()
-
-		// The configure_bounds event may be sent prior to a xdg_toplevel.configure
-		// event to communicate the bounds a window geometry size is recommended
-		// to constrain to.
-		//
-		// The passed width and height are in surface coordinate space. If width
-		// and height are 0, it means bounds is unknown and equivalent to as if no
-		// configure_bounds event was ever sent for this surface.
-		//
-		// The bounds can for example correspond to the size of a monitor excluding
-		// any panels or other shell components, so that a surface isn't created in
-		// a way that it cannot fit.
-		//
-		// The bounds may change at any point, and in such a case, a new
-		// xdg_toplevel.configure_bounds will be sent, followed by
-		// xdg_toplevel.configure and xdg_surface.configure.
-		ConfigureBounds(width int32, height int32)
-
-		// This event advertises the capabilities supported by the compositor. If
-		// a capability isn't supported, clients should hide or disable the UI
-		// elements that expose this functionality. For instance, if the
-		// compositor doesn't advertise support for minimized toplevels, a button
-		// triggering the set_minimized request should not be displayed.
-		//
-		// The compositor will ignore requests it doesn't support. For instance,
-		// a compositor which doesn't advertise support for minimized will ignore
-		// set_minimized requests.
-		//
-		// Compositors must send this event once before the first
-		// xdg_surface.configure event. When the capabilities change, compositors
-		// must send this event again and then send an xdg_surface.configure
-		// event.
-		//
-		// The configured state should not be applied immediately. See
-		// xdg_surface.configure for details.
-		//
-		// The capabilities are sent as an array of 32-bit unsigned integers in
-		// native endianness.
-		WmCapabilities(capabilities []byte)
-	}
-
+	// OnDelete is called when the object is removed from the tracking
+	// system.
 	OnDelete func()
 
 	state wire.State
@@ -1829,6 +1859,46 @@ const (
 	PopupVersion   = 5
 )
 
+// PopupListener is a type that can respond to incoming
+// messages for a Popup object.
+type PopupListener interface {
+	// This event asks the popup surface to configure itself given the
+	// configuration. The configured state should not be applied immediately.
+	// See xdg_surface.configure for details.
+	//
+	// The x and y arguments represent the position the popup was placed at
+	// given the xdg_positioner rule, relative to the upper left corner of the
+	// window geometry of the parent surface.
+	//
+	// For version 2 or older, the configure event for an xdg_popup is only
+	// ever sent once for the initial configuration. Starting with version 3,
+	// it may be sent again if the popup is setup with an xdg_positioner with
+	// set_reactive requested, or in response to xdg_popup.reposition requests.
+	Configure(x int32, y int32, width int32, height int32)
+
+	// The popup_done event is sent out when a popup is dismissed by the
+	// compositor. The client should destroy the xdg_popup object at this
+	// point.
+	PopupDone()
+
+	// The repositioned event is sent as part of a popup configuration
+	// sequence, together with xdg_popup.configure and lastly
+	// xdg_surface.configure to notify the completion of a reposition request.
+	//
+	// The repositioned event is to notify about the completion of a
+	// xdg_popup.reposition request. The token argument is the token passed
+	// in the xdg_popup.reposition request.
+	//
+	// Immediately after this event is emitted, xdg_popup.configure and
+	// xdg_surface.configure will be sent with the updated size and position,
+	// as well as a new configure serial.
+	//
+	// The client should optionally update the content of the popup, but must
+	// acknowledge the new popup configuration for the new position to take
+	// effect. See xdg_surface.ack_configure for details.
+	Repositioned(token uint32)
+}
+
 // A popup surface is a short-lived, temporary surface. It can be used to
 // implement for example menus, popovers, tooltips and other similar user
 // interface concepts.
@@ -1854,44 +1924,13 @@ const (
 // The client must call wl_surface.commit on the corresponding wl_surface
 // for the xdg_popup state to take effect.
 type Popup struct {
-	Listener interface {
-		// This event asks the popup surface to configure itself given the
-		// configuration. The configured state should not be applied immediately.
-		// See xdg_surface.configure for details.
-		//
-		// The x and y arguments represent the position the popup was placed at
-		// given the xdg_positioner rule, relative to the upper left corner of the
-		// window geometry of the parent surface.
-		//
-		// For version 2 or older, the configure event for an xdg_popup is only
-		// ever sent once for the initial configuration. Starting with version 3,
-		// it may be sent again if the popup is setup with an xdg_positioner with
-		// set_reactive requested, or in response to xdg_popup.reposition requests.
-		Configure(x int32, y int32, width int32, height int32)
+	// Listener's methods are called by incoming messages from the
+	// remote end via Dispatch. If it is nil, messages are silently
+	// ignored.
+	Listener PopupListener
 
-		// The popup_done event is sent out when a popup is dismissed by the
-		// compositor. The client should destroy the xdg_popup object at this
-		// point.
-		PopupDone()
-
-		// The repositioned event is sent as part of a popup configuration
-		// sequence, together with xdg_popup.configure and lastly
-		// xdg_surface.configure to notify the completion of a reposition request.
-		//
-		// The repositioned event is to notify about the completion of a
-		// xdg_popup.reposition request. The token argument is the token passed
-		// in the xdg_popup.reposition request.
-		//
-		// Immediately after this event is emitted, xdg_popup.configure and
-		// xdg_surface.configure will be sent with the updated size and position,
-		// as well as a new configure serial.
-		//
-		// The client should optionally update the content of the popup, but must
-		// acknowledge the new popup configuration for the new position to take
-		// effect. See xdg_surface.ack_configure for details.
-		Repositioned(token uint32)
-	}
-
+	// OnDelete is called when the object is removed from the tracking
+	// system.
 	OnDelete func()
 
 	state wire.State

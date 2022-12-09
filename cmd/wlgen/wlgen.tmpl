@@ -23,19 +23,29 @@ import (
 		{{$name}}Version = {{.Version}}
 	)
 
+	{{if len $listeners -}}
+		// {{$name}}Listener is a type that can respond to incoming
+		// messages for a {{$name}} object.
+		type {{$name}}Listener interface {
+			{{range $listeners -}}
+				{{.Description.Full | trimSpace | trimLines | comment -}}
+				{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{with .Enum}}{{. | enumType $interface.Name}}{{else}}{{. | goType}}{{end}}, {{end}})
+
+			{{end}}
+		}
+	{{end}}
+
 	{{.Description.Full | trimSpace | trimLines | comment -}}
 	type {{$name}} struct {
 		{{if len $listeners -}}
-			Listener interface {
-				{{range $listeners -}}
-					{{.Description.Full | trimSpace | trimLines | comment -}}
-					{{.Name | camel | export}}({{range .Args}}{{.Name | camel | unexport | unkeyword}} {{with .Enum}}{{. | enumType $interface.Name}}{{else}}{{. | goType}}{{end}}, {{end}})
-
-				{{end}}
-			}
+			// Listener's methods are called by incoming messages from the
+			// remote end via Dispatch. If it is nil, messages are silently
+			// ignored.
+			Listener {{$name}}Listener
 
 		{{end}}
-
+		// OnDelete is called when the object is removed from the tracking
+		// system.
 		OnDelete func()
 
 		state wire.State
