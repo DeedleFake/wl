@@ -238,7 +238,7 @@ func (state *xdgToplevelListener) drawFrame(width, height int32) *wl.Buffer {
 	defer file.Close()
 	file.Truncate(int64(shmSize))
 
-	mmap, err := shm.Map(file, shmSize, unix.PROT_READ|unix.PROT_WRITE)
+	mmap, err := shm.MapShared(file, shmSize, unix.PROT_READ|unix.PROT_WRITE)
 	if err != nil {
 		log.Fatalf("mmap: %v", err)
 	}
