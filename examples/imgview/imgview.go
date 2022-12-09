@@ -35,7 +35,7 @@ type state struct {
 	close sync.Once
 	done  chan struct{}
 
-	state      *wl.State
+	client     *wl.Client
 	display    *wl.Display
 	registry   *wl.Registry
 	shm        *wl.Shm
@@ -64,7 +64,7 @@ func (state *state) init() error {
 	if err != nil {
 		return fmt.Errorf("dial display: %w", err)
 	}
-	state.state = s
+	state.client = s
 
 	state.display = s.Display()
 	state.display.Listener = (*displayListener)(state)
@@ -72,7 +72,7 @@ func (state *state) init() error {
 	state.registry = state.display.GetRegistry()
 	state.registry.Listener = (*registryListener)(state)
 
-	err = state.state.RoundTrip()
+	err = state.client.RoundTrip()
 	if err != nil {
 		return fmt.Errorf("round trip: %w", err)
 	}
@@ -120,7 +120,7 @@ func (state *state) run(ctx context.Context) {
 		case <-state.done:
 			return
 		case <-tick.C:
-			err := state.state.Flush()
+			err := state.client.Flush()
 			if err != nil {
 				log.Printf("flush: %v", err)
 			}
@@ -135,7 +135,7 @@ func (state *displayListener) Error(id, code uint32, msg string) {
 }
 
 func (state *displayListener) DeleteId(id uint32) {
-	state.state.Delete(id)
+	state.client.Delete(id)
 }
 
 type registryListener state
@@ -143,14 +143,14 @@ type registryListener state
 func (state *registryListener) Global(name uint32, inter string, version uint32) {
 	switch inter {
 	case wl.CompositorInterface:
-		state.compositor = wl.BindCompositor(state.state, state.registry, name, version)
+		state.compositor = wl.BindCompositor(state.client, state.registry, name, version)
 	case wl.ShmInterface:
-		state.shm = wl.BindShm(state.state, state.registry, name, version)
+		state.shm = wl.BindShm(state.client, state.registry, name, version)
 	case WmBaseInterface:
-		state.wmBase = BindWmBase(state.state, state.registry, name, version)
+		state.wmBase = BindWmBase(state.client, state.registry, name, version)
 		state.wmBase.Listener = (*wmBaseListener)(state)
 	case wl.SeatInterface:
-		state.seat = wl.BindSeat(state.state, state.registry, name, version)
+		state.seat = wl.BindSeat(state.client, state.registry, name, version)
 	}
 }
 
@@ -325,7 +325,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("init: %v", err)
 	}
-	defer state.state.Close()
+	defer state.client.Close()
 
 	state.run(ctx)
 }

@@ -27,9 +27,9 @@ func init() {
 	}
 }
 
-// State tracks the connection state, including objects and the event
+// Client tracks the connection state, including objects and the event
 // queue. It is the primary interface to a Wayland server.
-type State struct {
+type Client struct {
 	done    chan struct{}
 	close   sync.Once
 	conn    *wire.Conn
@@ -41,7 +41,7 @@ type State struct {
 // Dial opens a connection to the Wayland display based on the
 // current environment. It follows the procedure outlined at
 // https://wayland-book.com/protocol-design/wire-protocol.html#transports
-func Dial() (*State, error) {
+func Dial() (*Client, error) {
 	c, err := wire.Dial()
 	if err != nil {
 		return nil, err
@@ -52,8 +52,8 @@ func Dial() (*State, error) {
 
 // NewState creates a new state that wraps conn. The returned state
 // assumes responsibility for closing conn.
-func NewState(conn *wire.Conn) *State {
-	state := State{
+func NewState(conn *wire.Conn) *Client {
+	state := Client{
 		done:    make(chan struct{}),
 		conn:    conn,
 		objects: make(map[uint32]wire.Object),
@@ -66,7 +66,7 @@ func NewState(conn *wire.Conn) *State {
 	return &state
 }
 
-func (state *State) listen() {
+func (state *Client) listen() {
 	for {
 		msg, err := wire.ReadMessage(state.conn)
 		if err != nil {
@@ -92,13 +92,13 @@ func (state *State) listen() {
 
 // Display returns the Display object that represents the Wayland
 // server.
-func (state *State) Display() *Display {
+func (state *Client) Display() *Display {
 	return state.objects[1].(*Display)
 }
 
 // Close closes the state, closing the underlying connection, stopping
 // the event queue, and so on.
-func (state *State) Close() error {
+func (state *Client) Close() error {
 	state.close.Do(func() { close(state.done) })
 	state.queue.Stop()
 	return state.conn.Close()
@@ -106,27 +106,27 @@ func (state *State) Close() error {
 
 // Add adds obj to state's knowledge. Do not call this method unless
 // you know what you are doing.
-func (state *State) Add(obj wire.Object) {
+func (state *Client) Add(obj wire.Object) {
 	state.Set(state.nextID, obj)
 	state.nextID++
 }
 
 // Set assigns id to obj and tracks it. Do not call this method unless
 // you know what you are doing.
-func (state *State) Set(id uint32, obj wire.Object) {
+func (state *Client) Set(id uint32, obj wire.Object) {
 	state.objects[id] = obj
 	obj.SetID(id)
 }
 
 // Get retrieves an object by ID. If no such object exists, nil is
 // returned.
-func (state *State) Get(id uint32) wire.Object {
+func (state *Client) Get(id uint32) wire.Object {
 	return state.objects[id]
 }
 
 // Delete deletes the object identified by ID, if it exists. If the
 // object has a delete handler specified, it is called.
-func (state *State) Delete(id uint32) {
+func (state *Client) Delete(id uint32) {
 	obj := state.objects[id]
 	delete(state.objects, id)
 	if obj != nil {
@@ -134,7 +134,7 @@ func (state *State) Delete(id uint32) {
 	}
 }
 
-func (state *State) dispatch(msg *wire.MessageBuffer) error {
+func (state *Client) dispatch(msg *wire.MessageBuffer) error {
 	obj := state.objects[msg.Sender()]
 	if obj == nil {
 		return UnknownSenderIDError{Msg: msg}
@@ -147,7 +147,7 @@ func (state *State) dispatch(msg *wire.MessageBuffer) error {
 
 // Enqueue adds msg to the event queue. It will be sent to the server
 // the next time the queue is flushed.
-func (state *State) Enqueue(msg *wire.MessageBuilder) {
+func (state *Client) Enqueue(msg *wire.MessageBuilder) {
 	state.queue.Add() <- func() error {
 		debug(" -> %v", msg)
 		return msg.Build(state.conn)
@@ -157,7 +157,7 @@ func (state *State) Enqueue(msg *wire.MessageBuilder) {
 // Flush flushes the event queue, sending all enqueued messages and
 // processing all messages that have been received since the last time
 // the queue was flushed. It returns all errors encountered.
-func (state *State) Flush() []error {
+func (state *Client) Flush() []error {
 	select {
 	case queue := <-state.queue.Get():
 		return flushQueue(queue)
@@ -169,7 +169,7 @@ func (state *State) Flush() []error {
 // RoundTrip flushes the event queue continuously until the server
 // indicates that it has finished processing all messages sent by the
 // call to this method.
-func (state *State) RoundTrip() error {
+func (state *Client) RoundTrip() error {
 	get := state.queue.Get()
 	done := make(chan struct{})
 	state.Display().Sync().Then(func(uint32) {
