@@ -7,7 +7,7 @@ import (
 )
 
 type listener struct {
-	state    *wl.State
+	state    *wl.Client
 	registry *wl.Registry
 }
 
