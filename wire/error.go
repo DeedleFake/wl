@@ -1,11 +1,8 @@
 package wire
 
 import (
-	"errors"
 	"fmt"
 )
-
-var ErrNilListener = errors.New("nil listener")
 
 // UnknownOpError is returned by Object.Dispatch if it is given a
 // message with an invalid opcode.
