@@ -43,17 +43,24 @@ func SocketPath() string {
 	return filepath.Join(dir, v)
 }
 
+// Conn represents a low-level Wayland connection. It is not generally
+// used directly, instead being handled automatically by a State
+// implementation.
 type Conn struct {
 	conn *net.UnixConn
 	fds  []int
 }
 
+// NewConn creates a new Conn that wraps c. After this is called, use
+// the provided Close method to close c instead of calling its own
+// Close method.
 func NewConn(c *net.UnixConn) *Conn {
 	return &Conn{
 		conn: c,
 	}
 }
 
+// Close closes the underlying connection.
 func (c *Conn) Close() error {
 	return c.conn.Close()
 }

@@ -95,12 +95,19 @@ type DebugObject interface {
 	MethodName(opcode uint16) string
 }
 
+// State can track objects and send messages. There are individual
+// implementations of this for the server and client, but an interface
+// is provided here to allow them to be referenced and used by
+// generated code.
 type State interface {
 	Add(Object)
 	Set(uint32, Object)
 	Enqueue(*MessageBuilder)
 }
 
+// Binder is a type that can bind a name to an object. This is
+// typically implemented by wl_registry, but it is provided as an
+// interface here to allow generated code to use it.
 type Binder interface {
 	Bind(name uint32, obj NewID)
 }
