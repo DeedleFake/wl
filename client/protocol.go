@@ -55,13 +55,6 @@ func NewDisplay(state wire.State) *Display {
 	return &Display{state: state}
 }
 
-func BindDisplay(state wire.State, registry wire.Binder, name, version uint32) *Display {
-	obj := NewDisplay(state)
-	state.Add(obj)
-	registry.Bind(name, wire.NewID{Interface: DisplayInterface, Version: version, ID: obj.ID()})
-	return obj
-}
-
 func (obj *Display) State() wire.State {
 	return obj.state
 }

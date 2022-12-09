@@ -166,7 +166,7 @@ func main() {
 		Protocol: proto,
 		Config:   conf,
 		IsClient: *client,
-		Locals:   make(set.Set[string]),
+		Locals:   set.New("wl_display"),
 	}
 
 	extraImports := make(set.Set[string])
