@@ -54,10 +54,18 @@ func NewImageBuffer(s *Shm, w, h int32) (buf *ImageBuffer, err error) {
 }
 
 func (s *ImageBuffer) Destroy() {
-	s.mmap.Unmap()
-	s.file.Close()
-	s.buf.Destroy()
-	s.pool.Destroy()
+	if s.mmap != nil {
+		s.mmap.Unmap()
+	}
+	if s.file != nil {
+		s.file.Close()
+	}
+	if s.buf != nil {
+		s.buf.Destroy()
+	}
+	if s.pool != nil {
+		s.pool.Destroy()
+	}
 }
 
 func (s *ImageBuffer) Shm() *Shm {
