@@ -19,14 +19,12 @@ import (
 
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/shm"
-	"deedles.dev/wl/shm/shmimage"
 	"deedles.dev/wl/wire"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
-	"golang.org/x/sys/unix"
 )
 
 type state struct {
@@ -48,6 +46,7 @@ type state struct {
 	surface  *wl.Surface
 	xsurface *Surface
 	toplevel *Toplevel
+	buffer   *shm.ImageBuffer
 
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
@@ -149,47 +148,27 @@ func (s *state) render(width, height int32) *wl.Buffer {
 	imgBounds = imgBounds.Add(image.Pt(0, barHeight))
 	winBounds := s.barBounds.Union(imgBounds)
 
-	stride := winBounds.Dx() * 4
-	shmSize := winBounds.Dy() * stride
-
-	file, err := shm.Create()
-	if err != nil {
-		log.Fatalf("create shm: %v", err)
-	}
-	defer file.Close()
-	file.Truncate(int64(shmSize))
-
-	mmap, err := shm.MapShared(file, shmSize, unix.PROT_READ|unix.PROT_WRITE)
-	if err != nil {
-		log.Fatalf("mmap: %v", err)
-	}
-	defer mmap.Unmap()
-
-	pool := s.shm.CreatePool(file, int32(shmSize))
-	defer pool.Destroy()
-	buf := pool.CreateBuffer(
-		0,
+	buffer, err := shm.NewImageBuffer(
+		s.shm,
 		int32(winBounds.Dx()),
 		int32(winBounds.Dy()),
-		int32(stride),
-		wl.ShmFormatArgb8888,
 	)
-
-	img := shmimage.ARGB8888{
-		Pix:    mmap,
-		Stride: stride,
-		Rect:   winBounds,
+	if err != nil {
+		log.Fatalf("create buffer: %v", err)
 	}
-	fillRect(&img, s.barBounds, colornames.Dimgray)
-	fillRect(&img, s.closeBounds, colornames.Red)
-	//fillRect(&img, s.maxBounds, colornames.Limegreen)
-	fillRect(&img, s.minBounds, colornames.Yellow)
+	s.buffer = buffer
+
+	img := s.buffer.Image()
+	fillRect(img, s.barBounds, colornames.Dimgray)
+	fillRect(img, s.closeBounds, colornames.Red)
+	//fillRect(img, s.maxBounds, colornames.Limegreen)
+	fillRect(img, s.minBounds, colornames.Yellow)
 	if s.highlight != nil {
-		addRect(&img, *s.highlight, color.RGBA{0x10, 0x10, 0x10, 0xFF})
+		addRect(img, *s.highlight, color.RGBA{0x10, 0x10, 0x10, 0xFF})
 	}
-	draw.ApproxBiLinear.Scale(&img, imgBounds, s.image, s.image.Bounds(), draw.Src, nil)
+	draw.ApproxBiLinear.Scale(img, imgBounds, s.image, s.image.Bounds(), draw.Src, nil)
 
-	return buf
+	return s.buffer.Buffer()
 }
 
 func (s *state) draw(w, h int32) {
@@ -252,7 +231,7 @@ func (s *pointerListener) Motion(time uint32, x, y wire.Fixed) {
 	default:
 		s.highlight = nil
 	}
-	(*state)(s).draw(0, 0)
+	//(*state)(s).draw(0, 0)
 }
 
 func (s *pointerListener) Button(serial, time uint32, button uint32, bstate wl.PointerButtonState) {
