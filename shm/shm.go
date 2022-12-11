@@ -9,6 +9,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Create returns a file that can be mmapped to share memory with
+// another process. It is possible for it to return both a valid file
+// and an error.
 func Create() (*os.File, error) {
 	path := "/dev/shm/wl-surface-example-" + time.Now().String()
 
@@ -25,6 +28,7 @@ func Create() (*os.File, error) {
 	return file, err
 }
 
+// Mmap is a []byte that represents a mmapped file.
 type Mmap []byte
 
 func mmap(file *os.File, size, prot, flags int) (mmap Mmap, err error) {
@@ -41,14 +45,21 @@ func mmap(file *os.File, size, prot, flags int) (mmap Mmap, err error) {
 	return mmap, err
 }
 
+// MapPrivate maps file into memory at the given size with the given
+// prot. It maps it in private mode, meaning that writes to the memory
+// will not be reflected in the file.
 func MapPrivate(file *os.File, size int, prot int) (Mmap, error) {
 	return mmap(file, size, prot, unix.MAP_PRIVATE)
 }
 
+// MapShared maps file into memory at the given size with the given
+// prot. It maps it in shared mode, meaning that writes to the memory
+// will be reflected in the file.
 func MapShared(file *os.File, size int, prot int) (Mmap, error) {
 	return mmap(file, size, prot, unix.MAP_SHARED)
 }
 
+// Unmap unmaps mmap.
 func (mmap Mmap) Unmap() error {
 	return unix.Munmap(mmap)
 }
