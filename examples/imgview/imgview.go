@@ -105,6 +105,12 @@ func (s *state) init() error {
 
 	s.surface.Commit()
 
+	buffer, err := wl.NewImageBuffer(s.shm, 1, 1)
+	if err != nil {
+		log.Fatalf("create buffer: %v", err)
+	}
+	s.buffer = buffer
+
 	return nil
 }
 
@@ -147,15 +153,10 @@ func (s *state) render(width, height int32) *wl.Buffer {
 	imgBounds = imgBounds.Add(image.Pt(0, barHeight))
 	winBounds := s.barBounds.Union(imgBounds)
 
-	buffer, err := wl.NewImageBuffer(
-		s.shm,
+	s.buffer.Resize(
 		int32(winBounds.Dx()),
 		int32(winBounds.Dy()),
 	)
-	if err != nil {
-		log.Fatalf("create buffer: %v", err)
-	}
-	s.buffer = buffer
 
 	img := s.buffer.Image()
 	fillRect(img, s.barBounds, colornames.Dimgray)
