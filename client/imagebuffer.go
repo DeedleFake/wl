@@ -1,4 +1,4 @@
-package shm
+package wl
 
 import (
 	"fmt"
@@ -6,51 +6,51 @@ import (
 	"image/draw"
 	"os"
 
-	wl "deedles.dev/wl/client"
+	"deedles.dev/wl/shm"
 	"deedles.dev/wl/shm/shmimage"
 	"golang.org/x/sys/unix"
 )
 
 type ImageBuffer struct {
 	w, h int32
-	shm  *wl.Shm
-	pool *wl.ShmPool
-	buf  *wl.Buffer
+	shm  *Shm
+	pool *ShmPool
+	buf  *Buffer
 	file *os.File
-	mmap Mmap
+	mmap shm.Mmap
 }
 
-func NewImageBuffer(shm *wl.Shm, w, h int32) (s *ImageBuffer, err error) {
+func NewImageBuffer(s *Shm, w, h int32) (buf *ImageBuffer, err error) {
 	defer func() {
 		if err != nil {
-			s.Destroy()
+			buf.Destroy()
 		}
 	}()
 
-	s = &ImageBuffer{
+	buf = &ImageBuffer{
 		w:   w,
 		h:   h,
-		shm: shm,
+		shm: s,
 	}
-	cap := s.Stride() * s.h
+	cap := buf.Stride() * buf.h
 
-	file, err := Create()
+	file, err := shm.Create()
 	if err != nil {
-		return s, fmt.Errorf("create SHM file: %w", err)
+		return buf, fmt.Errorf("create SHM file: %w", err)
 	}
-	s.file = file
-	s.file.Truncate(int64(cap))
+	buf.file = file
+	buf.file.Truncate(int64(cap))
 
-	mmap, err := MapShared(file, int(cap), unix.PROT_READ|unix.PROT_WRITE)
+	mmap, err := shm.MapShared(file, int(cap), unix.PROT_READ|unix.PROT_WRITE)
 	if err != nil {
-		return s, fmt.Errorf("mmap SHM file: %w", err)
+		return buf, fmt.Errorf("mmap SHM file: %w", err)
 	}
-	s.mmap = mmap
+	buf.mmap = mmap
 
-	s.pool = s.shm.CreatePool(file, int32(len(s.mmap)))
-	s.buf = s.pool.CreateBuffer(0, w, h, w*4, wl.ShmFormatArgb8888)
+	buf.pool = buf.shm.CreatePool(file, int32(len(buf.mmap)))
+	buf.buf = buf.pool.CreateBuffer(0, w, h, w*4, ShmFormatArgb8888)
 
-	return s, nil
+	return buf, nil
 }
 
 func (s *ImageBuffer) Destroy() {
@@ -60,15 +60,15 @@ func (s *ImageBuffer) Destroy() {
 	s.pool.Destroy()
 }
 
-func (s *ImageBuffer) Shm() *wl.Shm {
+func (s *ImageBuffer) Shm() *Shm {
 	return s.shm
 }
 
-func (s *ImageBuffer) ShmPool() *wl.ShmPool {
+func (s *ImageBuffer) ShmPool() *ShmPool {
 	return s.pool
 }
 
-func (s *ImageBuffer) Buffer() *wl.Buffer {
+func (s *ImageBuffer) Buffer() *Buffer {
 	return s.buf
 }
 
@@ -103,7 +103,7 @@ func (s *ImageBuffer) Resize(w, h int32) error {
 	if s.Len() < s.Cap() {
 		s.mmap = s.mmap[:s.Len()]
 		s.buf.Destroy()
-		s.buf = s.pool.CreateBuffer(0, s.w, s.h, s.Stride(), wl.ShmFormatArgb8888)
+		s.buf = s.pool.CreateBuffer(0, s.w, s.h, s.Stride(), ShmFormatArgb8888)
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func (s *ImageBuffer) Resize(w, h int32) error {
 	if err != nil {
 		return fmt.Errorf("unmap: %w", err)
 	}
-	mmap, err := MapShared(s.file, int(s.Len()), unix.PROT_READ|unix.PROT_WRITE)
+	mmap, err := shm.MapShared(s.file, int(s.Len()), unix.PROT_READ|unix.PROT_WRITE)
 	if err != nil {
 		return fmt.Errorf("mmap: %w", err)
 	}
@@ -121,7 +121,7 @@ func (s *ImageBuffer) Resize(w, h int32) error {
 
 	s.buf.Destroy()
 	s.pool.Resize(s.Len())
-	s.buf = s.pool.CreateBuffer(0, s.w, s.h, s.Stride(), wl.ShmFormatArgb8888)
+	s.buf = s.pool.CreateBuffer(0, s.w, s.h, s.Stride(), ShmFormatArgb8888)
 
 	return nil
 }

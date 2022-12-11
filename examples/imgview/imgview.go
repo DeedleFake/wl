@@ -18,7 +18,6 @@ import (
 	"time"
 
 	wl "deedles.dev/wl/client"
-	"deedles.dev/wl/shm"
 	"deedles.dev/wl/wire"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
@@ -46,7 +45,7 @@ type state struct {
 	surface  *wl.Surface
 	xsurface *Surface
 	toplevel *Toplevel
-	buffer   *shm.ImageBuffer
+	buffer   *wl.ImageBuffer
 
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
@@ -148,7 +147,7 @@ func (s *state) render(width, height int32) *wl.Buffer {
 	imgBounds = imgBounds.Add(image.Pt(0, barHeight))
 	winBounds := s.barBounds.Union(imgBounds)
 
-	buffer, err := shm.NewImageBuffer(
+	buffer, err := wl.NewImageBuffer(
 		s.shm,
 		int32(winBounds.Dx()),
 		int32(winBounds.Dy()),
