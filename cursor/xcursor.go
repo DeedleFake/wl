@@ -1,10 +1,13 @@
 package cursor
 
 import (
+	"bufio"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
+	"unicode"
 )
 
 type ximage struct {
@@ -110,4 +113,45 @@ func loadAllCursorsFromFile(path string, ent fs.DirEntry, size int, f func(ximag
 	})
 
 	return nil
+}
+
+func themeInherits(full string) (result string, err error) {
+	if full == "" {
+		return ""
+	}
+
+	file, err := os.Open(full)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	s := bufio.NewScanner(file)
+	for s.Scan() {
+		line := s.Text()
+		if !strings.HasPrefix(line, "Inherits") {
+			continue
+		}
+
+		_, after, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		after = strings.TrimSpace(after)
+		after = strings.TrimLeftFunc(after, func(c rune) bool {
+			switch c {
+			case ';', ',':
+				return true
+			default:
+				return unicode.IsSpace(c)
+			}
+		})
+
+		panic("Not implemented.")
+	}
+	if err := s.Err(); err != nil {
+		return "", fmt.Errorf("scan: %w", err)
+	}
+
+	return result, nil
 }
