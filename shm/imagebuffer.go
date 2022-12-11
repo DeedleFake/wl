@@ -94,9 +94,13 @@ func (s *ImageBuffer) Bounds() image.Rectangle {
 }
 
 func (s *ImageBuffer) Resize(w, h int32) error {
+	if (w == s.w) && (h == s.h) {
+		return nil
+	}
+
 	s.w = w
 	s.h = h
-	if int(s.Len()) < cap(s.mmap) {
+	if s.Len() < s.Cap() {
 		s.mmap = s.mmap[:s.Len()]
 		s.buf.Destroy()
 		s.buf = s.pool.CreateBuffer(0, s.w, s.h, s.Stride(), wl.ShmFormatArgb8888)
