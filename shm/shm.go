@@ -2,6 +2,7 @@
 package shm
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -13,10 +14,15 @@ func Create() (*os.File, error) {
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create file: %w", err)
 	}
 
-	return file, os.Remove(path)
+	err = os.Remove(path)
+	if err != nil {
+		err = fmt.Errorf("remove file: %w", err)
+	}
+
+	return file, err
 }
 
 type Mmap []byte
