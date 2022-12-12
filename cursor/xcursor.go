@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"deedles.dev/wl/internal/set"
 )
 
 const (
@@ -39,7 +37,7 @@ func loadTheme(theme string, size int, f func(ximages)) error {
 		theme = "default"
 	}
 
-	inherits := make(set.Set[string])
+	var inherits []string
 	for _, path := range libraryPaths() {
 		dir := filepath.Join(path, theme)
 		if dir == "" {
@@ -56,11 +54,11 @@ func loadTheme(theme string, size int, f func(ximages)) error {
 			full := filepath.Join(dir, "index.theme")
 			i, err := themeInherits(full)
 			if err == nil {
-				inherits.AddAll(i...)
+				inherits = i
 			}
 		}
 	}
-	for path := range inherits {
+	for _, path := range inherits {
 		loadTheme(path, size, f)
 	}
 
