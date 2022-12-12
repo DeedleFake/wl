@@ -2,12 +2,20 @@ package cursor
 
 import (
 	"bufio"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
+
+	"deedles.dev/wl/internal/set"
+)
+
+const (
+	magic         = 0x72756358
+	fileHeaderLen = 4 * 4
 )
 
 type ximage struct {
@@ -31,7 +39,7 @@ func loadTheme(theme string, size int, f func(ximages)) error {
 		theme = "default"
 	}
 
-	var inherits string
+	inherits := make(set.Set[string])
 	for _, path := range libraryPaths() {
 		dir := filepath.Join(path, theme)
 		if dir == "" {
@@ -44,12 +52,15 @@ func loadTheme(theme string, size int, f func(ximages)) error {
 			return err
 		}
 
-		if inherits == "" {
+		if len(inherits) == 0 {
 			full := filepath.Join(dir, "index.theme")
-			inherits = themeInherits(full)
+			i, err := themeInherits(full)
+			if err == nil {
+				inherits.AddAll(i...)
+			}
 		}
 	}
-	for path, ok := inherits, inherits != ""; ok; path, ok = nextPath(path) {
+	for path := range inherits {
 		loadTheme(path, size, f)
 	}
 
@@ -115,14 +126,14 @@ func loadAllCursorsFromFile(path string, ent fs.DirEntry, size int, f func(ximag
 	return nil
 }
 
-func themeInherits(full string) (result string, err error) {
+func themeInherits(full string) (inherits []string, err error) {
 	if full == "" {
-		return ""
+		return nil, nil
 	}
 
 	file, err := os.Open(full)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer file.Close()
 
@@ -137,21 +148,106 @@ func themeInherits(full string) (result string, err error) {
 		if !ok {
 			continue
 		}
-		after = strings.TrimSpace(after)
-		after = strings.TrimLeftFunc(after, func(c rune) bool {
-			switch c {
-			case ';', ',':
-				return true
-			default:
-				return unicode.IsSpace(c)
-			}
-		})
 
-		panic("Not implemented.")
+		inherits = strings.FieldsFunc(after, func(c rune) bool {
+			return (c == ':') || (c == ',')
+		})
+		for i, v := range inherits {
+			inherits[i] = strings.TrimSpace(v)
+		}
+
+		break
 	}
 	if err := s.Err(); err != nil {
-		return "", fmt.Errorf("scan: %w", err)
+		return inherits, fmt.Errorf("scan: %w", err)
 	}
 
-	return result, nil
+	return inherits, nil
+}
+
+func xcFileLoadImages(r io.ReadSeeker, size int) ([]ximage, error) {
+	hdr, err := readFileHeader(r)
+	if err != nil {
+		return nil, fmt.Errorf("read header: %w", err)
+	}
+
+	bestSize, nsize, err := fileBestSize(hdr, size)
+	if err != nil {
+		return nil, fmt.Errorf("read best size: %w", err)
+	}
+
+	images := make([]ximage, 0, nsize)
+	for i := 0; i < nsize; i++ {
+		toc, err := findImageToc(hdr, bestSize, i)
+		if err != nil {
+			return nil, fmt.Errorf("find image toc: %w", err)
+		}
+
+		img, err := readImage(r, hdr, toc)
+		if err != nil {
+			return nil, fmt.Errorf("read image: %w", err)
+		}
+
+		images[i] = img
+	}
+
+	return images, nil
+}
+
+type fileHeader struct {
+	Header  uint32
+	Version uint32
+	Tocs    []fileToc
+}
+
+type fileToc struct {
+	Type     uint32
+	Subtype  uint32
+	Position uint32
+}
+
+func readFileHeader(r io.ReadSeeker) (hdr fileHeader, err error) {
+	type ewrap struct{ error }
+	read := func(data any) {
+		err := binary.Read(r, binary.LittleEndian, data)
+		if err != nil {
+			panic(ewrap{err})
+		}
+	}
+	defer func() {
+		switch r := recover().(type) {
+		case ewrap:
+			err = r.error
+		default:
+			panic(r)
+		}
+	}()
+
+	var data uint32
+	read(&data)
+	if data != magic {
+		return hdr, fmt.Errorf("bad magic in header: %x", data)
+	}
+	read(&hdr.Header)
+	read(&hdr.Version)
+
+	var ntocs uint32
+	read(ntocs)
+	hdr.Tocs = make([]fileToc, ntocs)
+
+	skip := hdr.Header - fileHeaderLen
+	if skip > 0 {
+		_, err = r.Seek(int64(skip), io.SeekCurrent)
+		if err != nil {
+			return hdr, fmt.Errorf("seek past header: %w", err)
+		}
+	}
+
+	for i := range hdr.Tocs {
+		read(&hdr.Tocs[i].Type)
+		read(&hdr.Tocs[i].Subtype)
+		read(&hdr.Tocs[i].Position)
+	}
+
+	return hdr, nil
 }
