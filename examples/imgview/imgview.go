@@ -19,6 +19,7 @@ import (
 
 	wl "deedles.dev/wl/client"
 	"deedles.dev/wl/wire"
+	_ "deedles.dev/ximage/xcursor"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
