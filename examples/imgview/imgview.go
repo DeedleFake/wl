@@ -265,13 +265,13 @@ type xdgSurfaceListener state
 
 func (s *xdgSurfaceListener) Configure(serial uint32) {
 	s.xsurface.AckConfigure(serial)
+
+	(*state)(s).draw(0, 0)
 }
 
 type xdgToplevelListener state
 
-func (s *xdgToplevelListener) Configure(w, h int32, states []byte) {
-	(*state)(s).draw(0, 0)
-}
+func (s *xdgToplevelListener) Configure(w, h int32, states []byte) {}
 
 func (s *xdgToplevelListener) Close() {
 	s.close.Do(func() { close(s.done) })
