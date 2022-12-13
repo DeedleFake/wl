@@ -18,13 +18,15 @@ import (
 	"time"
 
 	wl "deedles.dev/wl/client"
+	"deedles.dev/wl/shm"
 	"deedles.dev/wl/wire"
-	_ "deedles.dev/ximage/xcursor"
+	"deedles.dev/ximage/xcursor"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/sys/unix"
 )
 
 type state struct {
@@ -47,6 +49,9 @@ type state struct {
 	xsurface *Surface
 	toplevel *Toplevel
 	buffer   *wl.ImageBuffer
+
+	cursorSurface *wl.Surface
+	cursorHot     image.Point
 
 	pointerLoc  image.Point
 	barBounds   image.Rectangle
@@ -90,6 +95,13 @@ func (s *state) init() error {
 		return errors.New("no seat found")
 	}
 
+	s.initWindow()
+	s.initCursor()
+
+	return nil
+}
+
+func (s *state) initWindow() {
 	s.surface = s.compositor.CreateSurface()
 
 	s.xsurface = s.wmBase.GetXdgSurface(s.surface)
@@ -111,8 +123,50 @@ func (s *state) init() error {
 		log.Fatalf("create buffer: %v", err)
 	}
 	s.buffer = buffer
+}
 
-	return nil
+func (s *state) initCursor() {
+	theme, err := xcursor.LoadTheme("")
+	if err != nil {
+		log.Fatalf("load cursor theme: %v", err)
+	}
+
+	cursors, ok := theme.Cursors["left_ptr"]
+	if !ok {
+		log.Fatalf("no left_ptr cursor in theme")
+	}
+	cimg := cursors.Images[0].Image
+	size := len(cimg.Pix)
+	s.cursorHot = cursors.Images[0].Hot
+
+	file, err := shm.Create()
+	if err != nil {
+		log.Fatalf("create SHM file: %v", err)
+	}
+	defer file.Close()
+	file.Truncate(int64(size))
+
+	mmap, err := shm.MapShared(file, size, unix.PROT_READ|unix.PROT_WRITE)
+	if err != nil {
+		log.Fatalf("mmap: %v", err)
+	}
+	defer mmap.Unmap()
+
+	s.cursorSurface = s.compositor.CreateSurface()
+	pool := s.shm.CreatePool(file, int32(size))
+	defer pool.Destroy()
+	buf := pool.CreateBuffer(
+		0,
+		int32(cimg.Rect.Dx()),
+		int32(cimg.Rect.Dy()),
+		int32(cimg.Stride()),
+		wl.ShmFormatArgb8888,
+	)
+
+	copy(mmap, cimg.Pix)
+
+	s.cursorSurface.Attach(buf, 0, 0)
+	s.cursorSurface.Commit()
 }
 
 func (s *state) run(ctx context.Context) {
@@ -215,6 +269,7 @@ func (s *wmBaseListener) Ping(serial uint32) {
 type pointerListener state
 
 func (s *pointerListener) Enter(serial uint32, surface *wl.Surface, surfaceX wire.Fixed, surfaceY wire.Fixed) {
+	(*state)(s).pointer.SetCursor(serial, s.cursorSurface, int32(s.cursorHot.X), int32(s.cursorHot.Y))
 }
 
 func (s *pointerListener) Leave(serial uint32, surface *wl.Surface) {}
