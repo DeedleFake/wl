@@ -86,6 +86,7 @@ func (client *Client) listen() {
 		case <-client.done:
 			return
 		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
+			// TODO: Limit number of queued incoming messages?
 		}
 	}
 }
