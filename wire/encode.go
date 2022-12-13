@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"deedles.dev/wl/bin"
 	"golang.org/x/sys/unix"
@@ -65,7 +66,7 @@ func (mb *MessageBuilder) WriteUint(v uint32) {
 
 func (mb *MessageBuilder) WriteObject(v Object) {
 	var id uint32
-	if v != nil {
+	if !isNil(v) {
 		id = v.ID()
 	}
 	mb.WriteUint(id)
@@ -175,4 +176,8 @@ func (mb *MessageBuilder) String() string {
 	}
 
 	return fmt.Sprintf("%v.%v(%v)", mb.sender, mb.Method, strings.Join(args, ", "))
+}
+
+func isNil(v any) bool {
+	return (v == nil) || ((*[2]uintptr)(unsafe.Pointer(&v))[1] == 0)
 }
