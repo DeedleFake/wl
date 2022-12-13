@@ -1,5 +1,5 @@
-deedles.dev/ximage v0.0.0-20221213200451-302902e53ab4 h1:CGRqaoESLGHfhIxarm/6xQNkzEwwXHURvuh1zCC3i4A=
-deedles.dev/ximage v0.0.0-20221213200451-302902e53ab4/go.mod h1:Jfea/mKLbkYA2sYHqpOQ5u0W8ry8O76y5MYtdZvLryI=
+deedles.dev/ximage v0.0.0-20221213201345-059befc705be h1:OIlQRjSmWnBrG1+F8Uam+rwijfSR8EHxafisXb03Ytg=
+deedles.dev/ximage v0.0.0-20221213201345-059befc705be/go.mod h1:Jfea/mKLbkYA2sYHqpOQ5u0W8ry8O76y5MYtdZvLryI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
