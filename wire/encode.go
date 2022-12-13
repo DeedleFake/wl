@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"deedles.dev/wl/bin"
+	"deedles.dev/wl/internal/bin"
 	"golang.org/x/sys/unix"
 )
 
