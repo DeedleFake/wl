@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"deedles.dev/wl/shm"
-	"deedles.dev/wl/shm/shmimage"
+	"deedles.dev/ximage"
 	"golang.org/x/sys/unix"
 )
 
@@ -135,9 +135,9 @@ func (s *ImageBuffer) Resize(w, h int32) error {
 }
 
 func (s *ImageBuffer) Image() draw.Image {
-	return &shmimage.ARGB8888{
-		Pix:    s.mmap,
-		Stride: int(s.Stride()),
+	return &ximage.FormatImage{
+		Format: ximage.ARGB8888,
 		Rect:   s.Bounds(),
+		Pix:    s.mmap,
 	}
 }
