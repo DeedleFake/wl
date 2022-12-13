@@ -100,8 +100,12 @@ type DebugObject interface {
 // is provided here to allow them to be referenced and used by
 // generated code.
 type State interface {
+	// Add adds an object to the state. If the object has a non-zero ID,
+	// that ID is used to track it. Otherwise, a new ID is generated and
+	// assigned to the object.
 	Add(Object)
-	Set(uint32, Object)
+
+	// Enqueue adds an outgoing message to the state's queue.
 	Enqueue(*MessageBuilder)
 }
 

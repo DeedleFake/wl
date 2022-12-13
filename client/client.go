@@ -107,15 +107,14 @@ func (client *Client) Close() error {
 // Add adds obj to client's knowledge. Do not call this method unless
 // you know what you are doing.
 func (client *Client) Add(obj wire.Object) {
-	client.Set(client.nextID, obj)
-	client.nextID++
-}
+	id := obj.ID()
+	if id == 0 {
+		id = client.nextID
+		obj.SetID(id)
+		client.nextID++
+	}
 
-// Set assigns id to obj and tracks it. Do not call this method unless
-// you know what you are doing.
-func (client *Client) Set(id uint32, obj wire.Object) {
 	client.objects[id] = obj
-	obj.SetID(id)
 }
 
 // Get retrieves an object by ID. If no such object exists, nil is

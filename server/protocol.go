@@ -2349,15 +2349,18 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	case 0:
 		sourceID := msg.ReadUint()
 		source := NewDataSource(obj.state)
-		obj.state.Set(sourceID, source)
+		source.SetID(sourceID)
+		obj.state.Add(source)
 
 		originID := msg.ReadUint()
 		origin := NewSurface(obj.state)
-		obj.state.Set(originID, origin)
+		origin.SetID(originID)
+		obj.state.Add(origin)
 
 		iconID := msg.ReadUint()
 		icon := NewSurface(obj.state)
-		obj.state.Set(iconID, icon)
+		icon.SetID(iconID)
+		obj.state.Add(icon)
 
 		serial := msg.ReadUint()
 
@@ -2379,7 +2382,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	case 1:
 		sourceID := msg.ReadUint()
 		source := NewDataSource(obj.state)
-		obj.state.Set(sourceID, source)
+		source.SetID(sourceID)
+		obj.state.Add(source)
 
 		serial := msg.ReadUint()
 
@@ -2649,7 +2653,8 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 
 		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		obj.state.Set(seatID, seat)
+		seat.SetID(seatID)
+		obj.state.Add(seat)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -2815,7 +2820,8 @@ func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3071,7 +3077,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 1:
 		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		obj.state.Set(seatID, seat)
+		seat.SetID(seatID)
+		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
@@ -3091,7 +3098,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 2:
 		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		obj.state.Set(seatID, seat)
+		seat.SetID(seatID)
+		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
@@ -3125,7 +3133,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 4:
 		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		obj.state.Set(parentID, parent)
+		parent.SetID(parentID)
+		obj.state.Add(parent)
 
 		x := msg.ReadInt()
 
@@ -3156,7 +3165,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		obj.state.Set(outputID, output)
+		output.SetID(outputID)
+		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3175,13 +3185,15 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 6:
 		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		obj.state.Set(seatID, seat)
+		seat.SetID(seatID)
+		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
 		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		obj.state.Set(parentID, parent)
+		parent.SetID(parentID)
+		obj.state.Add(parent)
 
 		x := msg.ReadInt()
 
@@ -3209,7 +3221,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 7:
 		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		obj.state.Set(outputID, output)
+		output.SetID(outputID)
+		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3852,7 +3865,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	case 1:
 		bufferID := msg.ReadUint()
 		buffer := NewBuffer(obj.state)
-		obj.state.Set(bufferID, buffer)
+		buffer.SetID(bufferID)
+		obj.state.Add(buffer)
 
 		x := msg.ReadInt()
 
@@ -3916,7 +3930,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	case 4:
 		regionID := msg.ReadUint()
 		region := NewRegion(obj.state)
-		obj.state.Set(regionID, region)
+		region.SetID(regionID)
+		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3933,7 +3948,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	case 5:
 		regionID := msg.ReadUint()
 		region := NewRegion(obj.state)
-		obj.state.Set(regionID, region)
+		region.SetID(regionID)
+		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4503,7 +4519,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		hotspotX := msg.ReadInt()
 
@@ -6031,11 +6048,13 @@ func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		obj.state.Set(parentID, parent)
+		parent.SetID(parentID)
+		obj.state.Add(parent)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -6304,7 +6323,8 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 2:
 		siblingID := msg.ReadUint()
 		sibling := NewSurface(obj.state)
-		obj.state.Set(siblingID, sibling)
+		sibling.SetID(siblingID)
+		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -6321,7 +6341,8 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 	case 3:
 		siblingID := msg.ReadUint()
 		sibling := NewSurface(obj.state)
-		obj.state.Set(siblingID, sibling)
+		sibling.SetID(siblingID)
+		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {
 			return err

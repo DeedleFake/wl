@@ -84,7 +84,8 @@ import (
 
 							{{$argName}}ID := msg.ReadUint()
 							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
-							obj.state.Set({{$argName}}ID, {{$argName}})
+							{{$argName}}.SetID({{$argName}}ID)
+							obj.state.Add({{$argName}})
 						{{else}}
 							{{if .Enum}}
 								{{$argName}} := {{.Enum | enumType $interface.Name}}(msg.Read{{. | typeFuncSuffix}}())

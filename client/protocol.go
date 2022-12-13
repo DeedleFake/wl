@@ -2372,7 +2372,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		x := msg.ReadFixed()
 
@@ -2380,7 +2381,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		idID := msg.ReadUint()
 		id := NewDataOffer(obj.state)
-		obj.state.Set(idID, id)
+		id.SetID(idID)
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -2445,7 +2447,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	case 5:
 		idID := msg.ReadUint()
 		id := NewDataOffer(obj.state)
-		obj.state.Set(idID, id)
+		id.SetID(idID)
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3474,7 +3477,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	case 0:
 		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		obj.state.Set(outputID, output)
+		output.SetID(outputID)
+		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3491,7 +3495,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	case 1:
 		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		obj.state.Set(outputID, output)
+		output.SetID(outputID)
+		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4413,7 +4418,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		surfaceX := msg.ReadFixed()
 
@@ -4440,7 +4446,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4938,7 +4945,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		keys := msg.ReadArray()
 
@@ -4962,7 +4970,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -5290,7 +5299,8 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		obj.state.Set(surfaceID, surface)
+		surface.SetID(surfaceID)
+		obj.state.Add(surface)
 
 		id := msg.ReadInt()
 
