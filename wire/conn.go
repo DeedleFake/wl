@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
+	"deedles.dev/wl/internal/set"
 	"golang.org/x/sys/unix"
 )
 
@@ -20,6 +22,14 @@ func pop[T any, S ~[]T](s S) (v T, ok bool) {
 	s = s[:len(s)-1]
 	copy(s, s[1:cap(s)])
 	return v, true
+}
+
+func xdgRuntimeDir() string {
+	dir, ok := os.LookupEnv("XDG_RUNTIME_DIR")
+	if ok {
+		return dir
+	}
+	return fmt.Sprintf("/var/run/user/%v", os.Getuid())
 }
 
 // SocketPath determines the path to the Wayland Unix domain socket
@@ -35,12 +45,37 @@ func SocketPath() string {
 		return v
 	}
 
-	dir, ok := os.LookupEnv("XDG_RUNTIME_DIR")
-	if !ok {
-		dir = fmt.Sprintf("/var/run/user/%v", os.Getuid())
+	return filepath.Join(xdgRuntimeDir(), v)
+}
+
+// NewSocketPath attempts to generate a valid path for opening a new
+// socket to listen on.
+func NewSocketPath() (string, error) {
+	dir := xdgRuntimeDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
 	}
 
-	return filepath.Join(dir, v)
+	names := make(set.Set[int], len(entries))
+	for _, ent := range entries {
+		after, ok := strings.CutPrefix(ent.Name(), "wayland-")
+		if !ok {
+			continue
+		}
+		n, err := strconv.ParseInt(after, 10, 0)
+		if err != nil {
+			continue
+		}
+		names.Add(int(n))
+	}
+
+	var num int
+	for names.Has(num) {
+		num++
+	}
+
+	return filepath.Join(dir, fmt.Sprintf("wayland-%v", num)), nil
 }
 
 // Conn represents a low-level Wayland connection. It is not generally
