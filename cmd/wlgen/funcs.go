@@ -133,7 +133,7 @@ func (ctx Context) goType(arg protocol.Arg) (string, error) {
 		if arg.Interface == "" {
 			return "wire.NewID", nil
 		}
-		return "uint32", nil
+		return "*" + ctx.ident(arg.Interface), nil
 	case "string":
 		return "string", nil
 	case "array":

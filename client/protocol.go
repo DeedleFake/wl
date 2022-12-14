@@ -2271,7 +2271,7 @@ type DataDeviceListener interface {
 	// following the data_device_data_offer event, the new data_offer
 	// object will send out data_offer.offer events to describe the
 	// mime types it offers.
-	DataOffer(id uint32)
+	DataOffer(id *DataOffer)
 
 	// This event is sent when an active drag-and-drop pointer enters
 	// a surface owned by the client.  The position of the pointer at
@@ -2351,8 +2351,9 @@ func (obj *DataDevice) State() wire.State {
 func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewDataOffer(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -2370,18 +2371,16 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		x := msg.ReadFixed()
 
 		y := msg.ReadFixed()
 
-		idID := msg.ReadUint()
 		id := NewDataOffer(obj.state)
-		id.SetID(idID)
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2445,9 +2444,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
-		idID := msg.ReadUint()
 		id := NewDataOffer(obj.state)
-		id.SetID(idID)
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -3475,9 +3473,8 @@ func (obj *Surface) State() wire.State {
 func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		output.SetID(outputID)
+		output.SetID(msg.ReadUint())
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3493,9 +3490,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		output.SetID(outputID)
+		output.SetID(msg.ReadUint())
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -4416,9 +4412,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		surfaceX := msg.ReadFixed()
@@ -4444,9 +4439,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -4943,9 +4937,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		keys := msg.ReadArray()
@@ -4968,9 +4961,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -5297,9 +5289,8 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		time := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		id := msg.ReadInt()

@@ -79,12 +79,12 @@ import (
 					{{range $method.Args -}}
 						{{- $argName := .Name | camel | unexport | unkeyword -}}
 
-						{{if and (eq .Type "object") .Interface}}
+						{{- $isObject := or (eq .Type "object") (eq .Type "new_id") -}}
+						{{if and $isObject .Interface}}
 							{{- $type := .Interface | ident -}}
 
-							{{$argName}}ID := msg.ReadUint()
 							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
-							{{$argName}}.SetID({{$argName}}ID)
+							{{if eq .Type "new_id" | not}}{{$argName}}.SetID(msg.ReadUint()){{end}}
 							obj.state.Add({{$argName}})
 						{{else}}
 							{{if .Enum}}

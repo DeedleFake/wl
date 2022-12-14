@@ -27,7 +27,7 @@ type DisplayListener interface {
 	// attempt to use it after that point.
 	//
 	// The callback_data passed in the callback is the event serial.
-	Sync(callback uint32)
+	Sync(callback *Callback)
 
 	// This request creates a registry object that allows the client
 	// to list and bind the global objects available from the
@@ -38,7 +38,7 @@ type DisplayListener interface {
 	// client disconnects, not when the client side proxy is destroyed.
 	// Therefore, clients should invoke get_registry as infrequently as
 	// possible to avoid wasting memory.
-	GetRegistry(registry uint32)
+	GetRegistry(registry *Registry)
 }
 
 // The core global object.  This is a special singleton object.  It
@@ -70,8 +70,9 @@ func (obj *Display) State() wire.State {
 func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		callback := NewCallback(obj.state)
 
-		callback := msg.ReadUint()
+		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -86,8 +87,9 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+		registry := NewRegistry(obj.state)
 
-		registry := msg.ReadUint()
+		obj.state.Add(registry)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -445,10 +447,10 @@ const (
 // messages for a Compositor object.
 type CompositorListener interface {
 	// Ask the compositor to create a new surface.
-	CreateSurface(id uint32)
+	CreateSurface(id *Surface)
 
 	// Ask the compositor to create a new region.
-	CreateRegion(id uint32)
+	CreateRegion(id *Region)
 }
 
 // A compositor.  This object is a singleton global.  The
@@ -481,8 +483,9 @@ func (obj *Compositor) State() wire.State {
 func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewSurface(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -497,8 +500,9 @@ func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+		id := NewRegion(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -569,7 +573,7 @@ type ShmPoolListener interface {
 	// A buffer will keep a reference to the pool it was created from
 	// so it is valid to destroy the pool immediately after creating
 	// a buffer from it.
-	CreateBuffer(id uint32, offset int32, width int32, height int32, stride int32, format ShmFormat)
+	CreateBuffer(id *Buffer, offset int32, width int32, height int32, stride int32, format ShmFormat)
 
 	// Destroy the shared memory pool.
 	//
@@ -619,8 +623,9 @@ func (obj *ShmPool) State() wire.State {
 func (obj *ShmPool) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewBuffer(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		offset := msg.ReadInt()
 
@@ -730,7 +735,7 @@ type ShmListener interface {
 	// The pool can be used to create shared memory based buffer
 	// objects.  The server will mmap size bytes of the passed file
 	// descriptor, to use as backing memory for the pool.
-	CreatePool(id uint32, fd *os.File, size int32)
+	CreatePool(id *ShmPool, fd *os.File, size int32)
 }
 
 // A singleton global object that provides support for shared
@@ -769,8 +774,9 @@ func (obj *Shm) State() wire.State {
 func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewShmPool(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		fd := msg.ReadFile()
 
@@ -2347,19 +2353,16 @@ func (obj *DataDevice) State() wire.State {
 func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		sourceID := msg.ReadUint()
 		source := NewDataSource(obj.state)
-		source.SetID(sourceID)
+		source.SetID(msg.ReadUint())
 		obj.state.Add(source)
 
-		originID := msg.ReadUint()
 		origin := NewSurface(obj.state)
-		origin.SetID(originID)
+		origin.SetID(msg.ReadUint())
 		obj.state.Add(origin)
 
-		iconID := msg.ReadUint()
 		icon := NewSurface(obj.state)
-		icon.SetID(iconID)
+		icon.SetID(msg.ReadUint())
 		obj.state.Add(icon)
 
 		serial := msg.ReadUint()
@@ -2380,9 +2383,8 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		sourceID := msg.ReadUint()
 		source := NewDataSource(obj.state)
-		source.SetID(sourceID)
+		source.SetID(msg.ReadUint())
 		obj.state.Add(source)
 
 		serial := msg.ReadUint()
@@ -2589,10 +2591,10 @@ const (
 // messages for a DataDeviceManager object.
 type DataDeviceManagerListener interface {
 	// Create a new data source.
-	CreateDataSource(id uint32)
+	CreateDataSource(id *DataSource)
 
 	// Create a new data device for a given seat.
-	GetDataDevice(id uint32, seat *Seat)
+	GetDataDevice(id *DataDevice, seat *Seat)
 }
 
 // The wl_data_device_manager is a singleton global object that
@@ -2632,8 +2634,9 @@ func (obj *DataDeviceManager) State() wire.State {
 func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewDataSource(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -2648,12 +2651,12 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+		id := NewDataDevice(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
-		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		seat.SetID(seatID)
+		seat.SetID(msg.ReadUint())
 		obj.state.Add(seat)
 
 		if err := msg.Err(); err != nil {
@@ -2777,7 +2780,7 @@ type ShellListener interface {
 	// already has another role, it raises a protocol error.
 	//
 	// Only one shell surface can be associated with a given surface.
-	GetShellSurface(id uint32, surface *Surface)
+	GetShellSurface(id *ShellSurface, surface *Surface)
 }
 
 // This interface is implemented by servers that provide
@@ -2815,12 +2818,12 @@ func (obj *Shell) State() wire.State {
 func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewShellSurface(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -3075,9 +3078,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		seat.SetID(seatID)
+		seat.SetID(msg.ReadUint())
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -3096,9 +3098,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
-		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		seat.SetID(seatID)
+		seat.SetID(msg.ReadUint())
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -3131,9 +3132,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
-		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		parent.SetID(parentID)
+		parent.SetID(msg.ReadUint())
 		obj.state.Add(parent)
 
 		x := msg.ReadInt()
@@ -3163,9 +3163,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 		framerate := msg.ReadUint()
 
-		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		output.SetID(outputID)
+		output.SetID(msg.ReadUint())
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3183,16 +3182,14 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 6:
-		seatID := msg.ReadUint()
 		seat := NewSeat(obj.state)
-		seat.SetID(seatID)
+		seat.SetID(msg.ReadUint())
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
-		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		parent.SetID(parentID)
+		parent.SetID(msg.ReadUint())
 		obj.state.Add(parent)
 
 		x := msg.ReadInt()
@@ -3219,9 +3216,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 7:
-		outputID := msg.ReadUint()
 		output := NewOutput(obj.state)
-		output.SetID(outputID)
+		output.SetID(msg.ReadUint())
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3622,7 +3618,7 @@ type SurfaceListener interface {
 	//
 	// The callback_data passed in the callback is the current time, in
 	// milliseconds, with an undefined base.
-	Frame(callback uint32)
+	Frame(callback *Callback)
 
 	// This request sets the region of the surface that contains
 	// opaque content.
@@ -3863,9 +3859,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		bufferID := msg.ReadUint()
 		buffer := NewBuffer(obj.state)
-		buffer.SetID(bufferID)
+		buffer.SetID(msg.ReadUint())
 		obj.state.Add(buffer)
 
 		x := msg.ReadInt()
@@ -3912,8 +3907,9 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 3:
+		callback := NewCallback(obj.state)
 
-		callback := msg.ReadUint()
+		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -3928,9 +3924,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
-		regionID := msg.ReadUint()
 		region := NewRegion(obj.state)
-		region.SetID(regionID)
+		region.SetID(msg.ReadUint())
 		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
@@ -3946,9 +3941,8 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
-		regionID := msg.ReadUint()
 		region := NewRegion(obj.state)
-		region.SetID(regionID)
+		region.SetID(msg.ReadUint())
 		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
@@ -4174,7 +4168,7 @@ type SeatListener interface {
 	// It is a protocol violation to issue this request on a seat that has
 	// never had the pointer capability. The missing_capability error will
 	// be sent in this case.
-	GetPointer(id uint32)
+	GetPointer(id *Pointer)
 
 	// The ID provided will be initialized to the wl_keyboard interface
 	// for this seat.
@@ -4184,7 +4178,7 @@ type SeatListener interface {
 	// It is a protocol violation to issue this request on a seat that has
 	// never had the keyboard capability. The missing_capability error will
 	// be sent in this case.
-	GetKeyboard(id uint32)
+	GetKeyboard(id *Keyboard)
 
 	// The ID provided will be initialized to the wl_touch interface
 	// for this seat.
@@ -4194,7 +4188,7 @@ type SeatListener interface {
 	// It is a protocol violation to issue this request on a seat that has
 	// never had the touch capability. The missing_capability error will
 	// be sent in this case.
-	GetTouch(id uint32)
+	GetTouch(id *Touch)
 
 	// Using this request a client can tell the server that it is not going to
 	// use the seat object anymore.
@@ -4232,8 +4226,9 @@ func (obj *Seat) State() wire.State {
 func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+		id := NewPointer(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4248,8 +4243,9 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+		id := NewKeyboard(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4264,8 +4260,9 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+		id := NewTouch(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -4517,9 +4514,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
 		hotspotX := msg.ReadInt()
@@ -5983,7 +5979,7 @@ type SubcompositorListener interface {
 	//
 	// This request modifies the behaviour of wl_surface.commit request on
 	// the sub-surface, see the documentation on wl_subsurface interface.
-	GetSubsurface(id uint32, surface *Surface, parent *Surface)
+	GetSubsurface(id *Subsurface, surface *Surface, parent *Surface)
 }
 
 // The global interface exposing sub-surface compositing capabilities.
@@ -6043,17 +6039,16 @@ func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+		id := NewSubsurface(obj.state)
 
-		id := msg.ReadUint()
+		obj.state.Add(id)
 
-		surfaceID := msg.ReadUint()
 		surface := NewSurface(obj.state)
-		surface.SetID(surfaceID)
+		surface.SetID(msg.ReadUint())
 		obj.state.Add(surface)
 
-		parentID := msg.ReadUint()
 		parent := NewSurface(obj.state)
-		parent.SetID(parentID)
+		parent.SetID(msg.ReadUint())
 		obj.state.Add(parent)
 
 		if err := msg.Err(); err != nil {
@@ -6321,9 +6316,8 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
-		siblingID := msg.ReadUint()
 		sibling := NewSurface(obj.state)
-		sibling.SetID(siblingID)
+		sibling.SetID(msg.ReadUint())
 		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {
@@ -6339,9 +6333,8 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 3:
-		siblingID := msg.ReadUint()
 		sibling := NewSurface(obj.state)
-		sibling.SetID(siblingID)
+		sibling.SetID(msg.ReadUint())
 		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {
