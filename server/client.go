@@ -42,6 +42,8 @@ func (client *Client) listen() {
 			}
 
 			select {
+			case <-client.server.done:
+				return
 			case <-client.done:
 				return
 			case client.server.queue.Add() <- func() error { return err }:
@@ -50,6 +52,8 @@ func (client *Client) listen() {
 		}
 
 		select {
+		case <-client.server.done:
+			return
 		case <-client.done:
 			return
 		case client.server.queue.Add() <- func() error { return client.dispatch(msg) }:

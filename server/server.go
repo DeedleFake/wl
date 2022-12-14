@@ -64,6 +64,12 @@ func (server *Server) listen() {
 	}
 }
 
+func (server *Server) Close() error {
+	server.close.Do(func() { close(server.done) })
+	server.queue.Stop()
+	return server.lis.Close()
+}
+
 func (server *Server) addClient(c *net.UnixConn) {
 	server.clients.Add(newClient(server, wire.NewConn(c)))
 }
