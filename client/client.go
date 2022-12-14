@@ -8,6 +8,7 @@ import (
 
 	"deedles.dev/wl/internal/cq"
 	"deedles.dev/wl/internal/debug"
+	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
 )
 
@@ -16,12 +17,11 @@ import (
 // Client tracks the connection state, including objects and the event
 // queue. It is the primary interface to a Wayland server.
 type Client struct {
-	done    chan struct{}
-	close   sync.Once
-	conn    *wire.Conn
-	objects map[uint32]wire.Object
-	nextID  uint32
-	queue   *cq.Queue[func() error]
+	done  chan struct{}
+	close sync.Once
+	conn  *wire.Conn
+	store *objstore.Store
+	queue *cq.Queue[func() error]
 }
 
 // Dial opens a connection to the Wayland display based on the
@@ -40,11 +40,10 @@ func Dial() (*Client, error) {
 // assumes responsibility for closing conn.
 func NewClient(conn *wire.Conn) *Client {
 	client := Client{
-		done:    make(chan struct{}),
-		conn:    conn,
-		objects: make(map[uint32]wire.Object),
-		nextID:  1,
-		queue:   cq.New[func() error](),
+		done:  make(chan struct{}),
+		conn:  conn,
+		store: objstore.New(1),
+		queue: cq.New[func() error](),
 	}
 	client.Add(NewDisplay(&client))
 	go client.listen()
@@ -80,7 +79,7 @@ func (client *Client) listen() {
 // Display returns the Display object that represents the Wayland
 // server.
 func (client *Client) Display() *Display {
-	return client.objects[1].(*Display)
+	return client.Get(1).(*Display)
 }
 
 // Close closes the client, closing the underlying connection, stopping
@@ -94,34 +93,23 @@ func (client *Client) Close() error {
 // Add adds obj to client's knowledge. Do not call this method unless
 // you know what you are doing.
 func (client *Client) Add(obj wire.Object) {
-	id := obj.ID()
-	if id == 0 {
-		id = client.nextID
-		obj.SetID(id)
-		client.nextID++
-	}
-
-	client.objects[id] = obj
+	client.store.Add(obj)
 }
 
 // Get retrieves an object by ID. If no such object exists, nil is
 // returned.
 func (client *Client) Get(id uint32) wire.Object {
-	return client.objects[id]
+	return client.store.Get(id)
 }
 
 // Delete deletes the object identified by ID, if it exists. If the
 // object has a delete handler specified, it is called.
 func (client *Client) Delete(id uint32) {
-	obj := client.objects[id]
-	delete(client.objects, id)
-	if obj != nil {
-		obj.Delete()
-	}
+	client.store.Delete(id)
 }
 
 func (client *Client) dispatch(msg *wire.MessageBuffer) error {
-	obj := client.objects[msg.Sender()]
+	obj := client.Get(msg.Sender())
 	if obj == nil {
 		return UnknownSenderIDError{Msg: msg}
 	}
