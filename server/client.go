@@ -77,25 +77,3 @@ func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 		return msg.Build(client.conn)
 	}
 }
-
-// Flush flushes the event queue, sending all enqueued messages and
-// processing all messages that have been received since the last time
-// the queue was flushed. It returns all errors encountered.
-func (client *Client) Flush() error {
-	select {
-	case queue := <-client.server.queue.Get():
-		return errors.Join(flushQueue(queue)...)
-	default:
-		return nil
-	}
-}
-
-func flushQueue(queue []func() error) (errs []error) {
-	for _, ev := range queue {
-		err := ev()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errs
-}

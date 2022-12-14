@@ -67,3 +67,25 @@ func (server *Server) listen() {
 func (server *Server) addClient(c *net.UnixConn) {
 	server.clients.Add(newClient(server, wire.NewConn(c)))
 }
+
+// Flush flushes the event queue, sending all enqueued messages and
+// processing all messages that have been received since the last time
+// the queue was flushed. It returns all errors encountered.
+func (server *Server) Flush() error {
+	select {
+	case queue := <-server.queue.Get():
+		return errors.Join(flushQueue(queue)...)
+	default:
+		return nil
+	}
+}
+
+func flushQueue(queue []func() error) (errs []error) {
+	for _, ev := range queue {
+		err := ev()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
