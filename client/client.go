@@ -3,29 +3,15 @@ package wl
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
-	"os"
-	"strconv"
 	"sync"
 
 	"deedles.dev/wl/internal/cq"
+	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/wire"
 )
 
 //go:generate go run deedles.dev/wl/cmd/wlgen -client -out protocol.go -xml ../protocol/wayland.xml
-
-var debug = func(string, ...any) {}
-
-func init() {
-	debugLevel, err := strconv.ParseInt(os.Getenv("WAYLAND_DEBUG"), 10, 0)
-	if err != nil {
-		return
-	}
-	if debugLevel > 0 {
-		debug = func(str string, args ...any) { log.Printf(str, args...) }
-	}
-}
 
 // Client tracks the connection state, including objects and the event
 // queue. It is the primary interface to a Wayland server.
@@ -141,7 +127,7 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 	}
 
 	err := obj.Dispatch(msg)
-	debug("%v", msg.Debug(obj))
+	debug.Printf("%v", msg.Debug(obj))
 	return err
 }
 
@@ -149,7 +135,7 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 // the next time the queue is flushed.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	client.queue.Add() <- func() error {
-		debug(" -> %v", msg)
+		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
 	}
 }
