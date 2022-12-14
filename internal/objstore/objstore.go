@@ -1,6 +1,9 @@
 package objstore
 
-import "deedles.dev/wl/wire"
+import (
+	"deedles.dev/wl/internal/debug"
+	"deedles.dev/wl/wire"
+)
 
 type Store struct {
 	objects map[uint32]wire.Object
@@ -35,4 +38,15 @@ func (s *Store) Delete(id uint32) {
 	if obj != nil {
 		obj.Delete()
 	}
+}
+
+func (s *Store) Dispatch(msg *wire.MessageBuffer) error {
+	obj := s.Get(msg.Sender())
+	if obj == nil {
+		return wire.UnknownSenderIDError{Msg: msg}
+	}
+
+	err := obj.Dispatch(msg)
+	debug.Printf("%v", msg.Debug(obj))
+	return err
 }

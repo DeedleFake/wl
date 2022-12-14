@@ -2,7 +2,6 @@ package wl
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 
@@ -109,14 +108,7 @@ func (client *Client) Delete(id uint32) {
 }
 
 func (client *Client) dispatch(msg *wire.MessageBuffer) error {
-	obj := client.Get(msg.Sender())
-	if obj == nil {
-		return UnknownSenderIDError{Msg: msg}
-	}
-
-	err := obj.Dispatch(msg)
-	debug.Printf("%v", msg.Debug(obj))
-	return err
+	return client.store.Dispatch(msg)
 }
 
 // Enqueue adds msg to the event queue. It will be sent to the server
@@ -131,10 +123,10 @@ func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 // Flush flushes the event queue, sending all enqueued messages and
 // processing all messages that have been received since the last time
 // the queue was flushed. It returns all errors encountered.
-func (client *Client) Flush() []error {
+func (client *Client) Flush() error {
 	select {
 	case queue := <-client.queue.Get():
-		return flushQueue(queue)
+		return errors.Join(flushQueue(queue)...)
 	default:
 		return nil
 	}
@@ -172,15 +164,4 @@ func flushQueue(queue []func() error) (errs []error) {
 		}
 	}
 	return errs
-}
-
-// UnknownSenderIDError is returned by an attempt to dispatch an
-// incoming message that indicates a method call on an object that the
-// State doesn't know about.
-type UnknownSenderIDError struct {
-	Msg *wire.MessageBuffer
-}
-
-func (err UnknownSenderIDError) Error() string {
-	return fmt.Sprintf("unknown sender object ID: %v", err.Msg.Sender())
 }
