@@ -135,9 +135,9 @@ func (s *state) initCursor() {
 	if !ok {
 		log.Fatalf("no left_ptr cursor in theme")
 	}
-	cimg := cursors.Images[0].Image
-	size := len(cimg.Pix)
-	s.cursorHot = cursors.Images[0].Hot
+	cimg := cursors.Images[cursors.BestSize(32)][0]
+	size := len(cimg.Image.Pix)
+	s.cursorHot = cimg.Hot
 
 	file, err := shm.Create()
 	if err != nil {
@@ -157,13 +157,13 @@ func (s *state) initCursor() {
 	defer pool.Destroy()
 	buf := pool.CreateBuffer(
 		0,
-		int32(cimg.Rect.Dx()),
-		int32(cimg.Rect.Dy()),
-		int32(cimg.Stride()),
+		int32(cimg.Image.Rect.Dx()),
+		int32(cimg.Image.Rect.Dy()),
+		int32(cimg.Image.Stride()),
 		wl.ShmFormatArgb8888,
 	)
 
-	copy(mmap, cimg.Pix)
+	copy(mmap, cimg.Image.Pix)
 
 	s.cursorSurface.Attach(buf, 0, 0)
 	s.cursorSurface.Commit()
