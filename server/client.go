@@ -23,6 +23,11 @@ func newClient(server *Server, conn *wire.Conn) *Client {
 		conn:   conn,
 		store:  objstore.New(1 << 24),
 	}
+
+	display := NewDisplay(&client)
+	display.SetID(1)
+	client.store.Add(display)
+
 	go client.listen()
 
 	return &client
