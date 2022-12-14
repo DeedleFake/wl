@@ -5,7 +5,6 @@ package wire
 import (
 	"errors"
 	"io"
-	"math"
 	"net"
 
 	"golang.org/x/sys/unix"
@@ -31,33 +30,6 @@ func (t unixTee) Read(buf []byte) (int, error) {
 	n, oobn, _, _, err := t.c.ReadMsgUnix(buf, oob)
 	_, ooberr := t.oob.Write(oob[:oobn])
 	return n, errors.Join(err, ooberr)
-}
-
-// TODO: Fix this and add some tests for it. It's quite likely that
-// none of this actually works.
-type Fixed int32
-
-func FixedInt(v int) Fixed {
-	return Fixed(v << 8)
-}
-
-func FixedFloat(v float64) Fixed {
-	i, frac := math.Modf(v)
-	return Fixed((int(i) << 8) | int(math.Abs(frac)*math.Exp2(8)))
-}
-
-func (f Fixed) Int() int {
-	return int(f >> 8)
-}
-
-func (f Fixed) Frac() int {
-	return int(uint32(f) & 0xFF)
-}
-
-func (f Fixed) Float() float64 {
-	i := f.Int()
-	frac := f.Frac()
-	return float64(i) + math.Abs(float64(frac)*math.Exp2(-8))
 }
 
 // NewID represents the Wayland new_id type when it doesn't have a
