@@ -17,6 +17,7 @@ import (
 
 	wl "deedles.dev/wl/client"
 	xdg "deedles.dev/wl/examples/internal/xdg/client"
+	"deedles.dev/wl/pointer"
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/wire"
 	"deedles.dev/ximage/xcursor"
@@ -290,8 +291,8 @@ func (s *pointerListener) Motion(time uint32, x, y wire.Fixed) {
 }
 
 func (s *pointerListener) Button(serial, time uint32, button uint32, bstate wl.PointerButtonState) {
-	switch wl.PointerButton(button) {
-	case wl.PointerButtonLeft:
+	switch pointer.Button(button) {
+	case pointer.ButtonLeft:
 		switch {
 		case s.pointerLoc.In(s.closeBounds):
 			s.close.Do(func() { close(s.done) })
