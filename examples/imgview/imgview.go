@@ -1,7 +1,5 @@
 package main
 
-//go:generate go run deedles.dev/wl/cmd/wlgen -client -xml xdg-shell.xml
-
 import (
 	"context"
 	"errors"
@@ -18,6 +16,7 @@ import (
 	"time"
 
 	wl "deedles.dev/wl/client"
+	xdg "deedles.dev/wl/examples/internal/xdg/client"
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/wire"
 	"deedles.dev/ximage/xcursor"
@@ -40,14 +39,14 @@ type state struct {
 	registry   *wl.Registry
 	shm        *wl.Shm
 	compositor *wl.Compositor
-	wmBase     *WmBase
+	wmBase     *xdg.WmBase
 	seat       *wl.Seat
 	keyboard   *wl.Keyboard
 	pointer    *wl.Pointer
 
 	surface  *wl.Surface
-	xsurface *Surface
-	toplevel *Toplevel
+	xsurface *xdg.Surface
+	toplevel *xdg.Toplevel
 	buffer   *wl.ImageBuffer
 
 	cursorSurface *wl.Surface
@@ -250,8 +249,8 @@ func (s *registryListener) Global(name uint32, inter string, version uint32) {
 		s.compositor = wl.BindCompositor(s.client, s.registry, name, version)
 	case wl.ShmInterface:
 		s.shm = wl.BindShm(s.client, s.registry, name, version)
-	case WmBaseInterface:
-		s.wmBase = BindWmBase(s.client, s.registry, name, version)
+	case xdg.WmBaseInterface:
+		s.wmBase = xdg.BindWmBase(s.client, s.registry, name, version)
 		s.wmBase.Listener = (*wmBaseListener)(s)
 	case wl.SeatInterface:
 		s.seat = wl.BindSeat(s.client, s.registry, name, version)
