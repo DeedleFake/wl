@@ -143,3 +143,23 @@ func Dial() (*Conn, error) {
 	}
 	return NewConn(s.(*net.UnixConn)), nil
 }
+
+// Listen generates a new socket from the environment and listens on
+// it.
+func Listen() (*net.UnixListener, error) {
+	path, err := NewSocketPath()
+	if err != nil {
+		return nil, err
+	}
+
+	return ListenPath(path)
+}
+
+// ListenPath opens a socket at the given path.
+func ListenPath(path string) (*net.UnixListener, error) {
+	lis, err := net.Listen("unix", path)
+	if err != nil {
+		return nil, err
+	}
+	return lis.(*net.UnixListener), nil
+}
