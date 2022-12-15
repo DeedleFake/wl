@@ -40,7 +40,6 @@ func (client *Client) listen() {
 	defer func() {
 		select {
 		case <-client.server.done:
-		case <-client.done:
 		case client.server.queue.Add() <- func() error { client.server.removeClient(client); return nil }:
 		}
 	}()

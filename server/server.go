@@ -79,6 +79,8 @@ func (server *Server) addClient(c *net.UnixConn) {
 }
 
 func (server *Server) removeClient(c *Client) {
+	defer c.Close()
+
 	if server.Listener != nil {
 		server.Listener.ClientRemove(c)
 	}
