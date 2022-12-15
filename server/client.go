@@ -2,7 +2,9 @@ package wl
 
 import (
 	"errors"
+	"io"
 	"net"
+	"sync"
 
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
@@ -12,6 +14,7 @@ import (
 type Client struct {
 	server *Server
 	done   chan struct{}
+	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
 }
@@ -34,10 +37,18 @@ func newClient(server *Server, conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen() {
+	defer func() {
+		select {
+		case <-client.server.done:
+		case <-client.done:
+		case client.server.queue.Add() <- func() error { client.server.removeClient(client); return nil }:
+		}
+	}()
+
 	for {
 		msg, err := wire.ReadMessage(client.conn)
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
+			if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
 				return
 			}
 
@@ -78,11 +89,18 @@ func (client *Client) Delete(id uint32) {
 	client.store.Delete(id)
 }
 
-// Enqueue adds msg to the event queue. It will be sent to the server
-// the next time the queue is flushed.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	client.server.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
 	}
+}
+
+func (client *Client) Display() *Display {
+	return client.Get(1).(*Display)
+}
+
+func (client *Client) Close() error {
+	client.close.Do(func() { close(client.done) })
+	return client.conn.Close()
 }

@@ -6,18 +6,18 @@ import (
 	"sync"
 
 	"deedles.dev/wl/internal/cq"
-	"deedles.dev/wl/internal/set"
 	"deedles.dev/wl/wire"
 )
 
 //go:generate go run deedles.dev/wl/cmd/wlgen -out protocol.go -xml ../protocol/wayland.xml
 
 type Server struct {
-	done    chan struct{}
-	close   sync.Once
-	lis     *net.UnixListener
-	clients set.Set[*Client]
-	queue   *cq.Queue[func() error]
+	Listener ServerListener
+
+	done  chan struct{}
+	close sync.Once
+	lis   *net.UnixListener
+	queue *cq.Queue[func() error]
 }
 
 func ListenAndServe() (*Server, error) {
@@ -30,10 +30,9 @@ func ListenAndServe() (*Server, error) {
 
 func NewServer(lis *net.UnixListener) *Server {
 	server := Server{
-		done:    make(chan struct{}),
-		lis:     lis,
-		clients: make(set.Set[*Client]),
-		queue:   cq.New[func() error](),
+		done:  make(chan struct{}),
+		lis:   lis,
+		queue: cq.New[func() error](),
 	}
 	go server.listen()
 
@@ -71,7 +70,18 @@ func (server *Server) Close() error {
 }
 
 func (server *Server) addClient(c *net.UnixConn) {
-	server.clients.Add(newClient(server, wire.NewConn(c)))
+	if server.Listener != nil {
+		server.Listener.Client(newClient(server, wire.NewConn(c)))
+		return
+	}
+
+	c.Close()
+}
+
+func (server *Server) removeClient(c *Client) {
+	if server.Listener != nil {
+		server.Listener.ClientRemove(c)
+	}
 }
 
 // Flush flushes the event queue, sending all enqueued messages and
@@ -94,4 +104,9 @@ func flushQueue(queue []func() error) (errs []error) {
 		}
 	}
 	return errs
+}
+
+type ServerListener interface {
+	Client(*Client)
+	ClientRemove(*Client)
 }
