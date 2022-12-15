@@ -7,8 +7,8 @@ import (
 	"net"
 	"sync"
 
-	"deedles.dev/wl/internal/cq"
 	"deedles.dev/wl/internal/debug"
+	"deedles.dev/wl/internal/ev"
 	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
 )
@@ -20,8 +20,10 @@ type Client struct {
 	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
-	queue  *cq.Queue[func() error, *Events]
+	queue  *ev.Queue
 }
+
+type Events = ev.Events
 
 func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 	client := Client{
@@ -29,7 +31,7 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 		done:   make(chan struct{}),
 		conn:   conn,
 		store:  objstore.New(1 << 24),
-		queue:  cq.NewWrapped(func(v []func() error) *Events { return &Events{events: v} }),
+		queue:  ev.NewQueue(),
 	}
 
 	display := NewDisplay(&client)
@@ -131,7 +133,10 @@ func (client *Client) Flush() error {
 	select {
 	case <-client.done:
 		return net.ErrClosed
-	case queue := <-client.queue.Get():
+	case queue, ok := <-client.queue.Get():
+		if !ok {
+			return net.ErrClosed
+		}
 		return queue.Flush()
 	default:
 		return nil
@@ -149,28 +154,6 @@ func (client *Client) Events() <-chan *Events {
 	return client.queue.Get()
 }
 
-func flushQueue(queue []func() error) (errs []error) {
-	for _, ev := range queue {
-		err := ev()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errs
-}
-
 func (client *Client) Addr() net.Addr {
 	return client.conn.LocalAddr()
-}
-
-// Events represents a series of events from a Client's event queue.
-type Events struct {
-	events []func() error
-}
-
-// Flush processess all of the events represented by q.
-func (q *Events) Flush() error {
-	err := errors.Join(flushQueue(q.events)...)
-	q.events = nil
-	return err
 }
