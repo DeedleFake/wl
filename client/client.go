@@ -119,9 +119,12 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 // Enqueue adds msg to the event queue. It will be sent to the server
 // the next time the queue is flushed.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
-	client.queue.Add() <- func() error {
+	select {
+	case <-client.done:
+	case client.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
+	}:
 	}
 }
 
