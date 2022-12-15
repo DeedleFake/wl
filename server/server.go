@@ -1,114 +1,76 @@
 package wl
 
 import (
+	"context"
 	"errors"
 	"net"
 	"sync"
 
-	"deedles.dev/wl/internal/cq"
 	"deedles.dev/wl/wire"
 )
 
 //go:generate go run deedles.dev/wl/cmd/wlgen -out protocol.go -xml ../protocol/wayland.xml
 
 type Server struct {
-	Listener ServerListener
+	Listener *net.UnixListener
 
-	done  chan struct{}
-	close sync.Once
-	lis   *net.UnixListener
-	queue *cq.Queue[func() error]
+	Handler func(context.Context, *Client)
+
+	err error
 }
 
-func ListenAndServe() (*Server, error) {
+func CreateServer() (*Server, error) {
 	lis, err := wire.Listen()
 	if err != nil {
 		return nil, err
 	}
-	return NewServer(lis), nil
+	return &Server{Listener: lis}, nil
 }
 
-func NewServer(lis *net.UnixListener) *Server {
-	server := Server{
-		done:  make(chan struct{}),
-		lis:   lis,
-		queue: cq.New[func() error](),
+func (server *Server) Run(ctx context.Context) (err error) {
+	if server.err != nil {
+		return server.err
 	}
-	go server.listen()
 
-	return &server
-}
+	defer func() {
+		if err != nil {
+			server.err = err
+		}
+	}()
 
-func (server *Server) listen() {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		server.Listener.Close()
+	}()
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	for {
-		c, err := server.lis.AcceptUnix()
+		c, err := server.Listener.AcceptUnix()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				return
+				return nil
 			}
 
-			select {
-			case <-server.done:
-				return
-			case server.queue.Add() <- func() error { return err }:
-				continue
-			}
+			return err
 		}
 
-		select {
-		case <-server.done:
-			return
-		case server.queue.Add() <- func() error { server.addClient(c); return nil }:
-		}
+		wg.Add(1)
+		go server.addClient(ctx, &wg, c)
 	}
 }
 
-func (server *Server) Close() error {
-	server.close.Do(func() { close(server.done) })
-	server.queue.Stop()
-	return server.lis.Close()
-}
+func (server *Server) addClient(ctx context.Context, wg *sync.WaitGroup, c *net.UnixConn) {
+	defer wg.Done()
 
-func (server *Server) addClient(c *net.UnixConn) {
-	if server.Listener != nil {
-		server.Listener.Client(newClient(server, wire.NewConn(c)))
+	if server.Handler == nil {
+		c.Close()
 		return
 	}
 
-	c.Close()
-}
-
-func (server *Server) removeClient(c *Client) {
-	defer c.Close()
-
-	if server.Listener != nil {
-		server.Listener.ClientRemove(c)
-	}
-}
-
-// Flush flushes the event queue, sending all enqueued messages and
-// processing all messages that have been received since the last time
-// the queue was flushed. It returns all errors encountered.
-func (server *Server) Flush() error {
-	select {
-	case queue := <-server.queue.Get():
-		return errors.Join(flushQueue(queue)...)
-	default:
-		return nil
-	}
-}
-
-func flushQueue(queue []func() error) (errs []error) {
-	for _, ev := range queue {
-		err := ev()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errs
-}
-
-type ServerListener interface {
-	Client(*Client)
-	ClientRemove(*Client)
+	server.Handler(ctx, newClient(ctx, server, wire.NewConn(c)))
 }

@@ -1,11 +1,13 @@
 package wl
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
 	"sync"
 
+	"deedles.dev/wl/internal/cq"
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
@@ -17,31 +19,31 @@ type Client struct {
 	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
+	queue  *cq.Queue[func() error]
 }
 
-func newClient(server *Server, conn *wire.Conn) *Client {
+func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 	client := Client{
 		server: server,
 		done:   make(chan struct{}),
 		conn:   conn,
 		store:  objstore.New(1 << 24),
+		queue:  cq.New[func() error](),
 	}
 
 	display := NewDisplay(&client)
 	display.SetID(1)
 	client.store.Add(display)
 
-	go client.listen()
+	go client.listen(ctx)
 
 	return &client
 }
 
-func (client *Client) listen() {
+func (client *Client) listen(ctx context.Context) {
 	defer func() {
-		select {
-		case <-client.server.done:
-		case client.server.queue.Add() <- func() error { client.server.removeClient(client); return nil }:
-		}
+		client.close.Do(func() { close(client.done) })
+		client.conn.Close()
 	}()
 
 	for {
@@ -52,21 +54,21 @@ func (client *Client) listen() {
 			}
 
 			select {
-			case <-client.server.done:
+			case <-ctx.Done():
 				return
 			case <-client.done:
 				return
-			case client.server.queue.Add() <- func() error { return err }:
+			case client.queue.Add() <- func() error { return err }:
 				continue
 			}
 		}
 
 		select {
-		case <-client.server.done:
+		case <-ctx.Done():
 			return
 		case <-client.done:
 			return
-		case client.server.queue.Add() <- func() error { return client.dispatch(msg) }:
+		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
 			// TODO: Limit number of queued incoming messages?
 		}
 	}
@@ -89,7 +91,7 @@ func (client *Client) Delete(id uint32) {
 }
 
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
-	client.server.queue.Add() <- func() error {
+	client.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
 	}
@@ -99,7 +101,24 @@ func (client *Client) Display() *Display {
 	return client.Get(1).(*Display)
 }
 
-func (client *Client) Close() error {
-	client.close.Do(func() { close(client.done) })
-	return client.conn.Close()
+// Flush flushes the event queue, sending all enqueued messages and
+// processing all messages that have been received since the last time
+// the queue was flushed. It returns all errors encountered.
+func (client *Client) Flush() error {
+	select {
+	case queue := <-client.queue.Get():
+		return errors.Join(flushQueue(queue)...)
+	default:
+		return nil
+	}
+}
+
+func flushQueue(queue []func() error) (errs []error) {
+	for _, ev := range queue {
+		err := ev()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }

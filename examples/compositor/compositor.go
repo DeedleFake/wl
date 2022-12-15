@@ -23,51 +23,31 @@ type state struct {
 func (s *state) init() {
 	s.done = make(chan struct{})
 
-	server, err := wl.ListenAndServe()
+	server, err := wl.CreateServer()
 	if err != nil {
 		log.Fatalf("start server: %v", err)
 	}
 	s.server = server
-	s.server.Listener = (*serverListener)(s)
+	s.server.Handler = s.handleClient
 }
 
 func (s *state) stop() {
 	s.close.Do(func() { close(s.done) })
-	if s.server != nil {
-		s.server.Close()
-		s.server = nil
-	}
 }
 
 func (s *state) run(ctx context.Context) {
-	tick := time.NewTicker(time.Second / 60)
-	defer tick.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-s.done:
-			return
-		case <-tick.C:
-			err := s.server.Flush()
-			if err != nil {
-				log.Printf("flush: %v", err)
-			}
-		}
+	err := s.server.Run(ctx)
+	if err != nil {
+		log.Fatalf("run server: %v", err)
 	}
 }
 
-type serverListener state
-
-func (s *serverListener) Client(c *wl.Client) {
+func (s *state) handleClient(ctx context.Context, c *wl.Client) {
 	log.Printf("client connected: %v", c)
-	cs := clientState{state: (*state)(s), client: c}
-	cs.init()
-}
+	defer log.Printf("client disconnected: %v", c)
 
-func (s *serverListener) ClientRemove(c *wl.Client) {
-	log.Printf("client disconnected: %v", c)
+	cs := clientState{state: (*state)(s), client: c}
+	cs.run(ctx)
 }
 
 type clientState struct {
@@ -76,8 +56,25 @@ type clientState struct {
 	serial uint32
 }
 
-func (cs *clientState) init() {
+func (cs *clientState) run(ctx context.Context) {
 	cs.client.Display().Listener = (*displayListener)(cs)
+
+	tick := time.NewTicker(time.Second / 60)
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-cs.state.done:
+			return
+		case <-tick.C:
+			err := cs.client.Flush()
+			if err != nil {
+				log.Printf("flush: %v", err)
+			}
+		}
+	}
 }
 
 type displayListener clientState
