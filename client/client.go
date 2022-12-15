@@ -2,6 +2,7 @@ package wl
 
 import (
 	"errors"
+	"io"
 	"net"
 	"sync"
 
@@ -51,10 +52,12 @@ func NewClient(conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen() {
+	defer client.Close()
+
 	for {
 		msg, err := wire.ReadMessage(client.conn)
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
+			if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
 				return
 			}
 
@@ -123,8 +126,13 @@ func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 // Flush flushes the event queue, sending all enqueued messages and
 // processing all messages that have been received since the last time
 // the queue was flushed. It returns all errors encountered.
+//
+// If the client's connection has been closed, Flush returns
+// net.ErrClosed.
 func (client *Client) Flush() error {
 	select {
+	case <-client.done:
+		return net.ErrClosed
 	case queue := <-client.queue.Get():
 		return errors.Join(flushQueue(queue)...)
 	default:
@@ -135,7 +143,16 @@ func (client *Client) Flush() error {
 // RoundTrip flushes the event queue continuously until the server
 // indicates that it has finished processing all messages sent by the
 // call to this method.
+//
+// If the client's connection has been closed, Flush returns
+// net.ErrClosed.
 func (client *Client) RoundTrip() error {
+	select {
+	case <-client.done:
+		return net.ErrClosed
+	default:
+	}
+
 	get := client.queue.Get()
 	done := make(chan struct{})
 	client.Display().Sync().Then(func(uint32) {
@@ -147,9 +164,10 @@ func (client *Client) RoundTrip() error {
 
 	for {
 		select {
+		case <-client.done:
+			return net.ErrClosed
 		case <-done:
 			return errors.Join(errs...)
-
 		case queue := <-get:
 			errs = append(errs, flushQueue(queue)...)
 		}

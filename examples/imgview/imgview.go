@@ -10,6 +10,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -182,6 +183,9 @@ func (s *state) run(ctx context.Context) {
 		case <-tick.C:
 			err := s.client.Flush()
 			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
 				log.Printf("flush: %v", err)
 			}
 		}

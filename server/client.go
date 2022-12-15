@@ -126,10 +126,10 @@ func (client *Client) Display() *Display {
 // net.ErrClosed.
 func (client *Client) Flush() error {
 	select {
-	case queue := <-client.queue.Get():
-		return errors.Join(flushQueue(queue)...)
 	case <-client.done:
 		return net.ErrClosed
+	case queue := <-client.queue.Get():
+		return errors.Join(flushQueue(queue)...)
 	default:
 		return nil
 	}
