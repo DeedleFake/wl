@@ -57,6 +57,11 @@ type clientState struct {
 	client *wl.Client
 	serial uint32
 
+	pingSerial uint32
+	pingTime   time.Time
+	pongTime   time.Time
+
+	wmBase   *xdg.WmBase
 	surfaces []*surface
 }
 
@@ -66,29 +71,58 @@ func (cs *clientState) run(ctx context.Context) {
 	tick := time.NewTicker(time.Second / 60)
 	defer tick.Stop()
 
+	ping := time.NewTicker(time.Second)
+	defer ping.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-cs.state.done:
 			return
+
+		case <-ping.C:
+			cs.ping()
+
 		case <-tick.C:
-			err := cs.client.Flush()
-			if err != nil {
-				if errors.Is(err, net.ErrClosed) {
-					return
-				}
-				log.Printf("flush: %v", err)
-			}
+			cs.flush()
 		}
+	}
+}
+
+func (cs *clientState) serialize() (s uint32) {
+	s = cs.serial
+	cs.serial++
+	return
+}
+
+func (cs *clientState) ping() {
+	if cs.wmBase == nil {
+		return
+	}
+	if cs.pingTime.After(cs.pongTime) {
+		return
+	}
+
+	cs.pingSerial = cs.serialize()
+	cs.pingTime = time.Now()
+	cs.wmBase.Ping(cs.pingSerial)
+}
+
+func (cs *clientState) flush() {
+	err := cs.client.Flush()
+	if err != nil {
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
+		log.Printf("flush: %v", err)
 	}
 }
 
 type displayListener clientState
 
 func (cs *displayListener) Sync(cb *wl.Callback) {
-	cb.Done(cs.serial)
-	cs.serial++
+	cb.Done((*clientState)(cs).serialize())
 }
 
 func (cs *displayListener) GetRegistry(r *wl.Registry) {
@@ -109,8 +143,8 @@ func (cs *registryListener) Bind(name uint32, id wire.NewID) {
 		shm := wl.BindShm(cs.client, id)
 		shm.Listener = (*shmListener)(cs)
 	case 2:
-		wm := xdg.BindWmBase(cs.client, id)
-		wm.Listener = (*wmBaseListener)(cs)
+		cs.wmBase = xdg.BindWmBase(cs.client, id)
+		cs.wmBase.Listener = (*wmBaseListener)(cs)
 	}
 }
 
@@ -146,7 +180,11 @@ func (cs *wmBaseListener) GetXdgSurface(xs *xdg.Surface, wls *wl.Surface) {
 }
 
 func (cs *wmBaseListener) Pong(serial uint32) {
-	// TODO
+	if serial != cs.pingSerial {
+		return
+	}
+
+	cs.pongTime = time.Now()
 }
 
 type surface struct {
