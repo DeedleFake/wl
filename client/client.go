@@ -52,7 +52,9 @@ func NewClient(conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen() {
-	defer client.Close()
+	defer func() {
+		client.close.Do(func() { close(client.done) })
+	}()
 
 	for {
 		msg, err := wire.ReadMessage(client.conn)
