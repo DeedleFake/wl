@@ -167,6 +167,7 @@ func (cs *wmBaseListener) GetXdgSurface(xs *xdg.Surface, wls *wl.Surface) {
 	for _, s := range cs.surfaces {
 		if s.s == wls {
 			s.role = &xdgRole{s: xs}
+			xs.Listener = (*xdgSurfaceListener)(cs)
 		}
 	}
 }
@@ -178,6 +179,18 @@ func (cs *wmBaseListener) Pong(serial uint32) {
 
 	cs.pongTime = time.Now()
 }
+
+type xdgSurfaceListener clientState
+
+func (cs *xdgSurfaceListener) Destroy() {}
+
+func (cs *xdgSurfaceListener) GetToplevel(tl *xdg.Toplevel) {}
+
+func (cs *xdgSurfaceListener) GetPopup(p *xdg.Popup, parent *xdg.Surface, pos *xdg.Positioner) {}
+
+func (cs *xdgSurfaceListener) SetWindowGeometry(x int32, y int32, width int32, height int32) {}
+
+func (cs *xdgSurfaceListener) AckConfigure(serial uint32) {}
 
 type surface struct {
 	s    *wl.Surface
