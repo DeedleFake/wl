@@ -197,6 +197,14 @@ func (obj *WmBase) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *WmBase) Interface() string {
+	return WmBaseInterface
+}
+
+func (obj *WmBase) Version() uint32 {
+	return WmBaseVersion
+}
+
 // The ping event asks the client if it's still alive. Pass the
 // serial specified in the event back to the compositor by sending
 // a "pong" request back with the specified serial. See xdg_wm_base.pong.
@@ -645,6 +653,14 @@ func (obj *Positioner) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Positioner) Interface() string {
+	return PositionerInterface
+}
+
+func (obj *Positioner) Version() uint32 {
+	return PositionerVersion
 }
 
 type PositionerError int64
@@ -1137,6 +1153,14 @@ func (obj *Surface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Surface) Interface() string {
+	return SurfaceInterface
+}
+
+func (obj *Surface) Version() uint32 {
+	return SurfaceVersion
 }
 
 // The configure event marks the end of a configure sequence. A configure
@@ -1861,6 +1885,14 @@ func (obj *Toplevel) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Toplevel) Interface() string {
+	return ToplevelInterface
+}
+
+func (obj *Toplevel) Version() uint32 {
+	return ToplevelVersion
+}
+
 // This configure event asks the client to resize its toplevel surface or
 // to change its state. The configured state should not be applied
 // immediately. See xdg_surface.configure for details.
@@ -2369,6 +2401,14 @@ func (obj *Popup) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Popup) Interface() string {
+	return PopupInterface
+}
+
+func (obj *Popup) Version() uint32 {
+	return PopupVersion
 }
 
 // This event asks the popup surface to configure itself given the

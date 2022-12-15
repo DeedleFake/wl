@@ -141,6 +141,14 @@ func (obj *Display) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Display) Interface() string {
+	return DisplayInterface
+}
+
+func (obj *Display) Version() uint32 {
+	return DisplayVersion
+}
+
 // The error event is sent out when a fatal (non-recoverable)
 // error has occurred.  The object_id argument is the object
 // where the error occurred, most often in response to a request
@@ -326,6 +334,14 @@ func (obj *Registry) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Registry) Interface() string {
+	return RegistryInterface
+}
+
+func (obj *Registry) Version() uint32 {
+	return RegistryVersion
+}
+
 // Notify the client of global objects.
 //
 // The event notifies the client that a global object with
@@ -424,6 +440,14 @@ func (obj *Callback) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Callback) Interface() string {
+	return CallbackInterface
+}
+
+func (obj *Callback) Version() uint32 {
+	return CallbackVersion
 }
 
 // Notify the client when the related request is done.
@@ -559,6 +583,14 @@ func (obj *Compositor) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Compositor) Interface() string {
+	return CompositorInterface
+}
+
+func (obj *Compositor) Version() uint32 {
+	return CompositorVersion
 }
 
 const (
@@ -729,6 +761,14 @@ func (obj *ShmPool) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *ShmPool) Interface() string {
+	return ShmPoolInterface
+}
+
+func (obj *ShmPool) Version() uint32 {
+	return ShmPoolVersion
+}
+
 const (
 	ShmInterface = "wl_shm"
 	ShmVersion   = 1
@@ -843,6 +883,14 @@ func (obj *Shm) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Shm) Interface() string {
+	return ShmInterface
+}
+
+func (obj *Shm) Version() uint32 {
+	return ShmVersion
 }
 
 // Informs the client about a valid pixel format that
@@ -1611,6 +1659,14 @@ func (obj *Buffer) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Buffer) Interface() string {
+	return BufferInterface
+}
+
+func (obj *Buffer) Version() uint32 {
+	return BufferVersion
+}
+
 // Sent when this wl_buffer is no longer used by the compositor.
 // The client is now free to reuse or destroy this buffer and its
 // backing storage.
@@ -1884,6 +1940,14 @@ func (obj *DataOffer) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataOffer) Interface() string {
+	return DataOfferInterface
+}
+
+func (obj *DataOffer) Version() uint32 {
+	return DataOfferVersion
+}
+
 // Sent immediately after creating the wl_data_offer object.  One
 // event per offered mime type.
 func (obj *DataOffer) Offer(mimeType string) {
@@ -2135,6 +2199,14 @@ func (obj *DataSource) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *DataSource) Interface() string {
+	return DataSourceInterface
+}
+
+func (obj *DataSource) Version() uint32 {
+	return DataSourceVersion
 }
 
 // Sent when a target accepts pointer_focus or motion events.  If
@@ -2468,6 +2540,14 @@ func (obj *DataDevice) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataDevice) Interface() string {
+	return DataDeviceInterface
+}
+
+func (obj *DataDevice) Version() uint32 {
+	return DataDeviceVersion
+}
+
 // The data_offer event introduces a new wl_data_offer object,
 // which will subsequently be used in either the
 // data_device.enter event (for drag-and-drop) or the
@@ -2731,6 +2811,14 @@ func (obj *DataDeviceManager) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataDeviceManager) Interface() string {
+	return DataDeviceManagerInterface
+}
+
+func (obj *DataDeviceManager) Version() uint32 {
+	return DataDeviceManagerVersion
+}
+
 // This is a bitmask of the available/preferred actions in a
 // drag-and-drop operation.
 //
@@ -2900,6 +2988,14 @@ func (obj *Shell) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Shell) Interface() string {
+	return ShellInterface
+}
+
+func (obj *Shell) Version() uint32 {
+	return ShellVersion
 }
 
 type ShellError int64
@@ -3352,6 +3448,14 @@ func (obj *ShellSurface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *ShellSurface) Interface() string {
+	return ShellSurfaceInterface
+}
+
+func (obj *ShellSurface) Version() uint32 {
+	return ShellSurfaceVersion
 }
 
 // Ping a client to check if it is receiving events and sending
@@ -4115,6 +4219,14 @@ func (obj *Surface) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Surface) Interface() string {
+	return SurfaceInterface
+}
+
+func (obj *Surface) Version() uint32 {
+	return SurfaceVersion
+}
+
 // This is emitted whenever a surface's creation, movement, or resizing
 // results in some part of it being within the scanout region of an
 // output.
@@ -4364,6 +4476,14 @@ func (obj *Seat) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Seat) Interface() string {
+	return SeatInterface
+}
+
+func (obj *Seat) Version() uint32 {
+	return SeatVersion
 }
 
 // This is emitted whenever a seat gains or loses the pointer,
@@ -4619,6 +4739,14 @@ func (obj *Pointer) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Pointer) Interface() string {
+	return PointerInterface
+}
+
+func (obj *Pointer) Version() uint32 {
+	return PointerVersion
 }
 
 // Notification that this seat's pointer is focused on a certain
@@ -5072,6 +5200,14 @@ func (obj *Keyboard) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Keyboard) Interface() string {
+	return KeyboardInterface
+}
+
+func (obj *Keyboard) Version() uint32 {
+	return KeyboardVersion
+}
+
 // This event provides a file descriptor to the client which can be
 // memory-mapped to provide a keyboard mapping description.
 //
@@ -5330,6 +5466,14 @@ func (obj *Touch) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Touch) Interface() string {
+	return TouchInterface
+}
+
+func (obj *Touch) Version() uint32 {
+	return TouchVersion
+}
+
 // A new touch point has appeared on the surface. This touch point is
 // assigned a unique ID. Future events from this touch point reference
 // this ID. The ID ceases to be valid after a touch up event and may be
@@ -5582,6 +5726,14 @@ func (obj *Output) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Output) Interface() string {
+	return OutputInterface
+}
+
+func (obj *Output) Version() uint32 {
+	return OutputVersion
 }
 
 // The geometry event describes geometric properties of the output.
@@ -5993,6 +6145,14 @@ func (obj *Region) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Region) Interface() string {
+	return RegionInterface
+}
+
+func (obj *Region) Version() uint32 {
+	return RegionVersion
+}
+
 const (
 	SubcompositorInterface = "wl_subcompositor"
 	SubcompositorVersion   = 1
@@ -6150,6 +6310,14 @@ func (obj *Subcompositor) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Subcompositor) Interface() string {
+	return SubcompositorInterface
+}
+
+func (obj *Subcompositor) Version() uint32 {
+	return SubcompositorVersion
 }
 
 type SubcompositorError int64
@@ -6468,6 +6636,14 @@ func (obj *Subsurface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Subsurface) Interface() string {
+	return SubsurfaceInterface
+}
+
+func (obj *Subsurface) Version() uint32 {
+	return SubsurfaceVersion
 }
 
 type SubsurfaceError int64

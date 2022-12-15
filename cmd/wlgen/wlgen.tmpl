@@ -156,6 +156,14 @@ import (
 		return "unknown method"
 	}
 
+	func (obj *{{$name}}) Interface() string {
+		return {{$name}}Interface
+	}
+
+	func (obj *{{$name}}) Version() uint32 {
+		return {{$name}}Version
+	}
+
 	{{range $op, $method := $senders}}
 		{{- $args := args $method -}}
 		{{- $rets := returns $method -}}

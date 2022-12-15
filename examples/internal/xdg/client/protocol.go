@@ -121,6 +121,14 @@ func (obj *WmBase) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *WmBase) Interface() string {
+	return WmBaseInterface
+}
+
+func (obj *WmBase) Version() uint32 {
+	return WmBaseVersion
+}
+
 // Destroy this xdg_wm_base object.
 //
 // Destroying a bound xdg_wm_base object while there are surfaces
@@ -320,6 +328,14 @@ func (obj *Positioner) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Positioner) Interface() string {
+	return PositionerInterface
+}
+
+func (obj *Positioner) Version() uint32 {
+	return PositionerVersion
 }
 
 // Notify the compositor that the xdg_positioner will no longer be used.
@@ -835,6 +851,14 @@ func (obj *Surface) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Surface) Interface() string {
+	return SurfaceInterface
+}
+
+func (obj *Surface) Version() uint32 {
+	return SurfaceVersion
+}
+
 // Destroy the xdg_surface object. An xdg_surface must only be destroyed
 // after its role object has been destroyed, otherwise
 // a defunct_role_object error is raised.
@@ -1252,6 +1276,14 @@ func (obj *Toplevel) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Toplevel) Interface() string {
+	return ToplevelInterface
+}
+
+func (obj *Toplevel) Version() uint32 {
+	return ToplevelVersion
 }
 
 // This request destroys the role surface and unmaps the surface;
@@ -2040,6 +2072,14 @@ func (obj *Popup) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Popup) Interface() string {
+	return PopupInterface
+}
+
+func (obj *Popup) Version() uint32 {
+	return PopupVersion
 }
 
 // This destroys the popup. Explicitly destroying the xdg_popup

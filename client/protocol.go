@@ -137,6 +137,14 @@ func (obj *Display) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Display) Interface() string {
+	return DisplayInterface
+}
+
+func (obj *Display) Version() uint32 {
+	return DisplayVersion
+}
+
 // The sync request asks the server to emit the 'done' event
 // on the returned wl_callback object.  Since requests are
 // handled in-order and events are delivered in-order, this can
@@ -369,6 +377,14 @@ func (obj *Registry) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Registry) Interface() string {
+	return RegistryInterface
+}
+
+func (obj *Registry) Version() uint32 {
+	return RegistryVersion
+}
+
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
 func (obj *Registry) Bind(name uint32, id wire.NewID) {
@@ -474,6 +490,14 @@ func (obj *Callback) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Callback) Interface() string {
+	return CallbackInterface
+}
+
+func (obj *Callback) Version() uint32 {
+	return CallbackVersion
+}
+
 const (
 	CompositorInterface = "wl_compositor"
 	CompositorVersion   = 4
@@ -541,6 +565,14 @@ func (obj *Compositor) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Compositor) Interface() string {
+	return CompositorInterface
+}
+
+func (obj *Compositor) Version() uint32 {
+	return CompositorVersion
 }
 
 // Ask the compositor to create a new surface.
@@ -635,6 +667,14 @@ func (obj *ShmPool) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *ShmPool) Interface() string {
+	return ShmPoolInterface
+}
+
+func (obj *ShmPool) Version() uint32 {
+	return ShmPoolVersion
 }
 
 // Create a wl_buffer object from the pool.
@@ -800,6 +840,14 @@ func (obj *Shm) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Shm) Interface() string {
+	return ShmInterface
+}
+
+func (obj *Shm) Version() uint32 {
+	return ShmVersion
 }
 
 // Create a new wl_shm_pool object.
@@ -1582,6 +1630,14 @@ func (obj *Buffer) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Buffer) Interface() string {
+	return BufferInterface
+}
+
+func (obj *Buffer) Version() uint32 {
+	return BufferVersion
+}
+
 // Destroy a buffer. If and how you need to release the backing
 // storage is defined by the buffer factory interface.
 //
@@ -1769,6 +1825,14 @@ func (obj *DataOffer) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *DataOffer) Interface() string {
+	return DataOfferInterface
+}
+
+func (obj *DataOffer) Version() uint32 {
+	return DataOfferVersion
 }
 
 // Indicate that the client can accept the given mime type, or
@@ -2186,6 +2250,14 @@ func (obj *DataSource) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataSource) Interface() string {
+	return DataSourceInterface
+}
+
+func (obj *DataSource) Version() uint32 {
+	return DataSourceVersion
+}
+
 // This request adds a mime type to the set of mime types
 // advertised to targets.  Can be called several times to offer
 // multiple types.
@@ -2510,6 +2582,14 @@ func (obj *DataDevice) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataDevice) Interface() string {
+	return DataDeviceInterface
+}
+
+func (obj *DataDevice) Version() uint32 {
+	return DataDeviceVersion
+}
+
 // This request asks the compositor to start a drag-and-drop
 // operation on behalf of the client.
 //
@@ -2670,6 +2750,14 @@ func (obj *DataDeviceManager) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *DataDeviceManager) Interface() string {
+	return DataDeviceManagerInterface
+}
+
+func (obj *DataDeviceManager) Version() uint32 {
+	return DataDeviceManagerVersion
+}
+
 // Create a new data source.
 func (obj *DataDeviceManager) CreateDataSource() (id *DataSource) {
 	builder := wire.NewMessage(obj, 0)
@@ -2828,6 +2916,14 @@ func (obj *Shell) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Shell) Interface() string {
+	return ShellInterface
+}
+
+func (obj *Shell) Version() uint32 {
+	return ShellVersion
 }
 
 // Create a shell surface for an existing surface. This gives
@@ -3027,6 +3123,14 @@ func (obj *ShellSurface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *ShellSurface) Interface() string {
+	return ShellSurfaceInterface
+}
+
+func (obj *ShellSurface) Version() uint32 {
+	return ShellSurfaceVersion
 }
 
 // A client must respond to a ping event with a pong request or
@@ -3542,6 +3646,14 @@ func (obj *Surface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Surface) Interface() string {
+	return SurfaceInterface
+}
+
+func (obj *Surface) Version() uint32 {
+	return SurfaceVersion
 }
 
 // Deletes the surface and invalidates its object ID.
@@ -4081,6 +4193,14 @@ func (obj *Seat) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Seat) Interface() string {
+	return SeatInterface
+}
+
+func (obj *Seat) Version() uint32 {
+	return SeatVersion
 }
 
 // The ID provided will be initialized to the wl_pointer interface
@@ -4649,6 +4769,14 @@ func (obj *Pointer) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Pointer) Interface() string {
+	return PointerInterface
+}
+
+func (obj *Pointer) Version() uint32 {
+	return PointerVersion
+}
+
 // Set the pointer surface, i.e., the surface that contains the
 // pointer image (cursor). This request gives the surface the role
 // of a cursor. If the surface already has another role, it raises
@@ -5100,6 +5228,14 @@ func (obj *Keyboard) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Keyboard) Interface() string {
+	return KeyboardInterface
+}
+
+func (obj *Keyboard) Version() uint32 {
+	return KeyboardVersion
+}
+
 func (obj *Keyboard) Release() {
 	builder := wire.NewMessage(obj, 0)
 	builder.Method = "release"
@@ -5479,6 +5615,14 @@ func (obj *Touch) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Touch) Interface() string {
+	return TouchInterface
+}
+
+func (obj *Touch) Version() uint32 {
+	return TouchVersion
+}
+
 func (obj *Touch) Release() {
 	builder := wire.NewMessage(obj, 0)
 	builder.Method = "release"
@@ -5743,6 +5887,14 @@ func (obj *Output) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Output) Interface() string {
+	return OutputInterface
+}
+
+func (obj *Output) Version() uint32 {
+	return OutputVersion
+}
+
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
 func (obj *Output) Release() {
@@ -5958,6 +6110,14 @@ func (obj *Region) MethodName(op uint16) string {
 	return "unknown method"
 }
 
+func (obj *Region) Interface() string {
+	return RegionInterface
+}
+
+func (obj *Region) Version() uint32 {
+	return RegionVersion
+}
+
 // Destroy the region.  This will invalidate the object ID.
 func (obj *Region) Destroy() {
 	builder := wire.NewMessage(obj, 0)
@@ -6081,6 +6241,14 @@ func (obj *Subcompositor) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Subcompositor) Interface() string {
+	return SubcompositorInterface
+}
+
+func (obj *Subcompositor) Version() uint32 {
+	return SubcompositorVersion
 }
 
 // Informs the server that the client will not be using this
@@ -6247,6 +6415,14 @@ func (obj *Subsurface) MethodName(op uint16) string {
 	}
 
 	return "unknown method"
+}
+
+func (obj *Subsurface) Interface() string {
+	return SubsurfaceInterface
+}
+
+func (obj *Subsurface) Version() uint32 {
+	return SubsurfaceVersion
 }
 
 // The sub-surface interface is removed from the wl_surface object
