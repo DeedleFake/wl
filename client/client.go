@@ -21,7 +21,7 @@ type Client struct {
 	close sync.Once
 	conn  *wire.Conn
 	store *objstore.Store
-	queue *cq.Queue[func() error]
+	queue *cq.Queue[func() error, *Events]
 }
 
 // Dial opens a connection to the Wayland display based on the
@@ -43,7 +43,7 @@ func NewClient(conn *wire.Conn) *Client {
 		done:  make(chan struct{}),
 		conn:  conn,
 		store: objstore.New(1),
-		queue: cq.New[func() error](),
+		queue: cq.NewWrapped(func(v []func() error) *Events { return &Events{events: v} }),
 	}
 	client.Add(NewDisplay(&client))
 	go client.listen()
@@ -52,9 +52,7 @@ func NewClient(conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen() {
-	defer func() {
-		client.close.Do(func() { close(client.done) })
-	}()
+	defer client.stop()
 
 	for {
 		msg, err := wire.ReadMessage(client.conn)
@@ -86,11 +84,15 @@ func (client *Client) Display() *Display {
 	return client.Get(1).(*Display)
 }
 
+func (client *Client) stop() {
+	client.close.Do(func() { close(client.done) })
+	client.queue.Stop()
+}
+
 // Close closes the client, closing the underlying connection, stopping
 // the event queue, and so on.
 func (client *Client) Close() error {
-	client.close.Do(func() { close(client.done) })
-	client.queue.Stop()
+	client.stop()
 	return client.conn.Close()
 }
 
@@ -139,10 +141,21 @@ func (client *Client) Flush() error {
 	case <-client.done:
 		return net.ErrClosed
 	case queue := <-client.queue.Get():
-		return errors.Join(flushQueue(queue)...)
+		return queue.Flush()
 	default:
 		return nil
 	}
+}
+
+// Events returns a channel that yields an Events representing events
+// that have happened since the last time the event queue was flushed.
+// The returned Events must be flushed directly in order for those
+// events to be processed.
+//
+// This channel will be closed when the client's internal processing
+// has stopped.
+func (client *Client) Events() <-chan *Events {
+	return client.queue.Get()
 }
 
 // RoundTrip flushes the event queue continuously until the server
@@ -174,7 +187,7 @@ func (client *Client) RoundTrip() error {
 		case <-done:
 			return errors.Join(errs...)
 		case queue := <-get:
-			errs = append(errs, flushQueue(queue)...)
+			errs = append(errs, flushQueue(queue.events)...)
 		}
 	}
 }
@@ -187,4 +200,16 @@ func flushQueue(queue []func() error) (errs []error) {
 		}
 	}
 	return errs
+}
+
+// Events represents a series of events from a Client's event queue.
+type Events struct {
+	events []func() error
+}
+
+// Flush processess all of the events represented by q.
+func (q *Events) Flush() error {
+	err := errors.Join(flushQueue(q.events)...)
+	q.events = nil
+	return err
 }

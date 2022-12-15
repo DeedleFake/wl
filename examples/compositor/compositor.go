@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -68,9 +66,6 @@ type clientState struct {
 func (cs *clientState) run(ctx context.Context) {
 	cs.client.Display().Listener = (*displayListener)(cs)
 
-	tick := time.NewTicker(time.Second / 60)
-	defer tick.Stop()
-
 	ping := time.NewTicker(time.Second)
 	defer ping.Stop()
 
@@ -84,8 +79,15 @@ func (cs *clientState) run(ctx context.Context) {
 		case <-ping.C:
 			cs.ping()
 
-		case <-tick.C:
-			cs.flush()
+		case ev, ok := <-cs.client.Events():
+			if !ok {
+				return
+			}
+
+			err := ev.Flush()
+			if err != nil {
+				log.Printf("flush: %v", err)
+			}
 		}
 	}
 }
@@ -107,16 +109,6 @@ func (cs *clientState) ping() {
 	cs.pingSerial = cs.serialize()
 	cs.pingTime = time.Now()
 	cs.wmBase.Ping(cs.pingSerial)
-}
-
-func (cs *clientState) flush() {
-	err := cs.client.Flush()
-	if err != nil {
-		if errors.Is(err, net.ErrClosed) {
-			return
-		}
-		log.Printf("flush: %v", err)
-	}
 }
 
 type displayListener clientState

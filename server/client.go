@@ -20,7 +20,7 @@ type Client struct {
 	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
-	queue  *cq.Queue[func() error]
+	queue  *cq.Queue[func() error, *Events]
 }
 
 func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
@@ -29,7 +29,7 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 		done:   make(chan struct{}),
 		conn:   conn,
 		store:  objstore.New(1 << 24),
-		queue:  cq.New[func() error](),
+		queue:  cq.NewWrapped(func(v []func() error) *Events { return &Events{events: v} }),
 	}
 
 	display := NewDisplay(&client)
@@ -132,10 +132,21 @@ func (client *Client) Flush() error {
 	case <-client.done:
 		return net.ErrClosed
 	case queue := <-client.queue.Get():
-		return errors.Join(flushQueue(queue)...)
+		return queue.Flush()
 	default:
 		return nil
 	}
+}
+
+// Events returns a channel that yields an Events representing events
+// that have happened since the last time the event queue was flushed.
+// The returned Events must be flushed directly in order for those
+// events to be processed.
+//
+// This channel will be closed when the client's internal processing
+// has stopped.
+func (client *Client) Events() <-chan *Events {
+	return client.queue.Get()
 }
 
 func flushQueue(queue []func() error) (errs []error) {
@@ -150,4 +161,16 @@ func flushQueue(queue []func() error) (errs []error) {
 
 func (client *Client) Addr() net.Addr {
 	return client.conn.LocalAddr()
+}
+
+// Events represents a series of events from a Client's event queue.
+type Events struct {
+	events []func() error
+}
+
+// Flush processess all of the events represented by q.
+func (q *Events) Flush() error {
+	err := errors.Join(flushQueue(q.events)...)
+	q.events = nil
+	return err
 }

@@ -10,11 +10,9 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 
 	wl "deedles.dev/wl/client"
 	xdg "deedles.dev/wl/examples/internal/xdg/client"
@@ -171,21 +169,19 @@ func (s *state) initCursor() {
 }
 
 func (s *state) run(ctx context.Context) {
-	tick := time.NewTicker(time.Second / 60)
-	defer tick.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-s.done:
 			return
-		case <-tick.C:
-			err := s.client.Flush()
+		case ev, ok := <-s.client.Events():
+			if !ok {
+				return
+			}
+
+			err := ev.Flush()
 			if err != nil {
-				if errors.Is(err, net.ErrClosed) {
-					return
-				}
 				log.Printf("flush: %v", err)
 			}
 		}
