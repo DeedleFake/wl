@@ -58,13 +58,22 @@ import (
 		return &{{$name}}{state: state}
 	}
 
-	{{if and $.IsClient ($.Locals.Has $interface.Name | not)}}
-		func Bind{{$name}}(state wire.State, registry wire.Binder, name, version uint32) *{{$name}} {
-			obj := New{{$name}}(state)
-			state.Add(obj)
-			registry.Bind(name, wire.NewID{Interface: {{$name}}Interface, Version: version, ID: obj.ID()})
-			return obj
-		}
+	{{if $.Locals.Has $interface.Name | not}}
+		{{if $.IsClient}}
+			func Bind{{$name}}(state wire.State, registry wire.Binder, name, version uint32) *{{$name}} {
+				obj := New{{$name}}(state)
+				state.Add(obj)
+				registry.Bind(name, wire.NewID{Interface: {{$name}}Interface, Version: version, ID: obj.ID()})
+				return obj
+			}
+		{{else}}
+			func Bind{{$name}}(state wire.State, id wire.NewID) *{{$name}} {
+				obj := New{{$name}}(state)
+				obj.SetID(id.ID)
+				state.Add(obj)
+				return obj
+			}
+		{{end}}
 	{{end}}
 
 	func (obj *{{$name}}) State() wire.State {

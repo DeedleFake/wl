@@ -476,6 +476,13 @@ func NewCompositor(state wire.State) *Compositor {
 	return &Compositor{state: state}
 }
 
+func BindCompositor(state wire.State, id wire.NewID) *Compositor {
+	obj := NewCompositor(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
 func (obj *Compositor) State() wire.State {
 	return obj.state
 }
@@ -765,6 +772,13 @@ type Shm struct {
 // primarily intended for use by generated code.
 func NewShm(state wire.State) *Shm {
 	return &Shm{state: state}
+}
+
+func BindShm(state wire.State, id wire.NewID) *Shm {
+	obj := NewShm(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
 }
 
 func (obj *Shm) State() wire.State {
@@ -2627,6 +2641,13 @@ func NewDataDeviceManager(state wire.State) *DataDeviceManager {
 	return &DataDeviceManager{state: state}
 }
 
+func BindDataDeviceManager(state wire.State, id wire.NewID) *DataDeviceManager {
+	obj := NewDataDeviceManager(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
 func (obj *DataDeviceManager) State() wire.State {
 	return obj.state
 }
@@ -2809,6 +2830,13 @@ type Shell struct {
 // primarily intended for use by generated code.
 func NewShell(state wire.State) *Shell {
 	return &Shell{state: state}
+}
+
+func BindShell(state wire.State, id wire.NewID) *Shell {
+	obj := NewShell(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
 }
 
 func (obj *Shell) State() wire.State {
@@ -4219,6 +4247,13 @@ func NewSeat(state wire.State) *Seat {
 	return &Seat{state: state}
 }
 
+func BindSeat(state wire.State, id wire.NewID) *Seat {
+	obj := NewSeat(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
 func (obj *Seat) State() wire.State {
 	return obj.state
 }
@@ -5490,6 +5525,13 @@ func NewOutput(state wire.State) *Output {
 	return &Output{state: state}
 }
 
+func BindOutput(state wire.State, id wire.NewID) *Output {
+	obj := NewOutput(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
 func (obj *Output) State() wire.State {
 	return obj.state
 }
@@ -6019,6 +6061,13 @@ type Subcompositor struct {
 // primarily intended for use by generated code.
 func NewSubcompositor(state wire.State) *Subcompositor {
 	return &Subcompositor{state: state}
+}
+
+func BindSubcompositor(state wire.State, id wire.NewID) *Subcompositor {
+	obj := NewSubcompositor(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
 }
 
 func (obj *Subcompositor) State() wire.State {

@@ -74,6 +74,13 @@ func NewWmBase(state wire.State) *WmBase {
 	return &WmBase{state: state}
 }
 
+func BindWmBase(state wire.State, id wire.NewID) *WmBase {
+	obj := NewWmBase(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
 func (obj *WmBase) State() wire.State {
 	return obj.state
 }
