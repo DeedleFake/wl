@@ -71,7 +71,7 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		callback := NewCallback(obj.state)
-
+		callback.SetID(msg.ReadUint())
 		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
@@ -88,7 +88,7 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		registry := NewRegistry(obj.state)
-
+		registry.SetID(msg.ReadUint())
 		obj.state.Add(registry)
 
 		if err := msg.Err(); err != nil {
@@ -484,7 +484,7 @@ func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewSurface(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -501,7 +501,7 @@ func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewRegion(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -624,7 +624,7 @@ func (obj *ShmPool) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewBuffer(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		offset := msg.ReadInt()
@@ -775,7 +775,7 @@ func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewShmPool(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		fd := msg.ReadFile()
@@ -2635,7 +2635,7 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewDataSource(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2652,7 +2652,7 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewDataDevice(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		seat := NewSeat(obj.state)
@@ -2819,7 +2819,7 @@ func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewShellSurface(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		surface := NewSurface(obj.state)
@@ -3908,7 +3908,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 3:
 		callback := NewCallback(obj.state)
-
+		callback.SetID(msg.ReadUint())
 		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
@@ -4227,7 +4227,7 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewPointer(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -4244,7 +4244,7 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewKeyboard(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -4261,7 +4261,7 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 		id := NewTouch(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -6040,7 +6040,7 @@ func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewSubsurface(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		surface := NewSurface(obj.state)

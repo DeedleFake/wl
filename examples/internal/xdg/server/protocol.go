@@ -93,7 +93,7 @@ func (obj *WmBase) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewPositioner(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -110,7 +110,7 @@ func (obj *WmBase) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 		id := NewSurface(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		surface := wl.NewSurface(obj.state)
@@ -1002,7 +1002,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 		id := NewToplevel(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -1019,7 +1019,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 		id := NewPopup(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		parent := NewSurface(obj.state)

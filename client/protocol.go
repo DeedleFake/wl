@@ -2352,7 +2352,7 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 		id := NewDataOffer(obj.state)
-
+		id.SetID(msg.ReadUint())
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {

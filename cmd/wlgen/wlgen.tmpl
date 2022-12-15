@@ -84,7 +84,7 @@ import (
 							{{- $type := .Interface | ident -}}
 
 							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
-							{{if eq .Type "new_id" | not}}{{$argName}}.SetID(msg.ReadUint()){{end}}
+							{{$argName}}.SetID(msg.ReadUint())
 							obj.state.Add({{$argName}})
 						{{else}}
 							{{if .Enum}}
