@@ -13,6 +13,7 @@ import (
 	"deedles.dev/wl/wire"
 )
 
+// Client represents a client connected to the server.
 type Client struct {
 	server *Server
 	done   chan struct{}
@@ -78,18 +79,26 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 	return client.store.Dispatch(msg)
 }
 
+// Add adds obj to client's knowledge. Do not call this method unless
+// you know what you are doing.
 func (client *Client) Add(obj wire.Object) {
 	client.store.Add(obj)
 }
 
+// Get retrieves an object by ID. If no such object exists, nil is
+// returned.
 func (client *Client) Get(id uint32) wire.Object {
 	return client.store.Get(id)
 }
 
+// Delete deletes the object identified by ID, if it exists. If the
+// object has a delete handler specified, it is called.
 func (client *Client) Delete(id uint32) {
 	client.store.Delete(id)
 }
 
+// Enqueue adds msg to the event queue. It will be sent to the server
+// the next time the queue is flushed.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	client.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
@@ -97,6 +106,8 @@ func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	}
 }
 
+// Display returns the display object that represents the Wayland
+// server to the remote client.
 func (client *Client) Display() *Display {
 	return client.Get(1).(*Display)
 }
