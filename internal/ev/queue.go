@@ -3,13 +3,13 @@ package ev
 import (
 	"errors"
 
-	"deedles.dev/wl/internal/cq"
+	"deedles.dev/xsync/cq"
 )
 
 type Queue = cq.Queue[func() error, *Events]
 
 func NewQueue() *Queue {
-	return cq.NewWrapped(func(v []func() error) *Events {
+	return cq.New(func(v []func() error) *Events {
 		return &Events{
 			events: v,
 		}
