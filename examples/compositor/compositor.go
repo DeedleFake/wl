@@ -99,12 +99,31 @@ type registryListener clientState
 func (cs *registryListener) Bind(name uint32, id wire.NewID) {
 	switch name {
 	case 0:
-		wl.BindCompositor(cs.client, id)
+		c := wl.BindCompositor(cs.client, id)
+		c.Listener = (*compositorListener)(cs)
 	case 1:
-		wl.BindShm(cs.client, id)
+		shm := wl.BindShm(cs.client, id)
+		shm.Listener = (*shmListener)(cs)
 	case 2:
 		xdg.BindWmBase(cs.client, id)
 	}
+}
+
+type compositorListener clientState
+
+func (cs *compositorListener) CreateRegion(r *wl.Region) {
+	// TODO
+}
+
+func (cs *compositorListener) CreateSurface(s *wl.Surface) {
+	// TODO
+}
+
+type shmListener clientState
+
+func (cs *shmListener) CreatePool(pool *wl.ShmPool, file *os.File, size int32) {
+	defer file.Close()
+	// TODO
 }
 
 func main() {
