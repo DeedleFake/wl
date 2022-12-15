@@ -36,6 +36,7 @@ func (s *state) stop() {
 }
 
 func (s *state) run(ctx context.Context) {
+	log.Printf("display at %q", s.server.Listener.Addr())
 	err := s.server.Run(ctx)
 	if err != nil {
 		log.Fatalf("run server: %v", err)
