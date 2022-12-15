@@ -56,6 +56,8 @@ type clientState struct {
 	state  *state
 	client *wl.Client
 	serial uint32
+
+	surfaces []*surface
 }
 
 func (cs *clientState) run(ctx context.Context) {
@@ -107,7 +109,8 @@ func (cs *registryListener) Bind(name uint32, id wire.NewID) {
 		shm := wl.BindShm(cs.client, id)
 		shm.Listener = (*shmListener)(cs)
 	case 2:
-		xdg.BindWmBase(cs.client, id)
+		wm := xdg.BindWmBase(cs.client, id)
+		wm.Listener = (*wmBaseListener)(cs)
 	}
 }
 
@@ -118,7 +121,7 @@ func (cs *compositorListener) CreateRegion(r *wl.Region) {
 }
 
 func (cs *compositorListener) CreateSurface(s *wl.Surface) {
-	// TODO
+	cs.surfaces = append(cs.surfaces, &surface{s: s})
 }
 
 type shmListener clientState
@@ -126,6 +129,33 @@ type shmListener clientState
 func (cs *shmListener) CreatePool(pool *wl.ShmPool, file *os.File, size int32) {
 	defer file.Close()
 	// TODO
+}
+
+type wmBaseListener clientState
+
+func (cs *wmBaseListener) Destroy() {}
+
+func (cs *wmBaseListener) CreatePositioner(p *xdg.Positioner) {}
+
+func (cs *wmBaseListener) GetXdgSurface(xs *xdg.Surface, wls *wl.Surface) {
+	for _, s := range cs.surfaces {
+		if s.s == wls {
+			s.role = &xdgRole{s: xs}
+		}
+	}
+}
+
+func (cs *wmBaseListener) Pong(serial uint32) {
+	// TODO
+}
+
+type surface struct {
+	s    *wl.Surface
+	role any
+}
+
+type xdgRole struct {
+	s *xdg.Surface
 }
 
 func main() {
