@@ -6,7 +6,7 @@ import (
 	"deedles.dev/xsync/cq"
 )
 
-type Queue = cq.Queue[func() error, *Events]
+type Queue = cq.BulkQueue[func() error, *Events]
 
 func NewQueue() *Queue {
 	return cq.New(func(v []func() error) *Events {
