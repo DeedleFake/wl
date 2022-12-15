@@ -148,6 +148,6 @@ func flushQueue(queue []func() error) (errs []error) {
 	return errs
 }
 
-func (client *Client) RemoteAddr() net.Addr {
-	return client.conn.RemoteAddr()
+func (client *Client) Addr() net.Addr {
+	return client.conn.LocalAddr()
 }

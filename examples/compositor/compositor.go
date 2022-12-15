@@ -45,8 +45,8 @@ func (s *state) run(ctx context.Context) {
 }
 
 func (s *state) handleClient(ctx context.Context, c *wl.Client) {
-	log.Printf("client connected: %v", c.RemoteAddr())
-	defer log.Printf("client disconnected: %v", c.RemoteAddr())
+	log.Printf("client connected: %v", c.Addr())
+	defer log.Printf("client disconnected: %v", c.Addr())
 
 	cs := clientState{state: (*state)(s), client: c}
 	cs.run(ctx)
