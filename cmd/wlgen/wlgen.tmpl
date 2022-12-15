@@ -88,19 +88,20 @@ import (
 					{{range $method.Args -}}
 						{{- $argName := .Name | camel | unexport | unkeyword -}}
 
-						{{- $isObject := or (eq .Type "object") (eq .Type "new_id") -}}
-						{{if and $isObject .Interface}}
+						{{if .Interface}}
 							{{- $type := .Interface | ident -}}
 
-							{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
-							{{$argName}}.SetID(msg.ReadUint())
-							obj.state.Add({{$argName}})
-						{{else}}
-							{{if .Enum}}
-								{{$argName}} := {{.Enum | enumType $interface.Name}}(msg.Read{{. | typeFuncSuffix}}())
-							{{else}}
-								{{$argName}} := msg.Read{{. | typeFuncSuffix}}()
+							{{if eq .Type "new_id"}}
+								{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
+								{{$argName}}.SetID(msg.ReadUint())
+							{{else if eq .Type "object"}}
+								{{$argName}} := obj.state.Get(msg.ReadUint()).(*{{$type}})
 							{{end}}
+							obj.state.Add({{$argName}})
+						{{else if .Enum}}
+							{{$argName}} := {{.Enum | enumType $interface.Name}}(msg.Read{{. | typeFuncSuffix}}())
+						{{else}}
+							{{$argName}} := msg.Read{{. | typeFuncSuffix}}()
 						{{end}}
 					{{end -}}
 					if err := msg.Err(); err != nil {
@@ -170,9 +171,7 @@ import (
 
 		{{$method.Description.Full | trimSpace | trimLines | comment -}}
 		func (obj *{{$name}}) {{$method.Name | camel | export}}({{range $args}}{{.Name | camel | unexport | unkeyword}} {{with .Enum}}{{. | enumType $interface.Name}}{{else}}{{. | goType}}{{end}}, {{end}}) ({{range $rets}}{{.Name | camel | unexport | unkeyword}} *{{.Interface | ident}}, {{end}}) {
-		builder := wire.NewMessage(obj, {{$op}})
-			builder.Method = {{$method.Name | printf "%q"}}
-			builder.Args = []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} }
+			builder := wire.NewMessage(obj, {{$op}})
 
 			{{range $method.Args -}}
 				{{if isRet . -}}
@@ -184,6 +183,8 @@ import (
 				{{end -}}
 			{{end}}
 
+			builder.Method = {{$method.Name | printf "%q"}}
+			builder.Args = []any{ {{- range $method.Args}}{{.Name | camel | unexport | unkeyword}}, {{end -}} }
 			obj.state.Enqueue(builder)
 			return {{range $i, $_ := $rets}}{{if $i}}, {{end}}{{.Name | camel | unexport | unkeyword}}{{end}}
 		}

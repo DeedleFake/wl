@@ -70,8 +70,10 @@ func (obj *Display) State() wire.State {
 func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		callback := NewCallback(obj.state)
 		callback.SetID(msg.ReadUint())
+
 		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
@@ -87,8 +89,10 @@ func (obj *Display) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		registry := NewRegistry(obj.state)
 		registry.SetID(msg.ReadUint())
+
 		obj.state.Add(registry)
 
 		if err := msg.Err(); err != nil {
@@ -158,13 +162,13 @@ func (obj *Display) Version() uint32 {
 // of the error, for (debugging) convenience.
 func (obj *Display) Error(objectId uint32, code uint32, message string) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "error"
-	builder.Args = []any{objectId, code, message}
 
 	builder.WriteUint(objectId)
 	builder.WriteUint(code)
 	builder.WriteString(message)
 
+	builder.Method = "error"
+	builder.Args = []any{objectId, code, message}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -176,11 +180,11 @@ func (obj *Display) Error(objectId uint32, code uint32, message string) {
 // it will know that it can safely reuse the object ID.
 func (obj *Display) DeleteId(id uint32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "delete_id"
-	builder.Args = []any{id}
 
 	builder.WriteUint(id)
 
+	builder.Method = "delete_id"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -349,13 +353,13 @@ func (obj *Registry) Version() uint32 {
 // given version of the given interface.
 func (obj *Registry) Global(name uint32, _interface string, version uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "global"
-	builder.Args = []any{name, _interface, version}
 
 	builder.WriteUint(name)
 	builder.WriteString(_interface)
 	builder.WriteUint(version)
 
+	builder.Method = "global"
+	builder.Args = []any{name, _interface, version}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -372,11 +376,11 @@ func (obj *Registry) Global(name uint32, _interface string, version uint32) {
 // the global going away and a client sending a request to it.
 func (obj *Registry) GlobalRemove(name uint32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "global_remove"
-	builder.Args = []any{name}
 
 	builder.WriteUint(name)
 
+	builder.Method = "global_remove"
+	builder.Args = []any{name}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -453,11 +457,11 @@ func (obj *Callback) Version() uint32 {
 // Notify the client when the related request is done.
 func (obj *Callback) Done(callbackData uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "done"
-	builder.Args = []any{callbackData}
 
 	builder.WriteUint(callbackData)
 
+	builder.Method = "done"
+	builder.Args = []any{callbackData}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -514,8 +518,10 @@ func (obj *Compositor) State() wire.State {
 func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewSurface(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -531,8 +537,10 @@ func (obj *Compositor) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewRegion(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -662,8 +670,10 @@ func (obj *ShmPool) State() wire.State {
 func (obj *ShmPool) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewBuffer(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		offset := msg.ReadInt()
@@ -828,8 +838,10 @@ func (obj *Shm) State() wire.State {
 func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewShmPool(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		fd := msg.ReadFile()
@@ -898,11 +910,11 @@ func (obj *Shm) Version() uint32 {
 // argb8888 and xrgb8888.
 func (obj *Shm) Format(format ShmFormat) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "format"
-	builder.Args = []any{format}
 
 	builder.WriteUint(uint32(format))
 
+	builder.Method = "format"
+	builder.Args = []any{format}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1681,9 +1693,9 @@ func (obj *Buffer) Version() uint32 {
 // optimization for GL(ES) compositors with wl_shm clients.
 func (obj *Buffer) Release() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1952,11 +1964,11 @@ func (obj *DataOffer) Version() uint32 {
 // event per offered mime type.
 func (obj *DataOffer) Offer(mimeType string) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "offer"
-	builder.Args = []any{mimeType}
 
 	builder.WriteString(mimeType)
 
+	builder.Method = "offer"
+	builder.Args = []any{mimeType}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1966,11 +1978,11 @@ func (obj *DataOffer) Offer(mimeType string) {
 // side changes its offered actions through wl_data_source.set_actions.
 func (obj *DataOffer) SourceActions(sourceActions DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "source_actions"
-	builder.Args = []any{sourceActions}
 
 	builder.WriteUint(uint32(sourceActions))
 
+	builder.Method = "source_actions"
+	builder.Args = []any{sourceActions}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2012,11 +2024,11 @@ func (obj *DataOffer) SourceActions(sourceActions DataDeviceManagerDndAction) {
 // must happen before the call to wl_data_offer.finish.
 func (obj *DataOffer) Action(dndAction DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "action"
-	builder.Args = []any{dndAction}
 
 	builder.WriteUint(uint32(dndAction))
 
+	builder.Method = "action"
+	builder.Args = []any{dndAction}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2215,11 +2227,11 @@ func (obj *DataSource) Version() uint32 {
 // Used for feedback during drag-and-drop.
 func (obj *DataSource) Target(mimeType string) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "target"
-	builder.Args = []any{mimeType}
 
 	builder.WriteString(mimeType)
 
+	builder.Method = "target"
+	builder.Args = []any{mimeType}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2229,12 +2241,12 @@ func (obj *DataSource) Target(mimeType string) {
 // close it.
 func (obj *DataSource) Send(mimeType string, fd *os.File) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "send"
-	builder.Args = []any{mimeType, fd}
 
 	builder.WriteString(mimeType)
 	builder.WriteFile(fd)
 
+	builder.Method = "send"
+	builder.Args = []any{mimeType, fd}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2261,9 +2273,9 @@ func (obj *DataSource) Send(mimeType string, fd *os.File) {
 // source.
 func (obj *DataSource) Cancelled() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "cancelled"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2279,9 +2291,9 @@ func (obj *DataSource) Cancelled() {
 // not be destroyed here.
 func (obj *DataSource) DndDropPerformed() {
 	builder := wire.NewMessage(obj, 3)
+
 	builder.Method = "dnd_drop_performed"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2294,9 +2306,9 @@ func (obj *DataSource) DndDropPerformed() {
 // source can now delete the transferred data.
 func (obj *DataSource) DndFinished() {
 	builder := wire.NewMessage(obj, 4)
+
 	builder.Method = "dnd_finished"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2328,11 +2340,11 @@ func (obj *DataSource) DndFinished() {
 // they reflect the current action.
 func (obj *DataSource) Action(dndAction DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "action"
-	builder.Args = []any{dndAction}
 
 	builder.WriteUint(uint32(dndAction))
 
+	builder.Method = "action"
+	builder.Args = []any{dndAction}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2439,16 +2451,17 @@ func (obj *DataDevice) State() wire.State {
 func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		source := NewDataSource(obj.state)
-		source.SetID(msg.ReadUint())
+
+		source := obj.state.Get(msg.ReadUint()).(*DataSource)
+
 		obj.state.Add(source)
 
-		origin := NewSurface(obj.state)
-		origin.SetID(msg.ReadUint())
+		origin := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(origin)
 
-		icon := NewSurface(obj.state)
-		icon.SetID(msg.ReadUint())
+		icon := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(icon)
 
 		serial := msg.ReadUint()
@@ -2469,8 +2482,9 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		source := NewDataSource(obj.state)
-		source.SetID(msg.ReadUint())
+
+		source := obj.state.Get(msg.ReadUint()).(*DataSource)
+
 		obj.state.Add(source)
 
 		serial := msg.ReadUint()
@@ -2557,13 +2571,13 @@ func (obj *DataDevice) Version() uint32 {
 // mime types it offers.
 func (obj *DataDevice) DataOffer() (id *DataOffer) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "data_offer"
-	builder.Args = []any{id}
 
 	id = NewDataOffer(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "data_offer"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -2574,8 +2588,6 @@ func (obj *DataDevice) DataOffer() (id *DataOffer) {
 // coordinates.
 func (obj *DataDevice) Enter(serial uint32, surface *Surface, x wire.Fixed, y wire.Fixed, id *DataOffer) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "enter"
-	builder.Args = []any{serial, surface, x, y, id}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
@@ -2583,6 +2595,8 @@ func (obj *DataDevice) Enter(serial uint32, surface *Surface, x wire.Fixed, y wi
 	builder.WriteFixed(y)
 	builder.WriteObject(id)
 
+	builder.Method = "enter"
+	builder.Args = []any{serial, surface, x, y, id}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2592,9 +2606,9 @@ func (obj *DataDevice) Enter(serial uint32, surface *Surface, x wire.Fixed, y wi
 // wl_data_offer introduced at enter time at this point.
 func (obj *DataDevice) Leave() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "leave"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2605,13 +2619,13 @@ func (obj *DataDevice) Leave() {
 // coordinates.
 func (obj *DataDevice) Motion(time uint32, x wire.Fixed, y wire.Fixed) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "motion"
-	builder.Args = []any{time, x, y}
 
 	builder.WriteUint(time)
 	builder.WriteFixed(x)
 	builder.WriteFixed(y)
 
+	builder.Method = "motion"
+	builder.Args = []any{time, x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2631,9 +2645,9 @@ func (obj *DataDevice) Motion(time uint32, x wire.Fixed, y wire.Fixed) {
 // to cancel the operation.
 func (obj *DataDevice) Drop() {
 	builder := wire.NewMessage(obj, 4)
+
 	builder.Method = "drop"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2651,11 +2665,11 @@ func (obj *DataDevice) Drop() {
 // this event.
 func (obj *DataDevice) Selection(id *DataOffer) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "selection"
-	builder.Args = []any{id}
 
 	builder.WriteObject(id)
 
+	builder.Method = "selection"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2735,8 +2749,10 @@ func (obj *DataDeviceManager) State() wire.State {
 func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewDataSource(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2752,12 +2768,14 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewDataDevice(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
-		seat := NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+
 		obj.state.Add(seat)
 
 		if err := msg.Err(); err != nil {
@@ -2934,12 +2952,14 @@ func (obj *Shell) State() wire.State {
 func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewShellSurface(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -3202,8 +3222,9 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		seat := NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -3222,8 +3243,9 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
-		seat := NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -3256,8 +3278,9 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
-		parent := NewSurface(obj.state)
-		parent.SetID(msg.ReadUint())
+
+		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(parent)
 
 		x := msg.ReadInt()
@@ -3287,8 +3310,8 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 		framerate := msg.ReadUint()
 
-		output := NewOutput(obj.state)
-		output.SetID(msg.ReadUint())
+		output := obj.state.Get(msg.ReadUint()).(*Output)
+
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3306,14 +3329,15 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 6:
-		seat := NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
-		parent := NewSurface(obj.state)
-		parent.SetID(msg.ReadUint())
+		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(parent)
 
 		x := msg.ReadInt()
@@ -3340,8 +3364,9 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 7:
-		output := NewOutput(obj.state)
-		output.SetID(msg.ReadUint())
+
+		output := obj.state.Get(msg.ReadUint()).(*Output)
+
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3462,11 +3487,11 @@ func (obj *ShellSurface) Version() uint32 {
 // requests. A client is expected to reply with a pong request.
 func (obj *ShellSurface) Ping(serial uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "ping"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "ping"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3490,13 +3515,13 @@ func (obj *ShellSurface) Ping(serial uint32) {
 // in surface-local coordinates.
 func (obj *ShellSurface) Configure(edges ShellSurfaceResize, width int32, height int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "configure"
-	builder.Args = []any{edges, width, height}
 
 	builder.WriteUint(uint32(edges))
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "configure"
+	builder.Args = []any{edges, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3506,9 +3531,9 @@ func (obj *ShellSurface) Configure(edges ShellSurfaceResize, width int32, height
 // to the client owning the popup surface.
 func (obj *ShellSurface) PopupDone() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "popup_done"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3991,8 +4016,9 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		buffer := NewBuffer(obj.state)
-		buffer.SetID(msg.ReadUint())
+
+		buffer := obj.state.Get(msg.ReadUint()).(*Buffer)
+
 		obj.state.Add(buffer)
 
 		x := msg.ReadInt()
@@ -4039,8 +4065,10 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 3:
+
 		callback := NewCallback(obj.state)
 		callback.SetID(msg.ReadUint())
+
 		obj.state.Add(callback)
 
 		if err := msg.Err(); err != nil {
@@ -4056,8 +4084,9 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
-		region := NewRegion(obj.state)
-		region.SetID(msg.ReadUint())
+
+		region := obj.state.Get(msg.ReadUint()).(*Region)
+
 		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
@@ -4073,8 +4102,9 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
-		region := NewRegion(obj.state)
-		region.SetID(msg.ReadUint())
+
+		region := obj.state.Get(msg.ReadUint()).(*Region)
+
 		obj.state.Add(region)
 
 		if err := msg.Err(); err != nil {
@@ -4234,11 +4264,11 @@ func (obj *Surface) Version() uint32 {
 // Note that a surface may be overlapping with zero or more outputs.
 func (obj *Surface) Enter(output *Output) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "enter"
-	builder.Args = []any{output}
 
 	builder.WriteObject(output)
 
+	builder.Method = "enter"
+	builder.Args = []any{output}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4254,11 +4284,11 @@ func (obj *Surface) Enter(output *Output) {
 // used instead.
 func (obj *Surface) Leave(output *Output) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "leave"
-	builder.Args = []any{output}
 
 	builder.WriteObject(output)
 
+	builder.Method = "leave"
+	builder.Args = []any{output}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4373,8 +4403,10 @@ func (obj *Seat) State() wire.State {
 func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewPointer(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -4390,8 +4422,10 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewKeyboard(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -4407,8 +4441,10 @@ func (obj *Seat) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+
 		id := NewTouch(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -4512,11 +4548,11 @@ func (obj *Seat) Version() uint32 {
 // keyboard and touch capabilities, respectively.
 func (obj *Seat) Capabilities(capabilities SeatCapability) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "capabilities"
-	builder.Args = []any{capabilities}
 
 	builder.WriteUint(uint32(capabilities))
 
+	builder.Method = "capabilities"
+	builder.Args = []any{capabilities}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4526,11 +4562,11 @@ func (obj *Seat) Capabilities(capabilities SeatCapability) {
 // the seat configuration used by the compositor.
 func (obj *Seat) Name(name string) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "name"
-	builder.Args = []any{name}
 
 	builder.WriteString(name)
 
+	builder.Method = "name"
+	builder.Args = []any{name}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4669,8 +4705,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		hotspotX := msg.ReadInt()
@@ -4757,14 +4793,14 @@ func (obj *Pointer) Version() uint32 {
 // an appropriate pointer image with the set_cursor request.
 func (obj *Pointer) Enter(serial uint32, surface *Surface, surfaceX wire.Fixed, surfaceY wire.Fixed) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "enter"
-	builder.Args = []any{serial, surface, surfaceX, surfaceY}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
 	builder.WriteFixed(surfaceX)
 	builder.WriteFixed(surfaceY)
 
+	builder.Method = "enter"
+	builder.Args = []any{serial, surface, surfaceX, surfaceY}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4776,12 +4812,12 @@ func (obj *Pointer) Enter(serial uint32, surface *Surface, surfaceX wire.Fixed, 
 // for the new focus.
 func (obj *Pointer) Leave(serial uint32, surface *Surface) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "leave"
-	builder.Args = []any{serial, surface}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
 
+	builder.Method = "leave"
+	builder.Args = []any{serial, surface}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4791,13 +4827,13 @@ func (obj *Pointer) Leave(serial uint32, surface *Surface) {
 // focused surface.
 func (obj *Pointer) Motion(time uint32, surfaceX wire.Fixed, surfaceY wire.Fixed) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "motion"
-	builder.Args = []any{time, surfaceX, surfaceY}
 
 	builder.WriteUint(time)
 	builder.WriteFixed(surfaceX)
 	builder.WriteFixed(surfaceY)
 
+	builder.Method = "motion"
+	builder.Args = []any{time, surfaceX, surfaceY}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4818,14 +4854,14 @@ func (obj *Pointer) Motion(time uint32, surfaceX wire.Fixed, surfaceY wire.Fixed
 // protocol.
 func (obj *Pointer) Button(serial uint32, time uint32, button uint32, state PointerButtonState) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "button"
-	builder.Args = []any{serial, time, button, state}
 
 	builder.WriteUint(serial)
 	builder.WriteUint(time)
 	builder.WriteUint(button)
 	builder.WriteUint(uint32(state))
 
+	builder.Method = "button"
+	builder.Args = []any{serial, time, button, state}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4848,13 +4884,13 @@ func (obj *Pointer) Button(serial uint32, time uint32, button uint32, state Poin
 // scroll distance.
 func (obj *Pointer) Axis(time uint32, axis PointerAxis, value wire.Fixed) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "axis"
-	builder.Args = []any{time, axis, value}
 
 	builder.WriteUint(time)
 	builder.WriteUint(uint32(axis))
 	builder.WriteFixed(value)
 
+	builder.Method = "axis"
+	builder.Args = []any{time, axis, value}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4895,9 +4931,9 @@ func (obj *Pointer) Axis(time uint32, axis PointerAxis, value wire.Fixed) {
 // groups.
 func (obj *Pointer) Frame() {
 	builder := wire.NewMessage(obj, 5)
+
 	builder.Method = "frame"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4929,11 +4965,11 @@ func (obj *Pointer) Frame() {
 // not guaranteed.
 func (obj *Pointer) AxisSource(axisSource PointerAxisSource) {
 	builder := wire.NewMessage(obj, 6)
-	builder.Method = "axis_source"
-	builder.Args = []any{axisSource}
 
 	builder.WriteUint(uint32(axisSource))
 
+	builder.Method = "axis_source"
+	builder.Args = []any{axisSource}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4954,12 +4990,12 @@ func (obj *Pointer) AxisSource(axisSource PointerAxisSource) {
 // preceding wl_pointer.axis event.
 func (obj *Pointer) AxisStop(time uint32, axis PointerAxis) {
 	builder := wire.NewMessage(obj, 7)
-	builder.Method = "axis_stop"
-	builder.Args = []any{time, axis}
 
 	builder.WriteUint(time)
 	builder.WriteUint(uint32(axis))
 
+	builder.Method = "axis_stop"
+	builder.Args = []any{time, axis}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4992,12 +5028,12 @@ func (obj *Pointer) AxisStop(time uint32, axis PointerAxis) {
 // not guaranteed.
 func (obj *Pointer) AxisDiscrete(axis PointerAxis, discrete int32) {
 	builder := wire.NewMessage(obj, 8)
-	builder.Method = "axis_discrete"
-	builder.Args = []any{axis, discrete}
 
 	builder.WriteUint(uint32(axis))
 	builder.WriteInt(discrete)
 
+	builder.Method = "axis_discrete"
+	builder.Args = []any{axis, discrete}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5215,13 +5251,13 @@ func (obj *Keyboard) Version() uint32 {
 // the recipient, as MAP_SHARED may fail.
 func (obj *Keyboard) Keymap(format KeyboardKeymapFormat, fd *os.File, size uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "keymap"
-	builder.Args = []any{format, fd, size}
 
 	builder.WriteUint(uint32(format))
 	builder.WriteFile(fd)
 	builder.WriteUint(size)
 
+	builder.Method = "keymap"
+	builder.Args = []any{format, fd, size}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5233,13 +5269,13 @@ func (obj *Keyboard) Keymap(format KeyboardKeymapFormat, fd *os.File, size uint3
 // event.
 func (obj *Keyboard) Enter(serial uint32, surface *Surface, keys []byte) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "enter"
-	builder.Args = []any{serial, surface, keys}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
 	builder.WriteArray(keys)
 
+	builder.Method = "enter"
+	builder.Args = []any{serial, surface, keys}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5254,12 +5290,12 @@ func (obj *Keyboard) Enter(serial uint32, surface *Surface, keys []byte) {
 // are lifted and also it must stop key repeating if there's some going on.
 func (obj *Keyboard) Leave(serial uint32, surface *Surface) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "leave"
-	builder.Args = []any{serial, surface}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
 
+	builder.Method = "leave"
+	builder.Args = []any{serial, surface}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5275,14 +5311,14 @@ func (obj *Keyboard) Leave(serial uint32, surface *Surface) {
 // wl_keyboard.modifiers event must be sent after this event.
 func (obj *Keyboard) Key(serial uint32, time uint32, key uint32, state KeyboardKeyState) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "key"
-	builder.Args = []any{serial, time, key, state}
 
 	builder.WriteUint(serial)
 	builder.WriteUint(time)
 	builder.WriteUint(key)
 	builder.WriteUint(uint32(state))
 
+	builder.Method = "key"
+	builder.Args = []any{serial, time, key, state}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5291,8 +5327,6 @@ func (obj *Keyboard) Key(serial uint32, time uint32, key uint32, state KeyboardK
 // changed, and it should update its local state.
 func (obj *Keyboard) Modifiers(serial uint32, modsDepressed uint32, modsLatched uint32, modsLocked uint32, group uint32) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "modifiers"
-	builder.Args = []any{serial, modsDepressed, modsLatched, modsLocked, group}
 
 	builder.WriteUint(serial)
 	builder.WriteUint(modsDepressed)
@@ -5300,6 +5334,8 @@ func (obj *Keyboard) Modifiers(serial uint32, modsDepressed uint32, modsLatched 
 	builder.WriteUint(modsLocked)
 	builder.WriteUint(group)
 
+	builder.Method = "modifiers"
+	builder.Args = []any{serial, modsDepressed, modsLatched, modsLocked, group}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5318,12 +5354,12 @@ func (obj *Keyboard) Modifiers(serial uint32, modsDepressed uint32, modsLatched 
 // of wl_keyboard.
 func (obj *Keyboard) RepeatInfo(rate int32, delay int32) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "repeat_info"
-	builder.Args = []any{rate, delay}
 
 	builder.WriteInt(rate)
 	builder.WriteInt(delay)
 
+	builder.Method = "repeat_info"
+	builder.Args = []any{rate, delay}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5480,8 +5516,6 @@ func (obj *Touch) Version() uint32 {
 // reused in the future.
 func (obj *Touch) Down(serial uint32, time uint32, surface *Surface, id int32, x wire.Fixed, y wire.Fixed) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "down"
-	builder.Args = []any{serial, time, surface, id, x, y}
 
 	builder.WriteUint(serial)
 	builder.WriteUint(time)
@@ -5490,6 +5524,8 @@ func (obj *Touch) Down(serial uint32, time uint32, surface *Surface, id int32, x
 	builder.WriteFixed(x)
 	builder.WriteFixed(y)
 
+	builder.Method = "down"
+	builder.Args = []any{serial, time, surface, id, x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5499,13 +5535,13 @@ func (obj *Touch) Down(serial uint32, time uint32, surface *Surface, id int32, x
 // reused in a future touch down event.
 func (obj *Touch) Up(serial uint32, time uint32, id int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "up"
-	builder.Args = []any{serial, time, id}
 
 	builder.WriteUint(serial)
 	builder.WriteUint(time)
 	builder.WriteInt(id)
 
+	builder.Method = "up"
+	builder.Args = []any{serial, time, id}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5513,14 +5549,14 @@ func (obj *Touch) Up(serial uint32, time uint32, id int32) {
 // A touch point has changed coordinates.
 func (obj *Touch) Motion(time uint32, id int32, x wire.Fixed, y wire.Fixed) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "motion"
-	builder.Args = []any{time, id, x, y}
 
 	builder.WriteUint(time)
 	builder.WriteInt(id)
 	builder.WriteFixed(x)
 	builder.WriteFixed(y)
 
+	builder.Method = "motion"
+	builder.Args = []any{time, id, x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5535,9 +5571,9 @@ func (obj *Touch) Motion(time uint32, id int32, x wire.Fixed, y wire.Fixed) {
 // previously known state.
 func (obj *Touch) Frame() {
 	builder := wire.NewMessage(obj, 3)
+
 	builder.Method = "frame"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5550,9 +5586,9 @@ func (obj *Touch) Frame() {
 // this surface may reuse the touch point ID.
 func (obj *Touch) Cancel() {
 	builder := wire.NewMessage(obj, 4)
+
 	builder.Method = "cancel"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5584,13 +5620,13 @@ func (obj *Touch) Cancel() {
 // shape if it did not receive this event.
 func (obj *Touch) Shape(id int32, major wire.Fixed, minor wire.Fixed) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "shape"
-	builder.Args = []any{id, major, minor}
 
 	builder.WriteInt(id)
 	builder.WriteFixed(major)
 	builder.WriteFixed(minor)
 
+	builder.Method = "shape"
+	builder.Args = []any{id, major, minor}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5620,12 +5656,12 @@ func (obj *Touch) Shape(id int32, major wire.Fixed, minor wire.Fixed) {
 // orientation reports.
 func (obj *Touch) Orientation(id int32, orientation wire.Fixed) {
 	builder := wire.NewMessage(obj, 6)
-	builder.Method = "orientation"
-	builder.Args = []any{id, orientation}
 
 	builder.WriteInt(id)
 	builder.WriteFixed(orientation)
 
+	builder.Method = "orientation"
+	builder.Args = []any{id, orientation}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5751,8 +5787,6 @@ func (obj *Output) Version() uint32 {
 // clients should use xdg_output.name and xdg_output.description.
 func (obj *Output) Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel OutputSubpixel, make string, model string, transform OutputTransform) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "geometry"
-	builder.Args = []any{x, y, physicalWidth, physicalHeight, subpixel, make, model, transform}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
@@ -5763,6 +5797,8 @@ func (obj *Output) Geometry(x int32, y int32, physicalWidth int32, physicalHeigh
 	builder.WriteString(model)
 	builder.WriteInt(int32(transform))
 
+	builder.Method = "geometry"
+	builder.Args = []any{x, y, physicalWidth, physicalHeight, subpixel, make, model, transform}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5799,14 +5835,14 @@ func (obj *Output) Geometry(x int32, y int32, physicalWidth int32, physicalHeigh
 // refresh rate or the size.
 func (obj *Output) Mode(flags OutputMode, width int32, height int32, refresh int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "mode"
-	builder.Args = []any{flags, width, height, refresh}
 
 	builder.WriteUint(uint32(flags))
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 	builder.WriteInt(refresh)
 
+	builder.Method = "mode"
+	builder.Args = []any{flags, width, height, refresh}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5818,9 +5854,9 @@ func (obj *Output) Mode(flags OutputMode, width int32, height int32, refresh int
 // atomic, even if they happen via multiple events.
 func (obj *Output) Done() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "done"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5845,11 +5881,11 @@ func (obj *Output) Done() {
 // a higher detail image.
 func (obj *Output) Scale(factor int32) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "scale"
-	builder.Args = []any{factor}
 
 	builder.WriteInt(factor)
 
+	builder.Method = "scale"
+	builder.Args = []any{factor}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6248,16 +6284,18 @@ func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewSubsurface(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
-		parent := NewSurface(obj.state)
-		parent.SetID(msg.ReadUint())
+		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(parent)
 
 		if err := msg.Err(); err != nil {
@@ -6533,8 +6571,9 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
-		sibling := NewSurface(obj.state)
-		sibling.SetID(msg.ReadUint())
+
+		sibling := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {
@@ -6550,8 +6589,9 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 3:
-		sibling := NewSurface(obj.state)
-		sibling.SetID(msg.ReadUint())
+
+		sibling := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(sibling)
 
 		if err := msg.Err(); err != nil {

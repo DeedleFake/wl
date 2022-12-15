@@ -136,9 +136,9 @@ func (obj *WmBase) Version() uint32 {
 // and will result in a defunct_surfaces error.
 func (obj *WmBase) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -148,13 +148,13 @@ func (obj *WmBase) Destroy() {
 // and xdg_surface.get_popup for details.
 func (obj *WmBase) CreatePositioner() (id *Positioner) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "create_positioner"
-	builder.Args = []any{id}
 
 	id = NewPositioner(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "create_positioner"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -174,14 +174,14 @@ func (obj *WmBase) CreatePositioner() (id *Positioner) {
 // xdg_surface is and how it is used.
 func (obj *WmBase) GetXdgSurface(surface *wl.Surface) (id *Surface) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "get_xdg_surface"
-	builder.Args = []any{id, surface}
 
 	id = NewSurface(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 	builder.WriteObject(surface)
 
+	builder.Method = "get_xdg_surface"
+	builder.Args = []any{id, surface}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -191,11 +191,11 @@ func (obj *WmBase) GetXdgSurface(surface *wl.Surface) (id *Surface) {
 // and xdg_wm_base.error.unresponsive.
 func (obj *WmBase) Pong(serial uint32) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "pong"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "pong"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -341,9 +341,9 @@ func (obj *Positioner) Version() uint32 {
 // Notify the compositor that the xdg_positioner will no longer be used.
 func (obj *Positioner) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -355,12 +355,12 @@ func (obj *Positioner) Destroy() {
 // If a zero or negative size is set the invalid_input error is raised.
 func (obj *Positioner) SetSize(width int32, height int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "set_size"
-	builder.Args = []any{width, height}
 
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "set_size"
+	builder.Args = []any{width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -377,14 +377,14 @@ func (obj *Positioner) SetSize(width int32, height int32) {
 // If a negative size is set the invalid_input error is raised.
 func (obj *Positioner) SetAnchorRect(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "set_anchor_rect"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "set_anchor_rect"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -397,11 +397,11 @@ func (obj *Positioner) SetAnchorRect(x int32, y int32, width int32, height int32
 // edge, or in the center of the anchor rectangle if no edge is specified.
 func (obj *Positioner) SetAnchor(anchor PositionerAnchor) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "set_anchor"
-	builder.Args = []any{anchor}
 
 	builder.WriteUint(uint32(anchor))
 
+	builder.Method = "set_anchor"
+	builder.Args = []any{anchor}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -415,11 +415,11 @@ func (obj *Positioner) SetAnchor(anchor PositionerAnchor) {
 // invalid_input error is raised.
 func (obj *Positioner) SetGravity(gravity PositionerGravity) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "set_gravity"
-	builder.Args = []any{gravity}
 
 	builder.WriteUint(uint32(gravity))
 
+	builder.Method = "set_gravity"
+	builder.Args = []any{gravity}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -439,11 +439,11 @@ func (obj *Positioner) SetGravity(gravity PositionerGravity) {
 // The default adjustment is none.
 func (obj *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "set_constraint_adjustment"
-	builder.Args = []any{constraintAdjustment}
 
 	builder.WriteUint(constraintAdjustment)
 
+	builder.Method = "set_constraint_adjustment"
+	builder.Args = []any{constraintAdjustment}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -461,12 +461,12 @@ func (obj *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) {
 // with some user interface element placed somewhere in the popup surface.
 func (obj *Positioner) SetOffset(x int32, y int32) {
 	builder := wire.NewMessage(obj, 6)
-	builder.Method = "set_offset"
-	builder.Args = []any{x, y}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	builder.Method = "set_offset"
+	builder.Args = []any{x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -479,9 +479,9 @@ func (obj *Positioner) SetOffset(x int32, y int32) {
 // xdg_surface.configure event.
 func (obj *Positioner) SetReactive() {
 	builder := wire.NewMessage(obj, 7)
+
 	builder.Method = "set_reactive"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -495,12 +495,12 @@ func (obj *Positioner) SetReactive() {
 // The arguments are given in the surface-local coordinate space.
 func (obj *Positioner) SetParentSize(parentWidth int32, parentHeight int32) {
 	builder := wire.NewMessage(obj, 8)
-	builder.Method = "set_parent_size"
-	builder.Args = []any{parentWidth, parentHeight}
 
 	builder.WriteInt(parentWidth)
 	builder.WriteInt(parentHeight)
 
+	builder.Method = "set_parent_size"
+	builder.Args = []any{parentWidth, parentHeight}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -511,11 +511,11 @@ func (obj *Positioner) SetParentSize(parentWidth int32, parentHeight int32) {
 // constrained using.
 func (obj *Positioner) SetParentConfigure(serial uint32) {
 	builder := wire.NewMessage(obj, 9)
-	builder.Method = "set_parent_configure"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "set_parent_configure"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -864,9 +864,9 @@ func (obj *Surface) Version() uint32 {
 // a defunct_role_object error is raised.
 func (obj *Surface) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -878,13 +878,13 @@ func (obj *Surface) Destroy() {
 // xdg_toplevel is and how it is used.
 func (obj *Surface) GetToplevel() (id *Toplevel) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "get_toplevel"
-	builder.Args = []any{id}
 
 	id = NewToplevel(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "get_toplevel"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -899,8 +899,6 @@ func (obj *Surface) GetToplevel() (id *Toplevel) {
 // xdg_popup is and how it is used.
 func (obj *Surface) GetPopup(parent *Surface, positioner *Positioner) (id *Popup) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "get_popup"
-	builder.Args = []any{id, parent, positioner}
 
 	id = NewPopup(obj.state)
 	obj.state.Add(id)
@@ -908,6 +906,8 @@ func (obj *Surface) GetPopup(parent *Surface, positioner *Positioner) (id *Popup
 	builder.WriteObject(parent)
 	builder.WriteObject(positioner)
 
+	builder.Method = "get_popup"
+	builder.Args = []any{id, parent, positioner}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -943,14 +943,14 @@ func (obj *Surface) GetPopup(parent *Surface, positioner *Positioner) (id *Popup
 // the associated subsurfaces.
 func (obj *Surface) SetWindowGeometry(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "set_window_geometry"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "set_window_geometry"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -989,11 +989,11 @@ func (obj *Surface) SetWindowGeometry(x int32, y int32, width int32, height int3
 // xdg_surface. Doing so will raise an invalid_serial error.
 func (obj *Surface) AckConfigure(serial uint32) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "ack_configure"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "ack_configure"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1290,9 +1290,9 @@ func (obj *Toplevel) Version() uint32 {
 // see "Unmapping" behavior in interface section for details.
 func (obj *Toplevel) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1319,11 +1319,11 @@ func (obj *Toplevel) Destroy() {
 // otherwise the invalid_parent protocol error is raised.
 func (obj *Toplevel) SetParent(parent *Toplevel) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "set_parent"
-	builder.Args = []any{parent}
 
 	builder.WriteObject(parent)
 
+	builder.Method = "set_parent"
+	builder.Args = []any{parent}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1337,11 +1337,11 @@ func (obj *Toplevel) SetParent(parent *Toplevel) {
 // The string must be encoded in UTF-8.
 func (obj *Toplevel) SetTitle(title string) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "set_title"
-	builder.Args = []any{title}
 
 	builder.WriteString(title)
 
+	builder.Method = "set_title"
+	builder.Args = []any{title}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1371,11 +1371,11 @@ func (obj *Toplevel) SetTitle(title string) {
 // [0] https://standards.freedesktop.org/desktop-entry-spec/
 func (obj *Toplevel) SetAppId(appId string) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "set_app_id"
-	builder.Args = []any{appId}
 
 	builder.WriteString(appId)
 
+	builder.Method = "set_app_id"
+	builder.Args = []any{appId}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1394,14 +1394,14 @@ func (obj *Toplevel) SetAppId(appId string) {
 // like a button press, key press, or touch down event.
 func (obj *Toplevel) ShowWindowMenu(seat *wl.Seat, serial uint32, x int32, y int32) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "show_window_menu"
-	builder.Args = []any{seat, serial, x, y}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	builder.Method = "show_window_menu"
+	builder.Args = []any{seat, serial, x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1424,12 +1424,12 @@ func (obj *Toplevel) ShowWindowMenu(seat *wl.Seat, serial uint32, x int32, y int
 // that the device focus will return when the move is completed.
 func (obj *Toplevel) Move(seat *wl.Seat, serial uint32) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "move"
-	builder.Args = []any{seat, serial}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 
+	builder.Method = "move"
+	builder.Args = []any{seat, serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1467,13 +1467,13 @@ func (obj *Toplevel) Move(seat *wl.Seat, serial uint32) {
 // cursor image.
 func (obj *Toplevel) Resize(seat *wl.Seat, serial uint32, edges ToplevelResizeEdge) {
 	builder := wire.NewMessage(obj, 6)
-	builder.Method = "resize"
-	builder.Args = []any{seat, serial, edges}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 	builder.WriteUint(uint32(edges))
 
+	builder.Method = "resize"
+	builder.Args = []any{seat, serial, edges}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1514,12 +1514,12 @@ func (obj *Toplevel) Resize(seat *wl.Seat, serial uint32, edges ToplevelResizeEd
 // invalid_size error.
 func (obj *Toplevel) SetMaxSize(width int32, height int32) {
 	builder := wire.NewMessage(obj, 7)
-	builder.Method = "set_max_size"
-	builder.Args = []any{width, height}
 
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "set_max_size"
+	builder.Args = []any{width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1560,12 +1560,12 @@ func (obj *Toplevel) SetMaxSize(width int32, height int32) {
 // invalid_size error.
 func (obj *Toplevel) SetMinSize(width int32, height int32) {
 	builder := wire.NewMessage(obj, 8)
-	builder.Method = "set_min_size"
-	builder.Args = []any{width, height}
 
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "set_min_size"
+	builder.Args = []any{width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1591,9 +1591,9 @@ func (obj *Toplevel) SetMinSize(width int32, height int32) {
 // unmaximized unless overridden by the compositor.
 func (obj *Toplevel) SetMaximized() {
 	builder := wire.NewMessage(obj, 9)
+
 	builder.Method = "set_maximized"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1621,9 +1621,9 @@ func (obj *Toplevel) SetMaximized() {
 // unmaximized unless overridden by the compositor.
 func (obj *Toplevel) UnsetMaximized() {
 	builder := wire.NewMessage(obj, 10)
+
 	builder.Method = "unset_maximized"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1653,11 +1653,11 @@ func (obj *Toplevel) UnsetMaximized() {
 // visible below the fullscreened surface.
 func (obj *Toplevel) SetFullscreen(output *wl.Output) {
 	builder := wire.NewMessage(obj, 11)
-	builder.Method = "set_fullscreen"
-	builder.Args = []any{output}
 
 	builder.WriteObject(output)
 
+	builder.Method = "set_fullscreen"
+	builder.Args = []any{output}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1681,9 +1681,9 @@ func (obj *Toplevel) SetFullscreen(output *wl.Output) {
 // content (see ack_configure).
 func (obj *Toplevel) UnsetFullscreen() {
 	builder := wire.NewMessage(obj, 12)
+
 	builder.Method = "unset_fullscreen"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1698,9 +1698,9 @@ func (obj *Toplevel) UnsetFullscreen() {
 // similar compositor features.
 func (obj *Toplevel) SetMinimized() {
 	builder := wire.NewMessage(obj, 13)
+
 	builder.Method = "set_minimized"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2089,9 +2089,9 @@ func (obj *Popup) Version() uint32 {
 // will be sent.
 func (obj *Popup) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2135,12 +2135,12 @@ func (obj *Popup) Destroy() {
 // will always have keyboard focus.
 func (obj *Popup) Grab(seat *wl.Seat, serial uint32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "grab"
-	builder.Args = []any{seat, serial}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 
+	builder.Method = "grab"
+	builder.Args = []any{seat, serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2170,12 +2170,12 @@ func (obj *Popup) Grab(seat *wl.Seat, serial uint32) {
 // send an xdg_positioner.set_parent_size request.
 func (obj *Popup) Reposition(positioner *Positioner, token uint32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "reposition"
-	builder.Args = []any{positioner, token}
 
 	builder.WriteObject(positioner)
 	builder.WriteUint(token)
 
+	builder.Method = "reposition"
+	builder.Args = []any{positioner, token}
 	obj.state.Enqueue(builder)
 	return
 }

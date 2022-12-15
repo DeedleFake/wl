@@ -99,8 +99,10 @@ func (obj *WmBase) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewPositioner(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -116,12 +118,14 @@ func (obj *WmBase) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+
 		id := NewSurface(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
-		surface := wl.NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*wl.Surface)
+
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -220,11 +224,11 @@ func (obj *WmBase) Version() uint32 {
 // always respond to any xdg_wm_base object it created.
 func (obj *WmBase) Ping(serial uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "ping"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "ping"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1024,8 +1028,10 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
+
 		id := NewToplevel(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -1041,16 +1047,18 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
+
 		id := NewPopup(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
-		parent := NewSurface(obj.state)
-		parent.SetID(msg.ReadUint())
+		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(parent)
 
-		positioner := NewPositioner(obj.state)
-		positioner.SetID(msg.ReadUint())
+		positioner := obj.state.Get(msg.ReadUint()).(*Positioner)
+
 		obj.state.Add(positioner)
 
 		if err := msg.Err(); err != nil {
@@ -1181,11 +1189,11 @@ func (obj *Surface) Version() uint32 {
 // to one, it is free to discard all but the last event it received.
 func (obj *Surface) Configure(serial uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "configure"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "configure"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1595,8 +1603,9 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		parent := NewToplevel(obj.state)
-		parent.SetID(msg.ReadUint())
+
+		parent := obj.state.Get(msg.ReadUint()).(*Toplevel)
+
 		obj.state.Add(parent)
 
 		if err := msg.Err(); err != nil {
@@ -1644,8 +1653,9 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 4:
-		seat := wl.NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -1670,8 +1680,9 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
-		seat := wl.NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -1690,8 +1701,9 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 6:
-		seat := wl.NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -1773,8 +1785,9 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 11:
-		output := wl.NewOutput(obj.state)
-		output.SetID(msg.ReadUint())
+
+		output := obj.state.Get(msg.ReadUint()).(*wl.Output)
+
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -1914,13 +1927,13 @@ func (obj *Toplevel) Version() uint32 {
 // xdg_surface.configure and xdg_surface.ack_configure for details.
 func (obj *Toplevel) Configure(width int32, height int32, states []byte) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "configure"
-	builder.Args = []any{width, height, states}
 
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 	builder.WriteArray(states)
 
+	builder.Method = "configure"
+	builder.Args = []any{width, height, states}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1935,9 +1948,9 @@ func (obj *Toplevel) Configure(width int32, height int32, states []byte) {
 // a dialog to ask the user to save their data, etc.
 func (obj *Toplevel) Close() {
 	builder := wire.NewMessage(obj, 1)
+
 	builder.Method = "close"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1959,12 +1972,12 @@ func (obj *Toplevel) Close() {
 // xdg_toplevel.configure and xdg_surface.configure.
 func (obj *Toplevel) ConfigureBounds(width int32, height int32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "configure_bounds"
-	builder.Args = []any{width, height}
 
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "configure_bounds"
+	builder.Args = []any{width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1991,11 +2004,11 @@ func (obj *Toplevel) ConfigureBounds(width int32, height int32) {
 // native endianness.
 func (obj *Toplevel) WmCapabilities(capabilities []byte) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "wm_capabilities"
-	builder.Args = []any{capabilities}
 
 	builder.WriteArray(capabilities)
 
+	builder.Method = "wm_capabilities"
+	builder.Args = []any{capabilities}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2323,8 +2336,9 @@ func (obj *Popup) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		seat := wl.NewSeat(obj.state)
-		seat.SetID(msg.ReadUint())
+
+		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
@@ -2343,8 +2357,9 @@ func (obj *Popup) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 2:
-		positioner := NewPositioner(obj.state)
-		positioner.SetID(msg.ReadUint())
+
+		positioner := obj.state.Get(msg.ReadUint()).(*Positioner)
+
 		obj.state.Add(positioner)
 
 		token := msg.ReadUint()
@@ -2425,14 +2440,14 @@ func (obj *Popup) Version() uint32 {
 // set_reactive requested, or in response to xdg_popup.reposition requests.
 func (obj *Popup) Configure(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "configure"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "configure"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2442,9 +2457,9 @@ func (obj *Popup) Configure(x int32, y int32, width int32, height int32) {
 // point.
 func (obj *Popup) PopupDone() {
 	builder := wire.NewMessage(obj, 1)
+
 	builder.Method = "popup_done"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2466,11 +2481,11 @@ func (obj *Popup) PopupDone() {
 // effect. See xdg_surface.ack_configure for details.
 func (obj *Popup) Repositioned(token uint32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "repositioned"
-	builder.Args = []any{token}
 
 	builder.WriteUint(token)
 
+	builder.Method = "repositioned"
+	builder.Args = []any{token}
 	obj.state.Enqueue(builder)
 	return
 }

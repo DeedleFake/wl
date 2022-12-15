@@ -77,6 +77,10 @@ type State interface {
 	// assigned to the object.
 	Add(Object)
 
+	// Get returns the Object with the given ID. If no such object
+	// exists, it returns nil.
+	Get(uint32) Object
+
 	// Enqueue adds an outgoing message to the state's queue. This
 	// method is safe to call concurrently, but no such guarantees are
 	// given about the rest of the State.

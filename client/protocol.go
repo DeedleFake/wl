@@ -158,13 +158,13 @@ func (obj *Display) Version() uint32 {
 // The callback_data passed in the callback is the event serial.
 func (obj *Display) Sync() (callback *Callback) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "sync"
-	builder.Args = []any{callback}
 
 	callback = NewCallback(obj.state)
 	obj.state.Add(callback)
 	builder.WriteObject(callback)
 
+	builder.Method = "sync"
+	builder.Args = []any{callback}
 	obj.state.Enqueue(builder)
 	return callback
 }
@@ -180,13 +180,13 @@ func (obj *Display) Sync() (callback *Callback) {
 // possible to avoid wasting memory.
 func (obj *Display) GetRegistry() (registry *Registry) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "get_registry"
-	builder.Args = []any{registry}
 
 	registry = NewRegistry(obj.state)
 	obj.state.Add(registry)
 	builder.WriteObject(registry)
 
+	builder.Method = "get_registry"
+	builder.Args = []any{registry}
 	obj.state.Enqueue(builder)
 	return registry
 }
@@ -389,12 +389,12 @@ func (obj *Registry) Version() uint32 {
 // specified name as the identifier.
 func (obj *Registry) Bind(name uint32, id wire.NewID) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "bind"
-	builder.Args = []any{name, id}
 
 	builder.WriteUint(name)
 	builder.WriteNewID(id)
 
+	builder.Method = "bind"
+	builder.Args = []any{name, id}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -578,13 +578,13 @@ func (obj *Compositor) Version() uint32 {
 // Ask the compositor to create a new surface.
 func (obj *Compositor) CreateSurface() (id *Surface) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "create_surface"
-	builder.Args = []any{id}
 
 	id = NewSurface(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "create_surface"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -592,13 +592,13 @@ func (obj *Compositor) CreateSurface() (id *Surface) {
 // Ask the compositor to create a new region.
 func (obj *Compositor) CreateRegion() (id *Region) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "create_region"
-	builder.Args = []any{id}
 
 	id = NewRegion(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "create_region"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -690,8 +690,6 @@ func (obj *ShmPool) Version() uint32 {
 // a buffer from it.
 func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride int32, format ShmFormat) (id *Buffer) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "create_buffer"
-	builder.Args = []any{id, offset, width, height, stride, format}
 
 	id = NewBuffer(obj.state)
 	obj.state.Add(id)
@@ -702,6 +700,8 @@ func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride
 	builder.WriteInt(stride)
 	builder.WriteUint(uint32(format))
 
+	builder.Method = "create_buffer"
+	builder.Args = []any{id, offset, width, height, stride, format}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -713,9 +713,9 @@ func (obj *ShmPool) CreateBuffer(offset int32, width int32, height int32, stride
 // are gone.
 func (obj *ShmPool) Destroy() {
 	builder := wire.NewMessage(obj, 1)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -726,11 +726,11 @@ func (obj *ShmPool) Destroy() {
 // used to make the pool bigger.
 func (obj *ShmPool) Resize(size int32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "resize"
-	builder.Args = []any{size}
 
 	builder.WriteInt(size)
 
+	builder.Method = "resize"
+	builder.Args = []any{size}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -857,8 +857,6 @@ func (obj *Shm) Version() uint32 {
 // descriptor, to use as backing memory for the pool.
 func (obj *Shm) CreatePool(fd *os.File, size int32) (id *ShmPool) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "create_pool"
-	builder.Args = []any{id, fd, size}
 
 	id = NewShmPool(obj.state)
 	obj.state.Add(id)
@@ -866,6 +864,8 @@ func (obj *Shm) CreatePool(fd *os.File, size int32) (id *ShmPool) {
 	builder.WriteFile(fd)
 	builder.WriteInt(size)
 
+	builder.Method = "create_pool"
+	builder.Args = []any{id, fd, size}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -1644,9 +1644,9 @@ func (obj *Buffer) Version() uint32 {
 // For possible side-effects to a surface, see wl_surface.attach.
 func (obj *Buffer) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1851,12 +1851,12 @@ func (obj *DataOffer) Version() uint32 {
 // conjunction with wl_data_source.action for feedback.
 func (obj *DataOffer) Accept(serial uint32, mimeType string) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "accept"
-	builder.Args = []any{serial, mimeType}
 
 	builder.WriteUint(serial)
 	builder.WriteString(mimeType)
 
+	builder.Method = "accept"
+	builder.Args = []any{serial, mimeType}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1878,12 +1878,12 @@ func (obj *DataOffer) Accept(serial uint32, mimeType string) {
 // determine acceptance.
 func (obj *DataOffer) Receive(mimeType string, fd *os.File) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "receive"
-	builder.Args = []any{mimeType, fd}
 
 	builder.WriteString(mimeType)
 	builder.WriteFile(fd)
 
+	builder.Method = "receive"
+	builder.Args = []any{mimeType, fd}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1891,9 +1891,9 @@ func (obj *DataOffer) Receive(mimeType string, fd *os.File) {
 // Destroy the data offer.
 func (obj *DataOffer) Destroy() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1914,9 +1914,9 @@ func (obj *DataOffer) Destroy() {
 // operation, the invalid_finish protocol error is raised.
 func (obj *DataOffer) Finish() {
 	builder := wire.NewMessage(obj, 3)
+
 	builder.Method = "finish"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -1954,12 +1954,12 @@ func (obj *DataOffer) Finish() {
 // will be raised otherwise.
 func (obj *DataOffer) SetActions(dndActions DataDeviceManagerDndAction, preferredAction DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "set_actions"
-	builder.Args = []any{dndActions, preferredAction}
 
 	builder.WriteUint(uint32(dndActions))
 	builder.WriteUint(uint32(preferredAction))
 
+	builder.Method = "set_actions"
+	builder.Args = []any{dndActions, preferredAction}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2263,11 +2263,11 @@ func (obj *DataSource) Version() uint32 {
 // multiple types.
 func (obj *DataSource) Offer(mimeType string) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "offer"
-	builder.Args = []any{mimeType}
 
 	builder.WriteString(mimeType)
 
+	builder.Method = "offer"
+	builder.Args = []any{mimeType}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2275,9 +2275,9 @@ func (obj *DataSource) Offer(mimeType string) {
 // Destroy the data source.
 func (obj *DataSource) Destroy() {
 	builder := wire.NewMessage(obj, 1)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2297,11 +2297,11 @@ func (obj *DataSource) Destroy() {
 // for drag-and-drop will raise a protocol error.
 func (obj *DataSource) SetActions(dndActions DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "set_actions"
-	builder.Args = []any{dndActions}
 
 	builder.WriteUint(uint32(dndActions))
 
+	builder.Method = "set_actions"
+	builder.Args = []any{dndActions}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2423,8 +2423,10 @@ func (obj *DataDevice) State() wire.State {
 func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
+
 		id := NewDataOffer(obj.state)
 		id.SetID(msg.ReadUint())
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2443,16 +2445,16 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		x := msg.ReadFixed()
 
 		y := msg.ReadFixed()
 
-		id := NewDataOffer(obj.state)
-		id.SetID(msg.ReadUint())
+		id := obj.state.Get(msg.ReadUint()).(*DataOffer)
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2516,8 +2518,9 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 5:
-		id := NewDataOffer(obj.state)
-		id.SetID(msg.ReadUint())
+
+		id := obj.state.Get(msg.ReadUint()).(*DataOffer)
+
 		obj.state.Add(id)
 
 		if err := msg.Err(); err != nil {
@@ -2620,14 +2623,14 @@ func (obj *DataDevice) Version() uint32 {
 // undefined, and the wl_surface is unmapped.
 func (obj *DataDevice) StartDrag(source *DataSource, origin *Surface, icon *Surface, serial uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "start_drag"
-	builder.Args = []any{source, origin, icon, serial}
 
 	builder.WriteObject(source)
 	builder.WriteObject(origin)
 	builder.WriteObject(icon)
 	builder.WriteUint(serial)
 
+	builder.Method = "start_drag"
+	builder.Args = []any{source, origin, icon, serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2638,12 +2641,12 @@ func (obj *DataDevice) StartDrag(source *DataSource, origin *Surface, icon *Surf
 // To unset the selection, set the source to NULL.
 func (obj *DataDevice) SetSelection(source *DataSource, serial uint32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "set_selection"
-	builder.Args = []any{source, serial}
 
 	builder.WriteObject(source)
 	builder.WriteUint(serial)
 
+	builder.Method = "set_selection"
+	builder.Args = []any{source, serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2651,9 +2654,9 @@ func (obj *DataDevice) SetSelection(source *DataSource, serial uint32) {
 // This request destroys the data device.
 func (obj *DataDevice) Release() {
 	builder := wire.NewMessage(obj, 2)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -2761,13 +2764,13 @@ func (obj *DataDeviceManager) Version() uint32 {
 // Create a new data source.
 func (obj *DataDeviceManager) CreateDataSource() (id *DataSource) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "create_data_source"
-	builder.Args = []any{id}
 
 	id = NewDataSource(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "create_data_source"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -2775,14 +2778,14 @@ func (obj *DataDeviceManager) CreateDataSource() (id *DataSource) {
 // Create a new data device for a given seat.
 func (obj *DataDeviceManager) GetDataDevice(seat *Seat) (id *DataDevice) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "get_data_device"
-	builder.Args = []any{id, seat}
 
 	id = NewDataDevice(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 	builder.WriteObject(seat)
 
+	builder.Method = "get_data_device"
+	builder.Args = []any{id, seat}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -2933,14 +2936,14 @@ func (obj *Shell) Version() uint32 {
 // Only one shell surface can be associated with a given surface.
 func (obj *Shell) GetShellSurface(surface *Surface) (id *ShellSurface) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "get_shell_surface"
-	builder.Args = []any{id, surface}
 
 	id = NewShellSurface(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 	builder.WriteObject(surface)
 
+	builder.Method = "get_shell_surface"
+	builder.Args = []any{id, surface}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -3137,11 +3140,11 @@ func (obj *ShellSurface) Version() uint32 {
 // the client may be deemed unresponsive.
 func (obj *ShellSurface) Pong(serial uint32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "pong"
-	builder.Args = []any{serial}
 
 	builder.WriteUint(serial)
 
+	builder.Method = "pong"
+	builder.Args = []any{serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3153,12 +3156,12 @@ func (obj *ShellSurface) Pong(serial uint32) {
 // the surface (e.g. fullscreen or maximized).
 func (obj *ShellSurface) Move(seat *Seat, serial uint32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "move"
-	builder.Args = []any{seat, serial}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 
+	builder.Method = "move"
+	builder.Args = []any{seat, serial}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3170,13 +3173,13 @@ func (obj *ShellSurface) Move(seat *Seat, serial uint32) {
 // the surface (e.g. fullscreen or maximized).
 func (obj *ShellSurface) Resize(seat *Seat, serial uint32, edges ShellSurfaceResize) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "resize"
-	builder.Args = []any{seat, serial, edges}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
 	builder.WriteUint(uint32(edges))
 
+	builder.Method = "resize"
+	builder.Args = []any{seat, serial, edges}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3186,9 +3189,9 @@ func (obj *ShellSurface) Resize(seat *Seat, serial uint32, edges ShellSurfaceRes
 // A toplevel surface is not fullscreen, maximized or transient.
 func (obj *ShellSurface) SetToplevel() {
 	builder := wire.NewMessage(obj, 3)
+
 	builder.Method = "set_toplevel"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3202,14 +3205,14 @@ func (obj *ShellSurface) SetToplevel() {
 // The flags argument controls details of the transient behaviour.
 func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "set_transient"
-	builder.Args = []any{parent, x, y, flags}
 
 	builder.WriteObject(parent)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteUint(uint32(flags))
 
+	builder.Method = "set_transient"
+	builder.Args = []any{parent, x, y, flags}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3249,13 +3252,13 @@ func (obj *ShellSurface) SetTransient(parent *Surface, x int32, y int32, flags S
 // be made fullscreen.
 func (obj *ShellSurface) SetFullscreen(method ShellSurfaceFullscreenMethod, framerate uint32, output *Output) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "set_fullscreen"
-	builder.Args = []any{method, framerate, output}
 
 	builder.WriteUint(uint32(method))
 	builder.WriteUint(framerate)
 	builder.WriteObject(output)
 
+	builder.Method = "set_fullscreen"
+	builder.Args = []any{method, framerate, output}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3281,8 +3284,6 @@ func (obj *ShellSurface) SetFullscreen(method ShellSurfaceFullscreenMethod, fram
 // parent surface, in surface-local coordinates.
 func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x int32, y int32, flags ShellSurfaceTransient) {
 	builder := wire.NewMessage(obj, 6)
-	builder.Method = "set_popup"
-	builder.Args = []any{seat, serial, parent, x, y, flags}
 
 	builder.WriteObject(seat)
 	builder.WriteUint(serial)
@@ -3291,6 +3292,8 @@ func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x 
 	builder.WriteInt(y)
 	builder.WriteUint(uint32(flags))
 
+	builder.Method = "set_popup"
+	builder.Args = []any{seat, serial, parent, x, y, flags}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3315,11 +3318,11 @@ func (obj *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x 
 // The details depend on the compositor implementation.
 func (obj *ShellSurface) SetMaximized(output *Output) {
 	builder := wire.NewMessage(obj, 7)
-	builder.Method = "set_maximized"
-	builder.Args = []any{output}
 
 	builder.WriteObject(output)
 
+	builder.Method = "set_maximized"
+	builder.Args = []any{output}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3333,11 +3336,11 @@ func (obj *ShellSurface) SetMaximized(output *Output) {
 // The string must be encoded in UTF-8.
 func (obj *ShellSurface) SetTitle(title string) {
 	builder := wire.NewMessage(obj, 8)
-	builder.Method = "set_title"
-	builder.Args = []any{title}
 
 	builder.WriteString(title)
 
+	builder.Method = "set_title"
+	builder.Args = []any{title}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3350,11 +3353,11 @@ func (obj *ShellSurface) SetTitle(title string) {
 // the application's .desktop file as the class.
 func (obj *ShellSurface) SetClass(class string) {
 	builder := wire.NewMessage(obj, 9)
-	builder.Method = "set_class"
-	builder.Args = []any{class}
 
 	builder.WriteString(class)
 
+	builder.Method = "set_class"
+	builder.Args = []any{class}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3577,8 +3580,9 @@ func (obj *Surface) State() wire.State {
 func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
-		output := NewOutput(obj.state)
-		output.SetID(msg.ReadUint())
+
+		output := obj.state.Get(msg.ReadUint()).(*Output)
+
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3594,8 +3598,9 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 		return nil
 
 	case 1:
-		output := NewOutput(obj.state)
-		output.SetID(msg.ReadUint())
+
+		output := obj.state.Get(msg.ReadUint()).(*Output)
+
 		obj.state.Add(output)
 
 		if err := msg.Err(); err != nil {
@@ -3659,9 +3664,9 @@ func (obj *Surface) Version() uint32 {
 // Deletes the surface and invalidates its object ID.
 func (obj *Surface) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3714,13 +3719,13 @@ func (obj *Surface) Destroy() {
 // following wl_surface.commit will remove the surface content.
 func (obj *Surface) Attach(buffer *Buffer, x int32, y int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "attach"
-	builder.Args = []any{buffer, x, y}
 
 	builder.WriteObject(buffer)
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	builder.Method = "attach"
+	builder.Args = []any{buffer, x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3748,14 +3753,14 @@ func (obj *Surface) Attach(buffer *Buffer, x int32, y int32) {
 // instead of surface coordinates.
 func (obj *Surface) Damage(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "damage"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "damage"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3794,13 +3799,13 @@ func (obj *Surface) Damage(x int32, y int32, width int32, height int32) {
 // milliseconds, with an undefined base.
 func (obj *Surface) Frame() (callback *Callback) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "frame"
-	builder.Args = []any{callback}
 
 	callback = NewCallback(obj.state)
 	obj.state.Add(callback)
 	builder.WriteObject(callback)
 
+	builder.Method = "frame"
+	builder.Args = []any{callback}
 	obj.state.Enqueue(builder)
 	return callback
 }
@@ -3831,11 +3836,11 @@ func (obj *Surface) Frame() (callback *Callback) {
 // region to be set to empty.
 func (obj *Surface) SetOpaqueRegion(region *Region) {
 	builder := wire.NewMessage(obj, 4)
-	builder.Method = "set_opaque_region"
-	builder.Args = []any{region}
 
 	builder.WriteObject(region)
 
+	builder.Method = "set_opaque_region"
+	builder.Args = []any{region}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3864,11 +3869,11 @@ func (obj *Surface) SetOpaqueRegion(region *Region) {
 // to infinite.
 func (obj *Surface) SetInputRegion(region *Region) {
 	builder := wire.NewMessage(obj, 5)
-	builder.Method = "set_input_region"
-	builder.Args = []any{region}
 
 	builder.WriteObject(region)
 
+	builder.Method = "set_input_region"
+	builder.Args = []any{region}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3892,9 +3897,9 @@ func (obj *Surface) SetInputRegion(region *Region) {
 // Other interfaces may add further double-buffered surface state.
 func (obj *Surface) Commit() {
 	builder := wire.NewMessage(obj, 6)
+
 	builder.Method = "commit"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3930,11 +3935,11 @@ func (obj *Surface) Commit() {
 // is raised.
 func (obj *Surface) SetBufferTransform(transform OutputTransform) {
 	builder := wire.NewMessage(obj, 7)
-	builder.Method = "set_buffer_transform"
-	builder.Args = []any{transform}
 
 	builder.WriteInt(int32(transform))
 
+	builder.Method = "set_buffer_transform"
+	builder.Args = []any{transform}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -3964,11 +3969,11 @@ func (obj *Surface) SetBufferTransform(transform OutputTransform) {
 // raised.
 func (obj *Surface) SetBufferScale(scale int32) {
 	builder := wire.NewMessage(obj, 8)
-	builder.Method = "set_buffer_scale"
-	builder.Args = []any{scale}
 
 	builder.WriteInt(scale)
 
+	builder.Method = "set_buffer_scale"
+	builder.Args = []any{scale}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4007,14 +4012,14 @@ func (obj *Surface) SetBufferScale(scale int32) {
 // after receiving the wl_surface.commit.
 func (obj *Surface) DamageBuffer(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 9)
-	builder.Method = "damage_buffer"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "damage_buffer"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4213,13 +4218,13 @@ func (obj *Seat) Version() uint32 {
 // be sent in this case.
 func (obj *Seat) GetPointer() (id *Pointer) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "get_pointer"
-	builder.Args = []any{id}
 
 	id = NewPointer(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "get_pointer"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -4234,13 +4239,13 @@ func (obj *Seat) GetPointer() (id *Pointer) {
 // be sent in this case.
 func (obj *Seat) GetKeyboard() (id *Keyboard) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "get_keyboard"
-	builder.Args = []any{id}
 
 	id = NewKeyboard(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "get_keyboard"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -4255,13 +4260,13 @@ func (obj *Seat) GetKeyboard() (id *Keyboard) {
 // be sent in this case.
 func (obj *Seat) GetTouch() (id *Touch) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "get_touch"
-	builder.Args = []any{id}
 
 	id = NewTouch(obj.state)
 	obj.state.Add(id)
 	builder.WriteObject(id)
 
+	builder.Method = "get_touch"
+	builder.Args = []any{id}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -4270,9 +4275,9 @@ func (obj *Seat) GetTouch() (id *Touch) {
 // use the seat object anymore.
 func (obj *Seat) Release() {
 	builder := wire.NewMessage(obj, 3)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4532,8 +4537,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		surfaceX := msg.ReadFixed()
@@ -4559,8 +4564,8 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -4810,14 +4815,14 @@ func (obj *Pointer) Version() uint32 {
 // undefined, and the wl_surface is unmapped.
 func (obj *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX int32, hotspotY int32) {
 	builder := wire.NewMessage(obj, 0)
-	builder.Method = "set_cursor"
-	builder.Args = []any{serial, surface, hotspotX, hotspotY}
 
 	builder.WriteUint(serial)
 	builder.WriteObject(surface)
 	builder.WriteInt(hotspotX)
 	builder.WriteInt(hotspotY)
 
+	builder.Method = "set_cursor"
+	builder.Args = []any{serial, surface, hotspotX, hotspotY}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -4829,9 +4834,9 @@ func (obj *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX int32, h
 // wl_pointer_destroy() after using this request.
 func (obj *Pointer) Release() {
 	builder := wire.NewMessage(obj, 1)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5065,8 +5070,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		keys := msg.ReadArray()
@@ -5089,8 +5094,8 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		if err := msg.Err(); err != nil {
@@ -5238,9 +5243,9 @@ func (obj *Keyboard) Version() uint32 {
 
 func (obj *Keyboard) Release() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5425,8 +5430,8 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		time := msg.ReadUint()
 
-		surface := NewSurface(obj.state)
-		surface.SetID(msg.ReadUint())
+		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+
 		obj.state.Add(surface)
 
 		id := msg.ReadInt()
@@ -5625,9 +5630,9 @@ func (obj *Touch) Version() uint32 {
 
 func (obj *Touch) Release() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5899,9 +5904,9 @@ func (obj *Output) Version() uint32 {
 // use the output object anymore.
 func (obj *Output) Release() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "release"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6121,9 +6126,9 @@ func (obj *Region) Version() uint32 {
 // Destroy the region.  This will invalidate the object ID.
 func (obj *Region) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6131,14 +6136,14 @@ func (obj *Region) Destroy() {
 // Add the specified rectangle to the region.
 func (obj *Region) Add(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "add"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "add"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6146,14 +6151,14 @@ func (obj *Region) Add(x int32, y int32, width int32, height int32) {
 // Subtract the specified rectangle from the region.
 func (obj *Region) Subtract(x int32, y int32, width int32, height int32) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "subtract"
-	builder.Args = []any{x, y, width, height}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 	builder.WriteInt(width)
 	builder.WriteInt(height)
 
+	builder.Method = "subtract"
+	builder.Args = []any{x, y, width, height}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6256,9 +6261,9 @@ func (obj *Subcompositor) Version() uint32 {
 // objects, wl_subsurface objects included.
 func (obj *Subcompositor) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6280,8 +6285,6 @@ func (obj *Subcompositor) Destroy() {
 // the sub-surface, see the documentation on wl_subsurface interface.
 func (obj *Subcompositor) GetSubsurface(surface *Surface, parent *Surface) (id *Subsurface) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "get_subsurface"
-	builder.Args = []any{id, surface, parent}
 
 	id = NewSubsurface(obj.state)
 	obj.state.Add(id)
@@ -6289,6 +6292,8 @@ func (obj *Subcompositor) GetSubsurface(surface *Surface, parent *Surface) (id *
 	builder.WriteObject(surface)
 	builder.WriteObject(parent)
 
+	builder.Method = "get_subsurface"
+	builder.Args = []any{id, surface, parent}
 	obj.state.Enqueue(builder)
 	return id
 }
@@ -6432,9 +6437,9 @@ func (obj *Subsurface) Version() uint32 {
 // a sub-surface. The wl_surface is unmapped immediately.
 func (obj *Subsurface) Destroy() {
 	builder := wire.NewMessage(obj, 0)
+
 	builder.Method = "destroy"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6457,12 +6462,12 @@ func (obj *Subsurface) Destroy() {
 // The initial position is 0, 0.
 func (obj *Subsurface) SetPosition(x int32, y int32) {
 	builder := wire.NewMessage(obj, 1)
-	builder.Method = "set_position"
-	builder.Args = []any{x, y}
 
 	builder.WriteInt(x)
 	builder.WriteInt(y)
 
+	builder.Method = "set_position"
+	builder.Args = []any{x, y}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6484,11 +6489,11 @@ func (obj *Subsurface) SetPosition(x int32, y int32) {
 // of its siblings and parent.
 func (obj *Subsurface) PlaceAbove(sibling *Surface) {
 	builder := wire.NewMessage(obj, 2)
-	builder.Method = "place_above"
-	builder.Args = []any{sibling}
 
 	builder.WriteObject(sibling)
 
+	builder.Method = "place_above"
+	builder.Args = []any{sibling}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6497,11 +6502,11 @@ func (obj *Subsurface) PlaceAbove(sibling *Surface) {
 // See wl_subsurface.place_above.
 func (obj *Subsurface) PlaceBelow(sibling *Surface) {
 	builder := wire.NewMessage(obj, 3)
-	builder.Method = "place_below"
-	builder.Args = []any{sibling}
 
 	builder.WriteObject(sibling)
 
+	builder.Method = "place_below"
+	builder.Args = []any{sibling}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6521,9 +6526,9 @@ func (obj *Subsurface) PlaceBelow(sibling *Surface) {
 // See wl_subsurface for the recursive effect of this mode.
 func (obj *Subsurface) SetSync() {
 	builder := wire.NewMessage(obj, 4)
+
 	builder.Method = "set_sync"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
@@ -6549,9 +6554,9 @@ func (obj *Subsurface) SetSync() {
 // the cached state is applied on set_desync.
 func (obj *Subsurface) SetDesync() {
 	builder := wire.NewMessage(obj, 5)
+
 	builder.Method = "set_desync"
 	builder.Args = []any{}
-
 	obj.state.Enqueue(builder)
 	return
 }
