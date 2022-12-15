@@ -86,5 +86,8 @@ func (server *Server) addClient(ctx context.Context, wg *sync.WaitGroup, c *net.
 		return
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	server.Handler(ctx, newClient(ctx, server, wire.NewConn(c)))
 }
