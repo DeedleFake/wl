@@ -100,6 +100,14 @@ func (c *Conn) Close() error {
 	return c.conn.Close()
 }
 
+func (c *Conn) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+func (c *Conn) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
 func (c *Conn) readFDs(data []byte) error {
 	cmsgs, err := unix.ParseSocketControlMessage(data)
 	if err != nil {
