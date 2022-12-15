@@ -161,5 +161,6 @@ func ListenPath(path string) (*net.UnixListener, error) {
 	if err != nil {
 		return nil, err
 	}
+	lis.(*net.UnixListener).SetUnlinkOnClose(true)
 	return lis.(*net.UnixListener), nil
 }
