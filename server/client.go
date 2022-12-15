@@ -42,8 +42,14 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen(ctx context.Context) {
-	defer func() {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+
 		client.close.Do(func() { close(client.done) })
+		client.queue.Stop()
 		client.conn.Close()
 	}()
 
@@ -115,10 +121,15 @@ func (client *Client) Display() *Display {
 // Flush flushes the event queue, sending all enqueued messages and
 // processing all messages that have been received since the last time
 // the queue was flushed. It returns all errors encountered.
+//
+// If the client's connection has been closed, Flush returns
+// net.ErrClosed.
 func (client *Client) Flush() error {
 	select {
 	case queue := <-client.queue.Get():
 		return errors.Join(flushQueue(queue)...)
+	case <-client.done:
+		return net.ErrClosed
 	default:
 		return nil
 	}

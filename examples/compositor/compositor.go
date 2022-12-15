@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -71,6 +73,9 @@ func (cs *clientState) run(ctx context.Context) {
 		case <-tick.C:
 			err := cs.client.Flush()
 			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
 				log.Printf("flush: %v", err)
 			}
 		}
