@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	xdg "deedles.dev/wl/examples/internal/xdg/server"
 	wl "deedles.dev/wl/server"
+	"deedles.dev/wl/wire"
 )
 
 type state struct {
@@ -59,11 +61,14 @@ func (s *state) run(ctx context.Context) {
 type serverListener state
 
 func (s *serverListener) Client(c *wl.Client) {
+	log.Printf("client connected: %v", c)
 	cs := clientState{state: (*state)(s), client: c}
 	cs.init()
 }
 
-func (s *serverListener) ClientRemove(c *wl.Client) {}
+func (s *serverListener) ClientRemove(c *wl.Client) {
+	log.Printf("client disconnected: %v", c)
+}
 
 type clientState struct {
 	state  *state
@@ -83,7 +88,23 @@ func (cs *displayListener) Sync(cb *wl.Callback) {
 }
 
 func (cs *displayListener) GetRegistry(r *wl.Registry) {
-	// TODO
+	r.Listener = (*registryListener)(cs)
+	r.Global(0, wl.CompositorInterface, wl.CompositorVersion)
+	r.Global(1, wl.ShmInterface, wl.ShmVersion)
+	r.Global(2, xdg.WmBaseInterface, xdg.WmBaseVersion)
+}
+
+type registryListener clientState
+
+func (cs *registryListener) Bind(name uint32, id wire.NewID) {
+	switch name {
+	case 0:
+		wl.BindCompositor(cs.client, id)
+	case 1:
+		wl.BindShm(cs.client, id)
+	case 2:
+		xdg.BindWmBase(cs.client, id)
+	}
 }
 
 func main() {
