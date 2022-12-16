@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"deedles.dev/wl/internal/debug"
-	"deedles.dev/wl/internal/ev"
 	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
+	"deedles.dev/xsync/cq"
 )
 
 // Client represents a client connected to the server.
@@ -20,10 +20,8 @@ type Client struct {
 	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
-	queue  *ev.Queue
+	queue  cq.Queue[func() error]
 }
-
-type Events = ev.Events
 
 func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 	client := Client{
@@ -31,7 +29,6 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 		done:   make(chan struct{}),
 		conn:   conn,
 		store:  objstore.New(1 << 24),
-		queue:  ev.NewQueue(),
 	}
 
 	display := NewDisplay(&client)
@@ -105,8 +102,7 @@ func (client *Client) Delete(id uint32) {
 	client.store.Delete(id)
 }
 
-// Enqueue adds msg to the event queue. It will be sent to the server
-// the next time the queue is flushed.
+// Enqueue adds msg to the event queue.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
 	case <-client.done:
@@ -123,34 +119,14 @@ func (client *Client) Display() *Display {
 	return client.Get(1).(*Display)
 }
 
-// Flush flushes the event queue, sending all enqueued messages and
-// processing all messages that have been received since the last time
-// the queue was flushed. It returns all errors encountered.
-//
-// If the client's connection has been closed, Flush returns
-// net.ErrClosed.
-func (client *Client) Flush() error {
-	select {
-	case <-client.done:
-		return net.ErrClosed
-	case queue, ok := <-client.queue.Get():
-		if !ok {
-			return net.ErrClosed
-		}
-		return queue.Flush()
-	default:
-		return nil
-	}
-}
-
-// Events returns a channel that yields an Events representing events
-// that have happened since the last time the event queue was flushed.
-// The returned Events must be flushed directly in order for those
-// events to be processed.
+// Events returns a channel that yields functions representing events
+// in the client's event queue. These functions should be called in
+// the order that they are yielded. Not doing so will result in
+// undefined behavior.
 //
 // This channel will be closed when the client's internal processing
 // has stopped.
-func (client *Client) Events() <-chan *Events {
+func (client *Client) Events() <-chan func() error {
 	return client.queue.Get()
 }
 

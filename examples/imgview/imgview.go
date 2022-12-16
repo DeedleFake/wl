@@ -180,9 +180,9 @@ func (s *state) run(ctx context.Context) {
 				return
 			}
 
-			err := ev.Flush()
+			err := ev()
 			if err != nil {
-				log.Printf("flush: %v", err)
+				log.Printf("event: %v", err)
 			}
 		}
 	}
