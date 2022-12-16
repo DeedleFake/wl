@@ -2445,7 +2445,7 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -2453,7 +2453,7 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 		y := msg.ReadFixed()
 
-		id := obj.state.Get(msg.ReadUint()).(*DataOffer)
+		id, _ := obj.state.Get(msg.ReadUint()).(*DataOffer)
 
 		obj.state.Add(id)
 
@@ -2519,7 +2519,7 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 5:
 
-		id := obj.state.Get(msg.ReadUint()).(*DataOffer)
+		id, _ := obj.state.Get(msg.ReadUint()).(*DataOffer)
 
 		obj.state.Add(id)
 
@@ -3581,7 +3581,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 
-		output := obj.state.Get(msg.ReadUint()).(*Output)
+		output, _ := obj.state.Get(msg.ReadUint()).(*Output)
 
 		obj.state.Add(output)
 
@@ -3599,7 +3599,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		output := obj.state.Get(msg.ReadUint()).(*Output)
+		output, _ := obj.state.Get(msg.ReadUint()).(*Output)
 
 		obj.state.Add(output)
 
@@ -4537,7 +4537,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -4564,7 +4564,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -5070,7 +5070,7 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -5094,7 +5094,7 @@ func (obj *Keyboard) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -5430,7 +5430,7 @@ func (obj *Touch) Dispatch(msg *wire.MessageBuffer) error {
 
 		time := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 

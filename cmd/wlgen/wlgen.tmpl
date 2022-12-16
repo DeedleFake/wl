@@ -95,7 +95,7 @@ import (
 								{{$argName}} := {{$type | package}}New{{$type | trimPackage}}(obj.state)
 								{{$argName}}.SetID(msg.ReadUint())
 							{{else if eq .Type "object"}}
-								{{$argName}} := obj.state.Get(msg.ReadUint()).(*{{$type}})
+								{{$argName}}, _ := obj.state.Get(msg.ReadUint()).(*{{$type}})
 							{{end}}
 							obj.state.Add({{$argName}})
 						{{else if .Enum}}

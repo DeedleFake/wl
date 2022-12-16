@@ -2452,15 +2452,15 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 	switch msg.Op() {
 	case 0:
 
-		source := obj.state.Get(msg.ReadUint()).(*DataSource)
+		source, _ := obj.state.Get(msg.ReadUint()).(*DataSource)
 
 		obj.state.Add(source)
 
-		origin := obj.state.Get(msg.ReadUint()).(*Surface)
+		origin, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(origin)
 
-		icon := obj.state.Get(msg.ReadUint()).(*Surface)
+		icon, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(icon)
 
@@ -2483,7 +2483,7 @@ func (obj *DataDevice) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		source := obj.state.Get(msg.ReadUint()).(*DataSource)
+		source, _ := obj.state.Get(msg.ReadUint()).(*DataSource)
 
 		obj.state.Add(source)
 
@@ -2774,7 +2774,7 @@ func (obj *DataDeviceManager) Dispatch(msg *wire.MessageBuffer) error {
 
 		obj.state.Add(id)
 
-		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*Seat)
 
 		obj.state.Add(seat)
 
@@ -2958,7 +2958,7 @@ func (obj *Shell) Dispatch(msg *wire.MessageBuffer) error {
 
 		obj.state.Add(id)
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -3223,7 +3223,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*Seat)
 
 		obj.state.Add(seat)
 
@@ -3244,7 +3244,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 
-		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*Seat)
 
 		obj.state.Add(seat)
 
@@ -3279,7 +3279,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 4:
 
-		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+		parent, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(parent)
 
@@ -3310,7 +3310,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 		framerate := msg.ReadUint()
 
-		output := obj.state.Get(msg.ReadUint()).(*Output)
+		output, _ := obj.state.Get(msg.ReadUint()).(*Output)
 
 		obj.state.Add(output)
 
@@ -3330,13 +3330,13 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 6:
 
-		seat := obj.state.Get(msg.ReadUint()).(*Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*Seat)
 
 		obj.state.Add(seat)
 
 		serial := msg.ReadUint()
 
-		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+		parent, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(parent)
 
@@ -3365,7 +3365,7 @@ func (obj *ShellSurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 7:
 
-		output := obj.state.Get(msg.ReadUint()).(*Output)
+		output, _ := obj.state.Get(msg.ReadUint()).(*Output)
 
 		obj.state.Add(output)
 
@@ -4017,7 +4017,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		buffer := obj.state.Get(msg.ReadUint()).(*Buffer)
+		buffer, _ := obj.state.Get(msg.ReadUint()).(*Buffer)
 
 		obj.state.Add(buffer)
 
@@ -4085,7 +4085,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 4:
 
-		region := obj.state.Get(msg.ReadUint()).(*Region)
+		region, _ := obj.state.Get(msg.ReadUint()).(*Region)
 
 		obj.state.Add(region)
 
@@ -4103,7 +4103,7 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 5:
 
-		region := obj.state.Get(msg.ReadUint()).(*Region)
+		region, _ := obj.state.Get(msg.ReadUint()).(*Region)
 
 		obj.state.Add(region)
 
@@ -4705,7 +4705,7 @@ func (obj *Pointer) Dispatch(msg *wire.MessageBuffer) error {
 
 		serial := msg.ReadUint()
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
@@ -6290,11 +6290,11 @@ func (obj *Subcompositor) Dispatch(msg *wire.MessageBuffer) error {
 
 		obj.state.Add(id)
 
-		surface := obj.state.Get(msg.ReadUint()).(*Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(surface)
 
-		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+		parent, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(parent)
 
@@ -6572,7 +6572,7 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 
-		sibling := obj.state.Get(msg.ReadUint()).(*Surface)
+		sibling, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(sibling)
 
@@ -6590,7 +6590,7 @@ func (obj *Subsurface) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 3:
 
-		sibling := obj.state.Get(msg.ReadUint()).(*Surface)
+		sibling, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(sibling)
 

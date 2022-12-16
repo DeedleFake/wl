@@ -124,7 +124,7 @@ func (obj *WmBase) Dispatch(msg *wire.MessageBuffer) error {
 
 		obj.state.Add(id)
 
-		surface := obj.state.Get(msg.ReadUint()).(*wl.Surface)
+		surface, _ := obj.state.Get(msg.ReadUint()).(*wl.Surface)
 
 		obj.state.Add(surface)
 
@@ -1053,11 +1053,11 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 
 		obj.state.Add(id)
 
-		parent := obj.state.Get(msg.ReadUint()).(*Surface)
+		parent, _ := obj.state.Get(msg.ReadUint()).(*Surface)
 
 		obj.state.Add(parent)
 
-		positioner := obj.state.Get(msg.ReadUint()).(*Positioner)
+		positioner, _ := obj.state.Get(msg.ReadUint()).(*Positioner)
 
 		obj.state.Add(positioner)
 
@@ -1604,7 +1604,7 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		parent := obj.state.Get(msg.ReadUint()).(*Toplevel)
+		parent, _ := obj.state.Get(msg.ReadUint()).(*Toplevel)
 
 		obj.state.Add(parent)
 
@@ -1654,7 +1654,7 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 4:
 
-		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*wl.Seat)
 
 		obj.state.Add(seat)
 
@@ -1681,7 +1681,7 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 5:
 
-		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*wl.Seat)
 
 		obj.state.Add(seat)
 
@@ -1702,7 +1702,7 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 6:
 
-		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*wl.Seat)
 
 		obj.state.Add(seat)
 
@@ -1786,7 +1786,7 @@ func (obj *Toplevel) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 11:
 
-		output := obj.state.Get(msg.ReadUint()).(*wl.Output)
+		output, _ := obj.state.Get(msg.ReadUint()).(*wl.Output)
 
 		obj.state.Add(output)
 
@@ -2337,7 +2337,7 @@ func (obj *Popup) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 1:
 
-		seat := obj.state.Get(msg.ReadUint()).(*wl.Seat)
+		seat, _ := obj.state.Get(msg.ReadUint()).(*wl.Seat)
 
 		obj.state.Add(seat)
 
@@ -2358,7 +2358,7 @@ func (obj *Popup) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 2:
 
-		positioner := obj.state.Get(msg.ReadUint()).(*Positioner)
+		positioner, _ := obj.state.Get(msg.ReadUint()).(*Positioner)
 
 		obj.state.Add(positioner)
 

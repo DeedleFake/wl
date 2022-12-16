@@ -38,6 +38,7 @@ type Arg struct {
 	Summary string `xml:"summary,attr"`
 
 	Type      string `xml:"type,attr"`
+	AllowNull bool   `xml:"allow-null,attr"`
 	Interface string `xml:"interface,attr"`
 	Version   int    `xml:"version,attr"`
 	Enum      string `xml:"enum,attr"`
