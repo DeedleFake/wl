@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"net"
-	"sync"
 
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
@@ -17,11 +16,10 @@ import (
 // Client tracks the connection state, including objects and the event
 // queue. It is the primary interface to a Wayland server.
 type Client struct {
-	done  chan struct{}
-	close sync.Once
 	conn  *wire.Conn
-	store *objstore.Store
+	stop  xsync.Stopper
 	queue xsync.Queue[func() error]
+	store *objstore.Store
 }
 
 // Dial opens a connection to the Wayland display based on the
@@ -40,7 +38,6 @@ func Dial() (*Client, error) {
 // assumes responsibility for closing conn.
 func NewClient(conn *wire.Conn) *Client {
 	client := Client{
-		done:  make(chan struct{}),
 		conn:  conn,
 		store: objstore.New(1),
 	}
@@ -51,7 +48,7 @@ func NewClient(conn *wire.Conn) *Client {
 }
 
 func (client *Client) listen() {
-	defer client.stop()
+	defer client.Close()
 
 	for {
 		msg, err := wire.ReadMessage(client.conn)
@@ -61,7 +58,7 @@ func (client *Client) listen() {
 			}
 
 			select {
-			case <-client.done:
+			case <-client.stop.Done():
 				return
 			case client.queue.Add() <- func() error { return err }:
 				continue
@@ -69,7 +66,7 @@ func (client *Client) listen() {
 		}
 
 		select {
-		case <-client.done:
+		case <-client.stop.Done():
 			return
 		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
 			// TODO: Limit number of queued incoming messages?
@@ -83,15 +80,11 @@ func (client *Client) Display() *Display {
 	return client.Get(1).(*Display)
 }
 
-func (client *Client) stop() {
-	client.close.Do(func() { close(client.done) })
-	client.queue.Stop()
-}
-
 // Close closes the client, closing the underlying connection, stopping
 // the event queue, and so on.
 func (client *Client) Close() error {
-	client.stop()
+	client.stop.Stop()
+	client.queue.Stop()
 	return client.conn.Close()
 }
 
@@ -120,7 +113,7 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 // Enqueue adds msg to the event queue.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
-	case <-client.done:
+	case <-client.stop.Done():
 	case client.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
@@ -147,15 +140,15 @@ func (client *Client) Events() <-chan func() error {
 // net.ErrClosed.
 func (client *Client) RoundTrip() error {
 	select {
-	case <-client.done:
+	case <-client.stop.Done():
 		return net.ErrClosed
 	default:
 	}
 
+	var stop xsync.Stopper
 	get := client.queue.Get()
-	done := make(chan struct{})
 	client.Display().Sync().Then(func(uint32) {
-		close(done)
+		stop.Stop()
 		get = nil
 	})
 
@@ -163,9 +156,9 @@ func (client *Client) RoundTrip() error {
 
 	for {
 		select {
-		case <-client.done:
+		case <-client.stop.Done():
 			return net.ErrClosed
-		case <-done:
+		case <-stop.Done():
 			return errors.Join(errs...)
 		case ev := <-get:
 			errs = append(errs, ev())

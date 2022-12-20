@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net"
-	"sync"
 
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
@@ -16,17 +15,15 @@ import (
 // Client represents a client connected to the server.
 type Client struct {
 	server *Server
-	done   chan struct{}
-	close  sync.Once
 	conn   *wire.Conn
-	store  *objstore.Store
+	stop   xsync.Stopper
 	queue  xsync.Queue[func() error]
+	store  *objstore.Store
 }
 
 func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 	client := Client{
 		server: server,
-		done:   make(chan struct{}),
 		conn:   conn,
 		store:  objstore.New(1 << 24),
 	}
@@ -40,6 +37,12 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 	return &client
 }
 
+func (client *Client) close() {
+	client.stop.Stop()
+	client.queue.Stop()
+	client.conn.Close()
+}
+
 func (client *Client) listen(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -47,9 +50,7 @@ func (client *Client) listen(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 
-		client.close.Do(func() { close(client.done) })
-		client.queue.Stop()
-		client.conn.Close()
+		client.close()
 	}()
 
 	for {
@@ -62,7 +63,7 @@ func (client *Client) listen(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-client.done:
+			case <-client.stop.Done():
 				return
 			case client.queue.Add() <- func() error { return err }:
 				continue
@@ -72,7 +73,7 @@ func (client *Client) listen(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-client.done:
+		case <-client.stop.Done():
 			return
 		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
 			// TODO: Limit number of queued incoming messages?
@@ -105,7 +106,7 @@ func (client *Client) Delete(id uint32) {
 // Enqueue adds msg to the event queue.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
-	case <-client.done:
+	case <-client.stop.Done():
 	case client.queue.Add() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)

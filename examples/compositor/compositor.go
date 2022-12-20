@@ -5,34 +5,27 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 
 	xdg "deedles.dev/wl/examples/internal/xdg/server"
 	wl "deedles.dev/wl/server"
 	"deedles.dev/wl/wire"
+	"deedles.dev/xsync"
 )
 
 type state struct {
-	done  chan struct{}
-	close sync.Once
+	stop xsync.Stopper
 
 	server *wl.Server
 }
 
 func (s *state) init() {
-	s.done = make(chan struct{})
-
 	server, err := wl.CreateServer()
 	if err != nil {
 		log.Fatalf("start server: %v", err)
 	}
 	s.server = server
 	s.server.Handler = s.handleClient
-}
-
-func (s *state) stop() {
-	s.close.Do(func() { close(s.done) })
 }
 
 func (s *state) run(ctx context.Context) {
@@ -74,7 +67,7 @@ func (cs *clientState) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-cs.state.done:
+		case <-cs.state.stop.Done():
 			return
 
 		case <-ping.C:
@@ -207,7 +200,7 @@ func main() {
 	defer cancel()
 
 	var s state
-	defer s.stop()
+	defer s.stop.Stop()
 
 	s.init()
 	s.run(ctx)

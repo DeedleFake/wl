@@ -12,7 +12,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 
 	wl "deedles.dev/wl/client"
 	xdg "deedles.dev/wl/examples/internal/xdg/client"
@@ -20,6 +19,7 @@ import (
 	"deedles.dev/wl/shm"
 	"deedles.dev/wl/wire"
 	"deedles.dev/ximage/xcursor"
+	"deedles.dev/xsync"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/draw"
@@ -31,8 +31,7 @@ import (
 type state struct {
 	image image.Image
 
-	close sync.Once
-	done  chan struct{}
+	stop xsync.Stopper
 
 	client     *wl.Client
 	display    *wl.Display
@@ -62,8 +61,6 @@ type state struct {
 }
 
 func (s *state) init() error {
-	s.done = make(chan struct{})
-
 	client, err := wl.Dial()
 	if err != nil {
 		return fmt.Errorf("dial display: %w", err)
@@ -173,7 +170,7 @@ func (s *state) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.done:
+		case <-s.stop.Done():
 			return
 		case ev, ok := <-s.client.Events():
 			if !ok {
@@ -295,7 +292,7 @@ func (s *pointerListener) Button(serial, time uint32, button uint32, bstate wl.P
 	case pointer.ButtonLeft:
 		switch {
 		case s.pointerLoc.In(s.closeBounds):
-			s.close.Do(func() { close(s.done) })
+			s.stop.Stop()
 		//case s.pointerLoc.In(s.maxBounds):
 		//	s.toplevel.SetMaximized(!s.max)
 		//	s.max = !s.max
@@ -330,7 +327,7 @@ type xdgToplevelListener state
 func (s *xdgToplevelListener) Configure(w, h int32, states []byte) {}
 
 func (s *xdgToplevelListener) Close() {
-	s.close.Do(func() { close(s.done) })
+	s.stop.Stop()
 }
 
 func (s *xdgToplevelListener) ConfigureBounds(w, h int32) {}
