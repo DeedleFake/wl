@@ -9,7 +9,7 @@ import (
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
-	"deedles.dev/xsync/cq"
+	"deedles.dev/xsync"
 )
 
 //go:generate go run deedles.dev/wl/cmd/wlgen -client -out protocol.go -xml ../protocol/wayland.xml
@@ -21,7 +21,7 @@ type Client struct {
 	close sync.Once
 	conn  *wire.Conn
 	store *objstore.Store
-	queue cq.Queue[func() error]
+	queue xsync.Queue[func() error]
 }
 
 // Dial opens a connection to the Wayland display based on the

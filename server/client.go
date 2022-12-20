@@ -10,7 +10,7 @@ import (
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
 	"deedles.dev/wl/wire"
-	"deedles.dev/xsync/cq"
+	"deedles.dev/xsync"
 )
 
 // Client represents a client connected to the server.
@@ -20,7 +20,7 @@ type Client struct {
 	close  sync.Once
 	conn   *wire.Conn
 	store  *objstore.Store
-	queue  cq.Queue[func() error]
+	queue  xsync.Queue[func() error]
 }
 
 func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
