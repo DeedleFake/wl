@@ -103,6 +103,14 @@ func (client *Client) Delete(id uint32) {
 	client.store.Delete(id)
 }
 
+// DeleteAll removes all objects from the client, running their delete
+// handlers where applicable. This is not done automatically, so if
+// you want the handlers to be run when, for example, the client
+// disconnects you must call this yourself.
+func (client *Client) DeleteAll() {
+	client.store.Clear()
+}
+
 // Enqueue adds msg to the event queue.
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
