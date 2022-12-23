@@ -40,6 +40,13 @@ func (s *Store) Delete(id uint32) {
 	}
 }
 
+func (s *Store) Clear() {
+	for id, obj := range s.objects {
+		obj.Delete()
+		delete(s.objects, id)
+	}
+}
+
 func (s *Store) Dispatch(msg *wire.MessageBuffer) error {
 	obj := s.Get(msg.Sender())
 	if obj == nil {
