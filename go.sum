@@ -1,7 +1,7 @@
 deedles.dev/ximage v0.0.0-20221215050754-c0e5b3d5cb27 h1:F+mE6jyINi+KLXQ1nUSJRSWo3WB9a7I1vw1Lz+zrhdo=
 deedles.dev/ximage v0.0.0-20221215050754-c0e5b3d5cb27/go.mod h1:L+pty+8xzHkc+kdS98tKtnSk7AlPpHbmnZjF2XK7ytU=
-deedles.dev/xsync v0.0.0-20221225002141-50525a2cbc70 h1:hVWI8JBAF/2NqtLY2ZRSbhy0AM3qnwVLb+FNFmW2FVE=
-deedles.dev/xsync v0.0.0-20221225002141-50525a2cbc70/go.mod h1:wsmuit2ps+u+6DLp6cIzQ6v9bP9/WasjyX3ygqM/3UY=
+deedles.dev/xsync v0.0.0-20221225004541-6e8ae81544fb h1:T3vAvinXP3l4PzhGj2v3KdJwemYBfW8bCZeyVt8aQ6g=
+deedles.dev/xsync v0.0.0-20221225004541-6e8ae81544fb/go.mod h1:wsmuit2ps+u+6DLp6cIzQ6v9bP9/WasjyX3ygqM/3UY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
