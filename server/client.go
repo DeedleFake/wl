@@ -39,7 +39,6 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 
 func (client *Client) close() {
 	client.stop.Stop()
-	client.queue.Stop()
 	client.conn.Close()
 }
 

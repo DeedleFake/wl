@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"runtime"
 
 	"deedles.dev/wl/internal/debug"
 	"deedles.dev/wl/internal/objstore"
@@ -84,7 +85,6 @@ func (client *Client) Display() *Display {
 // the event queue, and so on.
 func (client *Client) Close() error {
 	client.stop.Stop()
-	client.queue.Stop()
 	return client.conn.Close()
 }
 
@@ -153,10 +153,11 @@ func (client *Client) RoundTrip() error {
 	default:
 	}
 
-	var stop xsync.Stopper
+	done := make(chan struct{})
 	get := client.queue.Get()
+	defer func() { runtime.KeepAlive(client.queue) }()
 	client.Display().Sync().Then(func(uint32) {
-		stop.Stop()
+		close(done)
 		get = nil
 	})
 
@@ -166,7 +167,7 @@ func (client *Client) RoundTrip() error {
 		select {
 		case <-client.stop.Done():
 			return net.ErrClosed
-		case <-stop.Done():
+		case <-done:
 			return errors.Join(errs...)
 		case ev := <-get:
 			errs = append(errs, ev())
