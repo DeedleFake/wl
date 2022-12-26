@@ -39,6 +39,7 @@ func newClient(ctx context.Context, server *Server, conn *wire.Conn) *Client {
 
 func (client *Client) close() {
 	client.stop.Stop()
+	client.queue.Stop()
 	client.conn.Close()
 }
 
@@ -64,7 +65,7 @@ func (client *Client) listen(ctx context.Context) {
 				return
 			case <-client.stop.Done():
 				return
-			case client.queue.Add() <- func() error { return err }:
+			case client.queue.Push() <- func() error { return err }:
 				continue
 			}
 		}
@@ -74,7 +75,7 @@ func (client *Client) listen(ctx context.Context) {
 			return
 		case <-client.stop.Done():
 			return
-		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
+		case client.queue.Push() <- func() error { return client.dispatch(msg) }:
 			// TODO: Limit number of queued incoming messages?
 		}
 	}
@@ -114,7 +115,7 @@ func (client *Client) DeleteAll() {
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
 	case <-client.stop.Done():
-	case client.queue.Add() <- func() error {
+	case client.queue.Push() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
 	}:
@@ -135,7 +136,7 @@ func (client *Client) Display() *Display {
 // This channel will be closed when the client's internal processing
 // has stopped.
 func (client *Client) Events() <-chan func() error {
-	return client.queue.Get()
+	return client.queue.Pop()
 }
 
 func (client *Client) Addr() net.Addr {

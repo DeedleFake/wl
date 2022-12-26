@@ -61,7 +61,7 @@ func (client *Client) listen() {
 			select {
 			case <-client.stop.Done():
 				return
-			case client.queue.Add() <- func() error { return err }:
+			case client.queue.Push() <- func() error { return err }:
 				continue
 			}
 		}
@@ -69,7 +69,7 @@ func (client *Client) listen() {
 		select {
 		case <-client.stop.Done():
 			return
-		case client.queue.Add() <- func() error { return client.dispatch(msg) }:
+		case client.queue.Push() <- func() error { return client.dispatch(msg) }:
 			// TODO: Limit number of queued incoming messages?
 		}
 	}
@@ -85,6 +85,7 @@ func (client *Client) Display() *Display {
 // the event queue, and so on.
 func (client *Client) Close() error {
 	client.stop.Stop()
+	client.queue.Stop()
 	return client.conn.Close()
 }
 
@@ -122,7 +123,7 @@ func (client *Client) dispatch(msg *wire.MessageBuffer) error {
 func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 	select {
 	case <-client.stop.Done():
-	case client.queue.Add() <- func() error {
+	case client.queue.Push() <- func() error {
 		debug.Printf(" -> %v", msg)
 		return msg.Build(client.conn)
 	}:
@@ -137,7 +138,7 @@ func (client *Client) Enqueue(msg *wire.MessageBuilder) {
 // This channel will be closed when the client's internal processing
 // has stopped.
 func (client *Client) Events() <-chan func() error {
-	return client.queue.Get()
+	return client.queue.Pop()
 }
 
 // RoundTrip flushes the event queue continuously until the server
@@ -154,7 +155,7 @@ func (client *Client) RoundTrip() error {
 	}
 
 	done := make(chan struct{})
-	get := client.queue.Get()
+	get := client.queue.Pop()
 	defer func() { runtime.KeepAlive(client.queue) }()
 	client.Display().Sync().Then(func(uint32) {
 		close(done)
