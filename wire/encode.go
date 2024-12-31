@@ -117,7 +117,7 @@ func (mb *MessageBuilder) WriteArray(v []byte) {
 	}
 }
 
-func (mb *MessageBuilder) WriteFile(v *os.File) {
+func (mb *MessageBuilder) WriteFile(v FileDescriptor) {
 	fd, err := unix.Dup(int(v.Fd()))
 	if err != nil {
 		mb.err = err

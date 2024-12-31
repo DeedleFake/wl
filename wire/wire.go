@@ -93,3 +93,8 @@ type State interface {
 type Binder interface {
 	Bind(name uint32, obj NewID)
 }
+
+type FileDescriptor interface {
+	// Fd returns a valid file descriptor
+	Fd() uintptr
+}
