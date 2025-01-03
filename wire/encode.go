@@ -117,8 +117,12 @@ func (mb *MessageBuilder) WriteArray(v []byte) {
 	}
 }
 
-func (mb *MessageBuilder) WriteFile(v *os.File) {
-	fd, err := unix.Dup(int(v.Fd()))
+func (mb *MessageBuilder) WriteFile(file *os.File) {
+	mb.WriteFD(int(file.Fd()))
+}
+
+func (mb *MessageBuilder) WriteFD(file int) {
+	fd, err := unix.Dup(file)
 	if err != nil {
 		mb.err = err
 		return
