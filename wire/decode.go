@@ -181,7 +181,7 @@ func (r *MessageBuffer) ReadFile() *os.File {
 		return nil
 	}
 
-	fd, ok := pop(r.conn.fds)
+	fd, ok := pop(&r.conn.fds)
 	if !ok {
 		r.err = errors.New("no more file descriptors")
 		return nil

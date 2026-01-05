@@ -13,14 +13,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func pop[T any, S ~[]T](s S) (v T, ok bool) {
-	if len(s) == 0 {
+func pop[T any](s *[]T) (v T, ok bool) {
+	if len(*s) == 0 {
 		return v, false
 	}
 
-	v = s[0]
-	s = s[:len(s)-1]
-	copy(s, s[1:cap(s)])
+	v = (*s)[0]
+	*s = (*s)[1:]
 	return v, true
 }
 

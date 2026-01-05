@@ -25,8 +25,11 @@ type unixTee struct {
 	oob io.Writer
 }
 
+// 128 bytes are enough for about 32 FDs, which covers the protocol with a margin
+var oobSpace = unix.CmsgSpace(128)
+
 func (t unixTee) Read(buf []byte) (int, error) {
-	oob := make([]byte, unix.CmsgSpace(len(buf))) // TODO: How big should this be?
+	oob := make([]byte, oobSpace)
 	n, oobn, _, _, err := t.c.ReadMsgUnix(buf, oob)
 	_, ooberr := t.oob.Write(oob[:oobn])
 	return n, errors.Join(err, ooberr)
