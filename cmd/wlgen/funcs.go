@@ -187,7 +187,7 @@ func (ctx Context) comment(v string) string {
 	}
 
 	var sb strings.Builder
-	for _, line := range strings.Split(v, "\n") {
+	for line := range strings.SplitSeq(v, "\n") {
 		sb.WriteString("// ")
 		sb.WriteString(line)
 		sb.WriteByte('\n')
