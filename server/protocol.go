@@ -26,7 +26,7 @@ type DisplayListener interface {
 	// compositor after the callback is fired and as such the client must not
 	// attempt to use it after that point.
 	//
-	// The callback_data passed in the callback is the event serial.
+	// The callback_data passed in the callback is undefined and should be ignored.
 	Sync(callback *Callback)
 
 	// This request creates a registry object that allows the client
@@ -392,6 +392,9 @@ const (
 
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
+//
+// Note, because wl_callback objects are created from multiple independent
+// factory interfaces, the wl_callback interface is frozen at version 1.
 type Callback struct {
 
 	// OnDelete is called when the object is removed from the tracking
@@ -468,7 +471,7 @@ func (obj *Callback) Done(callbackData uint32) {
 
 const (
 	CompositorInterface = "wl_compositor"
-	CompositorVersion   = 4
+	CompositorVersion   = 6
 )
 
 // CompositorListener is a type that can respond to incoming
@@ -603,7 +606,7 @@ func (obj *Compositor) Version() uint32 {
 
 const (
 	ShmPoolInterface = "wl_shm_pool"
-	ShmPoolVersion   = 1
+	ShmPoolVersion   = 2
 )
 
 // ShmPoolListener is a type that can respond to incoming
@@ -633,6 +636,12 @@ type ShmPoolListener interface {
 	// for the pool from the file descriptor passed when the pool was
 	// created, but using the new size.  This request can only be
 	// used to make the pool bigger.
+	//
+	// This request only changes the amount of bytes that are mmapped
+	// by the server and does not touch the file corresponding to the
+	// file descriptor passed at creation time. It is the client's
+	// responsibility to ensure that the file is at least as big as
+	// the new pool size.
 	Resize(size int32)
 }
 
@@ -781,7 +790,7 @@ func (obj *ShmPool) Version() uint32 {
 
 const (
 	ShmInterface = "wl_shm"
-	ShmVersion   = 1
+	ShmVersion   = 2
 )
 
 // ShmListener is a type that can respond to incoming
@@ -793,6 +802,12 @@ type ShmListener interface {
 	// objects.  The server will mmap size bytes of the passed file
 	// descriptor, to use as backing memory for the pool.
 	CreatePool(id *ShmPool, fd *os.File, size int32)
+
+	// Using this request a client can tell the server that it is not going to
+	// use the shm object anymore.
+	//
+	// Objects created via this interface remain unaffected.
+	Release()
 }
 
 // A singleton global object that provides support for shared
@@ -801,8 +816,8 @@ type ShmListener interface {
 // Clients can create wl_shm_pool objects using the create_pool
 // request.
 //
-// At connection setup time, the wl_shm object emits one or more
-// format events to inform clients about the valid pixel formats
+// On binding the wl_shm object one or more format events
+// are emitted to inform clients about the valid pixel formats
 // that can be used for buffers.
 type Shm struct {
 	// Listener's methods are called by incoming messages from the
@@ -861,6 +876,17 @@ func (obj *Shm) Dispatch(msg *wire.MessageBuffer) error {
 			size,
 		)
 		return nil
+
+	case 1:
+		if err := msg.Err(); err != nil {
+			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Release()
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -892,6 +918,9 @@ func (obj *Shm) MethodName(op uint16) string {
 	switch op {
 	case 0:
 		return "create_pool"
+
+	case 1:
+		return "release"
 	}
 
 	return "unknown method"
@@ -957,6 +986,9 @@ func (enum ShmError) String() string {
 // The drm format codes match the macros defined in drm_fourcc.h, except
 // argb8888 and xrgb8888. The formats actually supported by the compositor
 // will be reported by the format event.
+//
+// For all wl_shm formats and unless specified in another protocol
+// extension, pre-multiplied alpha is used for pixel values.
 type ShmFormat int64
 
 const (
@@ -1259,6 +1291,63 @@ const (
 	ShmFormatQ410 ShmFormat = 808531025
 
 	ShmFormatQ401 ShmFormat = 825242705
+
+	// [63:0] x:R:G:B 16:16:16:16 little endian
+	ShmFormatXrgb16161616 ShmFormat = 942953048
+
+	// [63:0] x:B:G:R 16:16:16:16 little endian
+	ShmFormatXbgr16161616 ShmFormat = 942948952
+
+	// [63:0] A:R:G:B 16:16:16:16 little endian
+	ShmFormatArgb16161616 ShmFormat = 942953025
+
+	// [63:0] A:B:G:R 16:16:16:16 little endian
+	ShmFormatAbgr16161616 ShmFormat = 942948929
+
+	// [7:0] C0:C1:C2:C3:C4:C5:C6:C7 1:1:1:1:1:1:1:1 eight pixels/byte
+	ShmFormatC1 ShmFormat = 538980675
+
+	// [7:0] C0:C1:C2:C3 2:2:2:2 four pixels/byte
+	ShmFormatC2 ShmFormat = 538980931
+
+	// [7:0] C0:C1 4:4 two pixels/byte
+	ShmFormatC4 ShmFormat = 538981443
+
+	// [7:0] D0:D1:D2:D3:D4:D5:D6:D7 1:1:1:1:1:1:1:1 eight pixels/byte
+	ShmFormatD1 ShmFormat = 538980676
+
+	// [7:0] D0:D1:D2:D3 2:2:2:2 four pixels/byte
+	ShmFormatD2 ShmFormat = 538980932
+
+	// [7:0] D0:D1 4:4 two pixels/byte
+	ShmFormatD4 ShmFormat = 538981444
+
+	// [7:0] D
+	ShmFormatD8 ShmFormat = 538982468
+
+	// [7:0] R0:R1:R2:R3:R4:R5:R6:R7 1:1:1:1:1:1:1:1 eight pixels/byte
+	ShmFormatR1 ShmFormat = 538980690
+
+	// [7:0] R0:R1:R2:R3 2:2:2:2 four pixels/byte
+	ShmFormatR2 ShmFormat = 538980946
+
+	// [7:0] R0:R1 4:4 two pixels/byte
+	ShmFormatR4 ShmFormat = 538981458
+
+	// [15:0] x:R 6:10 little endian
+	ShmFormatR10 ShmFormat = 540029266
+
+	// [15:0] x:R 4:12 little endian
+	ShmFormatR12 ShmFormat = 540160338
+
+	// [31:0] A:Cr:Cb:Y 8:8:8:8 little endian
+	ShmFormatAvuy8888 ShmFormat = 1498764865
+
+	// [31:0] X:Cr:Cb:Y 8:8:8:8 little endian
+	ShmFormatXvuy8888 ShmFormat = 1498764888
+
+	// 2x2 subsampled Cr:Cb plane 10 bits per channel packed
+	ShmFormatP030 ShmFormat = 808661072
 )
 
 func (enum ShmFormat) String() string {
@@ -1574,6 +1663,63 @@ func (enum ShmFormat) String() string {
 
 	case 825242705:
 		return "ShmFormatQ401"
+
+	case 942953048:
+		return "ShmFormatXrgb16161616"
+
+	case 942948952:
+		return "ShmFormatXbgr16161616"
+
+	case 942953025:
+		return "ShmFormatArgb16161616"
+
+	case 942948929:
+		return "ShmFormatAbgr16161616"
+
+	case 538980675:
+		return "ShmFormatC1"
+
+	case 538980931:
+		return "ShmFormatC2"
+
+	case 538981443:
+		return "ShmFormatC4"
+
+	case 538980676:
+		return "ShmFormatD1"
+
+	case 538980932:
+		return "ShmFormatD2"
+
+	case 538981444:
+		return "ShmFormatD4"
+
+	case 538982468:
+		return "ShmFormatD8"
+
+	case 538980690:
+		return "ShmFormatR1"
+
+	case 538980946:
+		return "ShmFormatR2"
+
+	case 538981458:
+		return "ShmFormatR4"
+
+	case 540029266:
+		return "ShmFormatR10"
+
+	case 540160338:
+		return "ShmFormatR12"
+
+	case 1498764865:
+		return "ShmFormatAvuy8888"
+
+	case 1498764888:
+		return "ShmFormatXvuy8888"
+
+	case 808661072:
+		return "ShmFormatP030"
 	}
 
 	return "<invalid ShmFormat>"
@@ -1595,10 +1741,20 @@ type BufferListener interface {
 }
 
 // A buffer provides the content for a wl_surface. Buffers are
-// created through factory interfaces such as wl_drm, wl_shm or
-// similar. It has a width and a height and can be attached to a
-// wl_surface, but the mechanism by which a client provides and
-// updates the contents is defined by the buffer factory interface.
+// created through factory interfaces such as wl_shm, wp_linux_buffer_params
+// (from the linux-dmabuf protocol extension) or similar. It has a width and
+// a height and can be attached to a wl_surface, but the mechanism by which a
+// client provides and updates the contents is defined by the buffer factory
+// interface.
+//
+// Color channels are assumed to be electrical rather than optical (in other
+// words, encoded with a transfer function) unless otherwise specified. If
+// the buffer uses a format that has an alpha channel, the alpha channel is
+// assumed to be premultiplied into the electrical color channel values
+// (after transfer function encoding) unless otherwise specified.
+//
+// Note, because wl_buffer objects are created from multiple independent
+// factory interfaces, the wl_buffer interface is frozen at version 1.
 type Buffer struct {
 	// Listener's methods are called by incoming messages from the
 	// remote end via Dispatch. If it is nil, messages are silently
@@ -1680,8 +1836,10 @@ func (obj *Buffer) Version() uint32 {
 }
 
 // Sent when this wl_buffer is no longer used by the compositor.
-// The client is now free to reuse or destroy this buffer and its
-// backing storage.
+//
+// For more information on when release events may or may not be sent,
+// and what consequences it has, please see the description of
+// wl_surface.attach.
 //
 // If a client receives a release event before the frame callback
 // requested in the same wl_surface.commit that attaches this
@@ -1974,8 +2132,9 @@ func (obj *DataOffer) Offer(mimeType string) {
 }
 
 // This event indicates the actions offered by the data source. It
-// will be sent right after wl_data_device.enter, or anytime the source
-// side changes its offered actions through wl_data_source.set_actions.
+// will be sent immediately after creating the wl_data_offer object,
+// or anytime the source side changes its offered actions through
+// wl_data_source.set_actions.
 func (obj *DataOffer) SourceActions(sourceActions DataDeviceManagerDndAction) {
 	builder := wire.NewMessage(obj, 1)
 
@@ -2396,23 +2555,28 @@ type DataDeviceListener interface {
 	// The icon surface is an optional (can be NULL) surface that
 	// provides an icon to be moved around with the cursor.  Initially,
 	// the top-left corner of the icon surface is placed at the cursor
-	// hotspot, but subsequent wl_surface.attach request can move the
+	// hotspot, but subsequent wl_surface.offset requests can move the
 	// relative position. Attach requests must be confirmed with
 	// wl_surface.commit as usual. The icon surface is given the role of
 	// a drag-and-drop icon. If the icon surface already has another role,
 	// it raises a protocol error.
 	//
-	// The current and pending input regions of the icon wl_surface are
-	// cleared, and wl_surface.set_input_region is ignored until the
-	// wl_surface is no longer used as the icon surface. When the use
-	// as an icon ends, the current and pending input regions become
-	// undefined, and the wl_surface is unmapped.
+	// The input region is ignored for wl_surfaces with the role of a
+	// drag-and-drop icon.
+	//
+	// The given source may not be used in any further set_selection or
+	// start_drag requests. Attempting to reuse a previously-used source
+	// may send a used_source error.
 	StartDrag(source *DataSource, origin *Surface, icon *Surface, serial uint32)
 
 	// This request asks the compositor to set the selection
 	// to the data from the source on behalf of the client.
 	//
 	// To unset the selection, set the source to NULL.
+	//
+	// The given source may not be used in any further set_selection or
+	// start_drag requests. Attempting to reuse a previously-used source
+	// may send a used_source error.
 	SetSelection(source *DataSource, serial uint32)
 
 	// This request destroys the data device.
@@ -2566,7 +2730,7 @@ func (obj *DataDevice) Version() uint32 {
 // which will subsequently be used in either the
 // data_device.enter event (for drag-and-drop) or the
 // data_device.selection event (for selections).  Immediately
-// following the data_device_data_offer event, the new data_offer
+// following the data_device.data_offer event, the new data_offer
 // object will send out data_offer.offer events to describe the
 // mime types it offers.
 func (obj *DataDevice) DataOffer() (id *DataOffer) {
@@ -2660,9 +2824,10 @@ func (obj *DataDevice) Drop() {
 // immediately before receiving keyboard focus and when a new
 // selection is set while the client has keyboard focus.  The
 // data_offer is valid until a new data_offer or NULL is received
-// or until the client loses keyboard focus.  The client must
-// destroy the previous selection data_offer, if any, upon receiving
-// this event.
+// or until the client loses keyboard focus.  Switching surface with
+// keyboard focus within the same client doesn't mean a new selection
+// will be sent.  The client must destroy the previous selection
+// data_offer, if any, upon receiving this event.
 func (obj *DataDevice) Selection(id *DataOffer) {
 	builder := wire.NewMessage(obj, 5)
 
@@ -2679,12 +2844,18 @@ type DataDeviceError int64
 const (
 	// given wl_surface has another role
 	DataDeviceErrorRole DataDeviceError = 0
+
+	// source has already been used
+	DataDeviceErrorUsedSource DataDeviceError = 1
 )
 
 func (enum DataDeviceError) String() string {
 	switch enum {
 	case 0:
 		return "DataDeviceErrorRole"
+
+	case 1:
+		return "DataDeviceErrorUsedSource"
 	}
 
 	return "<invalid DataDeviceError>"
@@ -2917,7 +3088,8 @@ type ShellListener interface {
 // a basic surface.
 //
 // Note! This protocol is deprecated and not intended for production use.
-// For desktop-style user interfaces, use xdg_shell.
+// For desktop-style user interfaces, use xdg_shell. Compositors and clients
+// should not implement this interface.
 type Shell struct {
 	// Listener's methods are called by incoming messages from the
 	// remote end via Dispatch. If it is nil, messages are silently
@@ -3663,7 +3835,7 @@ func (enum ShellSurfaceFullscreenMethod) String() string {
 
 const (
 	SurfaceInterface = "wl_surface"
-	SurfaceVersion   = 4
+	SurfaceVersion   = 6
 )
 
 // SurfaceListener is a type that can respond to incoming
@@ -3684,7 +3856,15 @@ type SurfaceListener interface {
 	// buffer's upper left corner, relative to the current buffer's upper
 	// left corner, in surface-local coordinates. In other words, the
 	// x and y, combined with the new surface size define in which
-	// directions the surface's size changes.
+	// directions the surface's size changes. Setting anything other than 0
+	// as x and y arguments is discouraged, and should instead be replaced
+	// with using the separate wl_surface.offset request.
+	//
+	// When the bound wl_surface version is 5 or higher, passing any
+	// non-zero x or y is a protocol violation, and will result in an
+	// 'invalid_offset' error being raised. The x and y arguments are ignored
+	// and do not change the pending state. To achieve equivalent semantics,
+	// use wl_surface.offset.
 	//
 	// Surface contents are double-buffered state, see wl_surface.commit.
 	//
@@ -3709,15 +3889,26 @@ type SurfaceListener interface {
 	// the delivery of wl_buffer.release events becomes undefined. A well
 	// behaved client should not rely on wl_buffer.release events in this
 	// case. Alternatively, a client could create multiple wl_buffer objects
-	// from the same backing storage or use wp_linux_buffer_release.
+	// from the same backing storage or use a protocol extension providing
+	// per-commit release notifications.
 	//
 	// Destroying the wl_buffer after wl_buffer.release does not change
-	// the surface contents. However, if the client destroys the
-	// wl_buffer before receiving the wl_buffer.release event, the surface
-	// contents become undefined immediately.
+	// the surface contents. Destroying the wl_buffer before wl_buffer.release
+	// is allowed as long as the underlying buffer storage isn't re-used (this
+	// can happen e.g. on client process termination). However, if the client
+	// destroys the wl_buffer before receiving the wl_buffer.release event and
+	// mutates the underlying buffer storage, the surface contents become
+	// undefined immediately.
 	//
 	// If wl_surface.attach is sent with a NULL wl_buffer, the
 	// following wl_surface.commit will remove the surface content.
+	//
+	// If a pending wl_buffer has been destroyed, the result is not specified.
+	// Many compositors are known to remove the surface content on the following
+	// wl_surface.commit, but this behaviour is not universal. Clients seeking to
+	// maximise compatibility should not destroy pending buffers and should
+	// ensure that they explicitly remove content from surfaces, even after
+	// destroying buffers.
 	Attach(buffer *Buffer, x int32, y int32)
 
 	// This request is used to describe the regions where the pending
@@ -3829,16 +4020,18 @@ type SurfaceListener interface {
 
 	// Surface state (input, opaque, and damage regions, attached buffers,
 	// etc.) is double-buffered. Protocol requests modify the pending state,
-	// as opposed to the current state in use by the compositor. A commit
-	// request atomically applies all pending state, replacing the current
-	// state. After commit, the new pending state is as documented for each
-	// related request.
+	// as opposed to the active state in use by the compositor.
 	//
-	// On commit, a pending wl_buffer is applied first, and all other state
-	// second. This means that all coordinates in double-buffered state are
-	// relative to the new wl_buffer coming into use, except for
-	// wl_surface.attach itself. If there is no pending wl_buffer, the
-	// coordinates are relative to the current surface contents.
+	// A commit request atomically creates a content update from the pending
+	// state, even if the pending state has not been touched. The content
+	// update is placed in a queue until it becomes active. After commit, the
+	// new pending state is as documented for each related request.
+	//
+	// When the content update is applied, the wl_buffer is applied before all
+	// other state. This means that all coordinates in double-buffered state
+	// are relative to the newly attached wl_buffers, except for
+	// wl_surface.attach itself. If there is no newly attached wl_buffer, the
+	// coordinates are relative to the previous content update.
 	//
 	// All requests that need a commit to become effective are documented
 	// to affect double-buffered state.
@@ -3846,10 +4039,12 @@ type SurfaceListener interface {
 	// Other interfaces may add further double-buffered surface state.
 	Commit()
 
-	// This request sets an optional transformation on how the compositor
-	// interprets the contents of the buffer attached to the surface. The
-	// accepted values for the transform parameter are the values for
-	// wl_output.transform.
+	// This request sets the transformation that the client has already applied
+	// to the content of the buffer. The accepted values for the transform
+	// parameter are the values for wl_output.transform.
+	//
+	// The compositor applies the inverse of this transformation whenever it
+	// uses the buffer contents.
 	//
 	// Buffer transform is double-buffered state, see wl_surface.commit.
 	//
@@ -3898,7 +4093,7 @@ type SurfaceListener interface {
 	// a buffer that is larger (by a factor of scale in each dimension)
 	// than the desired surface size.
 	//
-	// If scale is not positive the invalid_scale protocol error is
+	// If scale is not greater than 0 the invalid_scale protocol error is
 	// raised.
 	SetBufferScale(scale int32)
 
@@ -3935,6 +4130,23 @@ type SurfaceListener interface {
 	// two requests separately and only transform from one to the other
 	// after receiving the wl_surface.commit.
 	DamageBuffer(x int32, y int32, width int32, height int32)
+
+	// The x and y arguments specify the location of the new pending
+	// buffer's upper left corner, relative to the current buffer's upper
+	// left corner, in surface-local coordinates. In other words, the
+	// x and y, combined with the new surface size define in which
+	// directions the surface's size changes.
+	//
+	// The exact semantics of wl_surface.offset are role-specific. Refer to
+	// the documentation of specific roles for more information.
+	//
+	// Surface location offset is double-buffered state, see
+	// wl_surface.commit.
+	//
+	// This request is semantically equivalent to and the replaces the x and y
+	// arguments in the wl_surface.attach request in wl_surface versions prior
+	// to 5. See wl_surface.attach for details.
+	Offset(x int32, y int32)
 }
 
 // A surface is a rectangular area that may be displayed on zero
@@ -3967,8 +4179,9 @@ type SurfaceListener interface {
 // that this request gives a role to a wl_surface. Often, this
 // request also creates a new protocol object that represents the
 // role and adds additional functionality to wl_surface. When a
-// client wants to destroy a wl_surface, they must destroy this 'role
-// object' before the wl_surface.
+// client wants to destroy a wl_surface, they must destroy this role
+// object before the wl_surface, otherwise a defunct_role_object error is
+// sent.
 //
 // Destroying the role object does not remove the role from the
 // wl_surface, but it may stop the wl_surface from "playing the role".
@@ -4186,6 +4399,25 @@ func (obj *Surface) Dispatch(msg *wire.MessageBuffer) error {
 			height,
 		)
 		return nil
+
+	case 10:
+
+		x := msg.ReadInt()
+
+		y := msg.ReadInt()
+
+		if err := msg.Err(); err != nil {
+			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Offset(
+			x,
+			y,
+		)
+		return nil
 	}
 
 	return wire.UnknownOpError{
@@ -4244,6 +4476,9 @@ func (obj *Surface) MethodName(op uint16) string {
 
 	case 9:
 		return "damage_buffer"
+
+	case 10:
+		return "offset"
 	}
 
 	return "unknown method"
@@ -4293,6 +4528,49 @@ func (obj *Surface) Leave(output *Output) {
 	return
 }
 
+// This event indicates the preferred buffer scale for this surface. It is
+// sent whenever the compositor's preference changes.
+//
+// Before receiving this event the preferred buffer scale for this surface
+// is 1.
+//
+// It is intended that scaling aware clients use this event to scale their
+// content and use wl_surface.set_buffer_scale to indicate the scale they
+// have rendered with. This allows clients to supply a higher detail
+// buffer.
+//
+// The compositor shall emit a scale value greater than 0.
+func (obj *Surface) PreferredBufferScale(factor int32) {
+	builder := wire.NewMessage(obj, 2)
+
+	builder.WriteInt(factor)
+
+	builder.Method = "preferred_buffer_scale"
+	builder.Args = []any{factor}
+	obj.state.Enqueue(builder)
+	return
+}
+
+// This event indicates the preferred buffer transform for this surface.
+// It is sent whenever the compositor's preference changes.
+//
+// Before receiving this event the preferred buffer transform for this
+// surface is normal.
+//
+// Applying this transformation to the surface buffer contents and using
+// wl_surface.set_buffer_transform might allow the compositor to use the
+// surface buffer more efficiently.
+func (obj *Surface) PreferredBufferTransform(transform OutputTransform) {
+	builder := wire.NewMessage(obj, 3)
+
+	builder.WriteUint(uint32(transform))
+
+	builder.Method = "preferred_buffer_transform"
+	builder.Args = []any{transform}
+	obj.state.Enqueue(builder)
+	return
+}
+
 // These errors can be emitted in response to wl_surface requests.
 type SurfaceError int64
 
@@ -4305,6 +4583,12 @@ const (
 
 	// buffer size is invalid
 	SurfaceErrorInvalidSize SurfaceError = 2
+
+	// buffer offset is invalid
+	SurfaceErrorInvalidOffset SurfaceError = 3
+
+	// surface was destroyed before its role object
+	SurfaceErrorDefunctRoleObject SurfaceError = 4
 )
 
 func (enum SurfaceError) String() string {
@@ -4317,6 +4601,12 @@ func (enum SurfaceError) String() string {
 
 	case 2:
 		return "SurfaceErrorInvalidSize"
+
+	case 3:
+		return "SurfaceErrorInvalidOffset"
+
+	case 4:
+		return "SurfaceErrorDefunctRoleObject"
 	}
 
 	return "<invalid SurfaceError>"
@@ -4324,7 +4614,7 @@ func (enum SurfaceError) String() string {
 
 const (
 	SeatInterface = "wl_seat"
-	SeatVersion   = 7
+	SeatVersion   = 10
 )
 
 // SeatListener is a type that can respond to incoming
@@ -4522,9 +4812,10 @@ func (obj *Seat) Version() uint32 {
 	return SeatVersion
 }
 
-// This is emitted whenever a seat gains or loses the pointer,
-// keyboard or touch capabilities.  The argument is a capability
-// enum containing the complete set of capabilities this seat has.
+// This is sent on binding to the seat global or whenever a seat gains
+// or loses the pointer, keyboard or touch capabilities.
+// The argument is a capability enum containing the complete set of
+// capabilities this seat has.
 //
 // When the pointer capability is added, a client may create a
 // wl_pointer object using the wl_seat.get_pointer request. This object
@@ -4557,9 +4848,22 @@ func (obj *Seat) Capabilities(capabilities SeatCapability) {
 	return
 }
 
-// In a multiseat configuration this can be used by the client to help
-// identify which physical devices the seat represents. Based on
-// the seat configuration used by the compositor.
+// In a multi-seat configuration the seat name can be used by clients to
+// help identify which physical devices the seat represents.
+//
+// The seat name is a UTF-8 string with no convention defined for its
+// contents. Each name is unique among all wl_seat globals. The name is
+// only guaranteed to be unique for the current compositor instance.
+//
+// The same seat names are used for all clients. Thus, the name can be
+// shared across processes to refer to a specific wl_seat global.
+//
+// The name event is sent after binding to the seat global, and should be sent
+// before announcing capabilities. This event only sent once per seat object,
+// and the name does not change over the lifetime of the wl_seat global.
+//
+// Compositors may re-use the same seat name if the wl_seat global is
+// destroyed and re-created later.
 func (obj *Seat) Name(name string) {
 	builder := wire.NewMessage(obj, 1)
 
@@ -4620,7 +4924,7 @@ func (enum SeatError) String() string {
 
 const (
 	PointerInterface = "wl_pointer"
-	PointerVersion   = 7
+	PointerVersion   = 10
 )
 
 // PointerListener is a type that can respond to incoming
@@ -4643,20 +4947,22 @@ type PointerListener interface {
 	// where (x, y) are the coordinates of the pointer location, in
 	// surface-local coordinates.
 	//
-	// On surface.attach requests to the pointer surface, hotspot_x
+	// On wl_surface.offset requests to the pointer surface, hotspot_x
 	// and hotspot_y are decremented by the x and y parameters
-	// passed to the request. Attach must be confirmed by
+	// passed to the request. The offset must be applied by
 	// wl_surface.commit as usual.
 	//
 	// The hotspot can also be updated by passing the currently set
 	// pointer surface to this request with new values for hotspot_x
 	// and hotspot_y.
 	//
-	// The current and pending input regions of the wl_surface are
-	// cleared, and wl_surface.set_input_region is ignored until the
-	// wl_surface is no longer used as the cursor. When the use as a
-	// cursor ends, the current and pending input regions become
-	// undefined, and the wl_surface is unmapped.
+	// The input region is ignored for wl_surfaces with the role of
+	// a cursor. When the use as a cursor ends, the wl_surface is
+	// unmapped.
+	//
+	// The serial parameter must match the latest wl_pointer.enter
+	// serial number sent to the client. Otherwise the request will be
+	// ignored.
 	SetCursor(serial uint32, surface *Surface, hotspotX int32, hotspotY int32)
 
 	// Using this request a client can tell the server that it is not going to
@@ -5005,6 +5311,9 @@ func (obj *Pointer) AxisStop(time uint32, axis PointerAxis) {
 // This event carries the axis value of the wl_pointer.axis event in
 // discrete steps (e.g. mouse wheel clicks).
 //
+// This event is deprecated with wl_pointer version 8 - this event is not
+// sent to clients supporting version 8 or later.
+//
 // This event does not occur on its own, it is coupled with a
 // wl_pointer.axis event that represents this axis value on a
 // continuous scale. The protocol guarantees that each axis_discrete
@@ -5012,7 +5321,8 @@ func (obj *Pointer) AxisStop(time uint32, axis PointerAxis) {
 // axis number within the same wl_pointer.frame. Note that the protocol
 // allows for other events to occur between the axis_discrete and
 // its coupled axis event, including other axis_discrete or axis
-// events.
+// events. A wl_pointer.frame must not contain more than one axis_discrete
+// event per axis type.
 //
 // This event is optional; continuous scrolling devices
 // like two-finger scrolling on touchpads do not have discrete
@@ -5034,6 +5344,86 @@ func (obj *Pointer) AxisDiscrete(axis PointerAxis, discrete int32) {
 
 	builder.Method = "axis_discrete"
 	builder.Args = []any{axis, discrete}
+	obj.state.Enqueue(builder)
+	return
+}
+
+// Discrete high-resolution scroll information.
+//
+// This event carries high-resolution wheel scroll information,
+// with each multiple of 120 representing one logical scroll step
+// (a wheel detent). For example, an axis_value120 of 30 is one quarter of
+// a logical scroll step in the positive direction, a value120 of
+// -240 are two logical scroll steps in the negative direction within the
+// same hardware event.
+// Clients that rely on discrete scrolling should accumulate the
+// value120 to multiples of 120 before processing the event.
+//
+// The value120 must not be zero.
+//
+// This event replaces the wl_pointer.axis_discrete event in clients
+// supporting wl_pointer version 8 or later.
+//
+// Where a wl_pointer.axis_source event occurs in the same
+// wl_pointer.frame, the axis source applies to this event.
+//
+// The order of wl_pointer.axis_value120 and wl_pointer.axis_source is
+// not guaranteed.
+func (obj *Pointer) AxisValue120(axis PointerAxis, value120 int32) {
+	builder := wire.NewMessage(obj, 9)
+
+	builder.WriteUint(uint32(axis))
+	builder.WriteInt(value120)
+
+	builder.Method = "axis_value120"
+	builder.Args = []any{axis, value120}
+	obj.state.Enqueue(builder)
+	return
+}
+
+// Relative directional information of the entity causing the axis
+// motion.
+//
+// For a wl_pointer.axis event, the wl_pointer.axis_relative_direction
+// event specifies the movement direction of the entity causing the
+// wl_pointer.axis event. For example:
+// - if a user's fingers on a touchpad move down and this
+// causes a wl_pointer.axis vertical_scroll down event, the physical
+// direction is 'identical'
+// - if a user's fingers on a touchpad move down and this causes a
+// wl_pointer.axis vertical_scroll up scroll up event ('natural
+// scrolling'), the physical direction is 'inverted'.
+//
+// A client may use this information to adjust scroll motion of
+// components. Specifically, enabling natural scrolling causes the
+// content to change direction compared to traditional scrolling.
+// Some widgets like volume control sliders should usually match the
+// physical direction regardless of whether natural scrolling is
+// active. This event enables clients to match the scroll direction of
+// a widget to the physical direction.
+//
+// This event does not occur on its own, it is coupled with a
+// wl_pointer.axis event that represents this axis value.
+// The protocol guarantees that each axis_relative_direction event is
+// always followed by exactly one axis event with the same
+// axis number within the same wl_pointer.frame. Note that the protocol
+// allows for other events to occur between the axis_relative_direction
+// and its coupled axis event.
+//
+// The axis number is identical to the axis number in the associated
+// axis event.
+//
+// The order of wl_pointer.axis_relative_direction,
+// wl_pointer.axis_discrete and wl_pointer.axis_source is not
+// guaranteed.
+func (obj *Pointer) AxisRelativeDirection(axis PointerAxis, direction PointerAxisRelativeDirection) {
+	builder := wire.NewMessage(obj, 10)
+
+	builder.WriteUint(uint32(axis))
+	builder.WriteUint(uint32(direction))
+
+	builder.Method = "axis_relative_direction"
+	builder.Args = []any{axis, direction}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5151,9 +5541,33 @@ func (enum PointerAxisSource) String() string {
 	return "<invalid PointerAxisSource>"
 }
 
+// This specifies the direction of the physical motion that caused a
+// wl_pointer.axis event, relative to the wl_pointer.axis direction.
+type PointerAxisRelativeDirection int64
+
+const (
+	// physical motion matches axis direction
+	PointerAxisRelativeDirectionIdentical PointerAxisRelativeDirection = 0
+
+	// physical motion is the inverse of the axis direction
+	PointerAxisRelativeDirectionInverted PointerAxisRelativeDirection = 1
+)
+
+func (enum PointerAxisRelativeDirection) String() string {
+	switch enum {
+	case 0:
+		return "PointerAxisRelativeDirectionIdentical"
+
+	case 1:
+		return "PointerAxisRelativeDirectionInverted"
+	}
+
+	return "<invalid PointerAxisRelativeDirection>"
+}
+
 const (
 	KeyboardInterface = "wl_keyboard"
-	KeyboardVersion   = 7
+	KeyboardVersion   = 10
 )
 
 // KeyboardListener is a type that can respond to incoming
@@ -5164,6 +5578,16 @@ type KeyboardListener interface {
 
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
+//
+// Each wl_keyboard has the following logical state:
+//
+// - an active surface (possibly null),
+// - the keys currently logically down,
+// - the active modifiers,
+// - the active group.
+//
+// By default, the active surface is null, the keys currently logically down
+// are empty, the active modifiers and the active group are 0.
 type Keyboard struct {
 	// Listener's methods are called by incoming messages from the
 	// remote end via Dispatch. If it is nil, messages are silently
@@ -5245,7 +5669,8 @@ func (obj *Keyboard) Version() uint32 {
 }
 
 // This event provides a file descriptor to the client which can be
-// memory-mapped to provide a keyboard mapping description.
+// memory-mapped in read-only mode to provide a keyboard mapping
+// description.
 //
 // From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
 // the recipient, as MAP_SHARED may fail.
@@ -5267,6 +5692,14 @@ func (obj *Keyboard) Keymap(format KeyboardKeymapFormat, fd *os.File, size uint3
 //
 // The compositor must send the wl_keyboard.modifiers event after this
 // event.
+//
+// In the wl_keyboard logical state, this event sets the active surface to
+// the surface argument and the keys currently logically down to the keys
+// in the keys argument. The compositor must not send this event if the
+// wl_keyboard already had an active surface immediately before this event.
+//
+// Clients should not use the list of pressed keys to emulate key-press
+// events. The order of keys in the list is unspecified.
 func (obj *Keyboard) Enter(serial uint32, surface *Surface, keys []byte) {
 	builder := wire.NewMessage(obj, 1)
 
@@ -5286,8 +5719,10 @@ func (obj *Keyboard) Enter(serial uint32, surface *Surface, keys []byte) {
 // The leave notification is sent before the enter notification
 // for the new focus.
 //
-// After this event client must assume that all keys, including modifiers,
-// are lifted and also it must stop key repeating if there's some going on.
+// In the wl_keyboard logical state, this event resets all values to their
+// defaults. The compositor must not send this event if the active surface
+// of the wl_keyboard was not equal to the surface argument immediately
+// before this event.
 func (obj *Keyboard) Leave(serial uint32, surface *Surface) {
 	builder := wire.NewMessage(obj, 2)
 
@@ -5309,6 +5744,20 @@ func (obj *Keyboard) Leave(serial uint32, surface *Surface) {
 //
 // If this event produces a change in modifiers, then the resulting
 // wl_keyboard.modifiers event must be sent after this event.
+//
+// In the wl_keyboard logical state, this event adds the key to the keys
+// currently logically down (if the state argument is pressed) or removes
+// the key from the keys currently logically down (if the state argument is
+// released). The compositor must not send this event if the wl_keyboard
+// did not have an active surface immediately before this event. The
+// compositor must not send this event if state is pressed (resp. released)
+// and the key was already logically down (resp. was not logically down)
+// immediately before this event.
+//
+// Since version 10, compositors may send key events with the "repeated"
+// key state when a wl_keyboard.repeat_info event with a rate argument of
+// 0 has been received. This allows the compositor to take over the
+// responsibility of key repetition.
 func (obj *Keyboard) Key(serial uint32, time uint32, key uint32, state KeyboardKeyState) {
 	builder := wire.NewMessage(obj, 3)
 
@@ -5325,6 +5774,17 @@ func (obj *Keyboard) Key(serial uint32, time uint32, key uint32, state KeyboardK
 
 // Notifies clients that the modifier and/or group state has
 // changed, and it should update its local state.
+//
+// The compositor may send this event without a surface of the client
+// having keyboard focus, for example to tie modifier information to
+// pointer focus instead. If a modifier event with pressed modifiers is sent
+// without a prior enter event, the client can assume the modifier state is
+// valid until it receives the next wl_keyboard.modifiers event. In order to
+// reset the modifier state again, the compositor can send a
+// wl_keyboard.modifiers event with no pressed modifiers.
+//
+// In the wl_keyboard logical state, this event updates the modifiers and
+// group.
 func (obj *Keyboard) Modifiers(serial uint32, modsDepressed uint32, modsLatched uint32, modsLocked uint32, group uint32) {
 	builder := wire.NewMessage(obj, 4)
 
@@ -5372,7 +5832,7 @@ const (
 	// no keymap; client must understand how to interpret the raw keycode
 	KeyboardKeymapFormatNoKeymap KeyboardKeymapFormat = 0
 
-	// libxkbcommon compatible; to determine the xkb keycode, clients must add 8 to the key event keycode
+	// libxkbcommon compatible, null-terminated string; to determine the xkb keycode, clients must add 8 to the key event keycode
 	KeyboardKeymapFormatXkbV1 KeyboardKeymapFormat = 1
 )
 
@@ -5389,6 +5849,14 @@ func (enum KeyboardKeymapFormat) String() string {
 }
 
 // Describes the physical state of a key that produced the key event.
+//
+// Since version 10, the key can be in a "repeated" pseudo-state which
+// means the same as "pressed", but is used to signal repetition in the
+// key event.
+//
+// The key may only enter the repeated state after entering the pressed
+// state and before entering the released state. This event may be
+// generated multiple times while the key is down.
 type KeyboardKeyState int64
 
 const (
@@ -5397,6 +5865,9 @@ const (
 
 	// key is pressed
 	KeyboardKeyStatePressed KeyboardKeyState = 1
+
+	// key was repeated
+	KeyboardKeyStateRepeated KeyboardKeyState = 2
 )
 
 func (enum KeyboardKeyState) String() string {
@@ -5406,6 +5877,9 @@ func (enum KeyboardKeyState) String() string {
 
 	case 1:
 		return "KeyboardKeyStatePressed"
+
+	case 2:
+		return "KeyboardKeyStateRepeated"
 	}
 
 	return "<invalid KeyboardKeyState>"
@@ -5413,7 +5887,7 @@ func (enum KeyboardKeyState) String() string {
 
 const (
 	TouchInterface = "wl_touch"
-	TouchVersion   = 7
+	TouchVersion   = 10
 )
 
 // TouchListener is a type that can respond to incoming
@@ -5584,6 +6058,8 @@ func (obj *Touch) Frame() {
 // currently active on this client's surface. The client is
 // responsible for finalizing the touch points, future touch points on
 // this surface may reuse the touch point ID.
+//
+// No frame event is required after the cancel event.
 func (obj *Touch) Cancel() {
 	builder := wire.NewMessage(obj, 4)
 
@@ -5668,7 +6144,7 @@ func (obj *Touch) Orientation(id int32, orientation wire.Fixed) {
 
 const (
 	OutputInterface = "wl_output"
-	OutputVersion   = 3
+	OutputVersion   = 4
 )
 
 // OutputListener is a type that can respond to incoming
@@ -5779,12 +6255,19 @@ func (obj *Output) Version() uint32 {
 // The physical size can be set to zero if it doesn't make sense for this
 // output (e.g. for projectors or virtual outputs).
 //
+// The geometry event will be followed by a done event (starting from
+// version 2).
+//
+// Clients should use wl_surface.preferred_buffer_transform instead of the
+// transform advertised by this event to find the preferred buffer
+// transform to use for a surface.
+//
 // Note: wl_output only advertises partial information about the output
 // position and identification. Some compositors, for instance those not
 // implementing a desktop-style output layout or those exposing virtual
 // outputs, might fake this information. Instead of using x and y, clients
 // should use xdg_output.logical_position. Instead of using make and model,
-// clients should use xdg_output.name and xdg_output.description.
+// clients should use name and description.
 func (obj *Output) Geometry(x int32, y int32, physicalWidth int32, physicalHeight int32, subpixel OutputSubpixel, make string, model string, transform OutputTransform) {
 	builder := wire.NewMessage(obj, 0)
 
@@ -5826,6 +6309,9 @@ func (obj *Output) Geometry(x int32, y int32, physicalWidth int32, physicalHeigh
 // The vertical refresh rate can be set to zero if it doesn't make
 // sense for this output (e.g. for virtual outputs).
 //
+// The mode event will be followed by a done event (starting from
+// version 2).
+//
 // Clients should not use the refresh rate to schedule frames. Instead,
 // they should use the wl_surface.frame event or the presentation-time
 // protocol.
@@ -5864,8 +6350,9 @@ func (obj *Output) Done() {
 // This event contains scaling geometry information
 // that is not in the geometry event. It may be sent after
 // binding the output object or if the output scale changes
-// later. If it is not sent, the client should assume a
-// scale of 1.
+// later. The compositor will emit a non-zero, positive
+// value for scale. If it is not sent, the client should
+// assume a scale of 1.
 //
 // A scale larger than 1 means that the compositor will
 // automatically scale surface buffers by this amount
@@ -5873,12 +6360,11 @@ func (obj *Output) Done() {
 // displays where applications rendering at the native
 // resolution would be too small to be legible.
 //
-// It is intended that scaling aware clients track the
-// current output of a surface, and if it is on a scaled
-// output it should use wl_surface.set_buffer_scale with
-// the scale of the output. That way the compositor can
-// avoid scaling the surface, and the client can supply
-// a higher detail image.
+// Clients should use wl_surface.preferred_buffer_scale
+// instead of this event to find the preferred buffer
+// scale to use for a surface.
+//
+// The scale event will be followed by a done event.
 func (obj *Output) Scale(factor int32) {
 	builder := wire.NewMessage(obj, 3)
 
@@ -5886,6 +6372,70 @@ func (obj *Output) Scale(factor int32) {
 
 	builder.Method = "scale"
 	builder.Args = []any{factor}
+	obj.state.Enqueue(builder)
+	return
+}
+
+// Many compositors will assign user-friendly names to their outputs, show
+// them to the user, allow the user to refer to an output, etc. The client
+// may wish to know this name as well to offer the user similar behaviors.
+//
+// The name is a UTF-8 string with no convention defined for its contents.
+// Each name is unique among all wl_output globals. The name is only
+// guaranteed to be unique for the compositor instance.
+//
+// The same output name is used for all clients for a given wl_output
+// global. Thus, the name can be shared across processes to refer to a
+// specific wl_output global.
+//
+// The name is not guaranteed to be persistent across sessions, thus cannot
+// be used to reliably identify an output in e.g. configuration files.
+//
+// Examples of names include 'HDMI-A-1', 'WL-1', 'X11-1', etc. However, do
+// not assume that the name is a reflection of an underlying DRM connector,
+// X11 connection, etc.
+//
+// The name event is sent after binding the output object. This event is
+// only sent once per output object, and the name does not change over the
+// lifetime of the wl_output global.
+//
+// Compositors may re-use the same output name if the wl_output global is
+// destroyed and re-created later. Compositors should avoid re-using the
+// same name if possible.
+//
+// The name event will be followed by a done event.
+func (obj *Output) Name(name string) {
+	builder := wire.NewMessage(obj, 4)
+
+	builder.WriteString(name)
+
+	builder.Method = "name"
+	builder.Args = []any{name}
+	obj.state.Enqueue(builder)
+	return
+}
+
+// Many compositors can produce human-readable descriptions of their
+// outputs. The client may wish to know this description as well, e.g. for
+// output selection purposes.
+//
+// The description is a UTF-8 string with no convention defined for its
+// contents. The description is not guaranteed to be unique among all
+// wl_output globals. Examples might include 'Foocorp 11" Display' or
+// 'Virtual X11 output via :1'.
+//
+// The description event is sent after binding the output object and
+// whenever the description changes. The description is optional, and may
+// not be sent at all.
+//
+// The description event will be followed by a done event.
+func (obj *Output) Description(description string) {
+	builder := wire.NewMessage(obj, 5)
+
+	builder.WriteString(description)
+
+	builder.Method = "description"
+	builder.Args = []any{description}
 	obj.state.Enqueue(builder)
 	return
 }
@@ -5938,9 +6488,8 @@ func (enum OutputSubpixel) String() string {
 	return "<invalid OutputSubpixel>"
 }
 
-// This describes the transform that a compositor will apply to a
-// surface to compensate for the rotation or mirroring of an
-// output device.
+// This describes transformations that clients and compositors apply to
+// buffer contents.
 //
 // The flipped values correspond to an initial flip around a
 // vertical axis followed by rotation.
@@ -6207,13 +6756,17 @@ type SubcompositorListener interface {
 	// plain wl_surface into a sub-surface.
 	//
 	// The to-be sub-surface must not already have another role, and it
-	// must not have an existing wl_subsurface object. Otherwise a protocol
-	// error is raised.
+	// must not have an existing wl_subsurface object. Otherwise the
+	// bad_surface protocol error is raised.
 	//
 	// Adding sub-surfaces to a parent is a double-buffered operation on the
 	// parent (see wl_surface.commit). The effect of adding a sub-surface
 	// becomes visible on the next time the state of the parent surface is
 	// applied.
+	//
+	// The parent surface must not be one of the child surface's descendants,
+	// and the parent must be different from the child surface, otherwise the
+	// bad_parent protocol error is raised.
 	//
 	// This request modifies the behaviour of wl_surface.commit request on
 	// the sub-surface, see the documentation on wl_subsurface interface.
@@ -6363,12 +6916,18 @@ type SubcompositorError int64
 const (
 	// the to-be sub-surface is invalid
 	SubcompositorErrorBadSurface SubcompositorError = 0
+
+	// the to-be sub-surface parent is invalid
+	SubcompositorErrorBadParent SubcompositorError = 1
 )
 
 func (enum SubcompositorError) String() string {
 	switch enum {
 	case 0:
 		return "SubcompositorErrorBadSurface"
+
+	case 1:
+		return "SubcompositorErrorBadParent"
 	}
 
 	return "<invalid SubcompositorError>"
@@ -6385,8 +6944,7 @@ type SubsurfaceListener interface {
 	// The sub-surface interface is removed from the wl_surface object
 	// that was turned into a sub-surface with a
 	// wl_subcompositor.get_subsurface request. The wl_surface's association
-	// to the parent is deleted, and the wl_surface loses its role as
-	// a sub-surface. The wl_surface is unmapped immediately.
+	// to the parent is deleted. The wl_surface is unmapped immediately.
 	Destroy()
 
 	// This schedules a sub-surface position change.
@@ -6396,9 +6954,7 @@ type SubsurfaceListener interface {
 	// surface area. Negative values are allowed.
 	//
 	// The scheduled coordinates will take effect whenever the state of the
-	// parent surface is applied. When this happens depends on whether the
-	// parent surface is in synchronized mode or not. See
-	// wl_subsurface.set_sync and wl_subsurface.set_desync for details.
+	// parent surface is applied.
 	//
 	// If more than one set_position request is invoked by the client before
 	// the commit of the parent surface, the position of a new request always
@@ -6416,9 +6972,7 @@ type SubsurfaceListener interface {
 	// The z-order is double-buffered. Requests are handled in order and
 	// applied immediately to a pending state. The final pending state is
 	// copied to the active state the next time the state of the parent
-	// surface is applied. When this happens depends on whether the parent
-	// surface is in synchronized mode or not. See wl_subsurface.set_sync and
-	// wl_subsurface.set_desync for details.
+	// surface is applied.
 	//
 	// A new sub-surface is initially added as the top-most in the stack
 	// of its siblings and parent.
@@ -6505,15 +7059,18 @@ type SubsurfaceListener interface {
 // synchronized mode, and then assume that all its child and grand-child
 // sub-surfaces are synchronized, too, without explicitly setting them.
 //
-// If the wl_surface associated with the wl_subsurface is destroyed, the
-// wl_subsurface object becomes inert. Note, that destroying either object
-// takes effect immediately. If you need to synchronize the removal
-// of a sub-surface to the parent surface update, unmap the sub-surface
-// first by attaching a NULL wl_buffer, update parent, and then destroy
-// the sub-surface.
+// Destroying a sub-surface takes effect immediately. If you need to
+// synchronize the removal of a sub-surface to the parent surface update,
+// unmap the sub-surface first by attaching a NULL wl_buffer, update parent,
+// and then destroy the sub-surface.
 //
 // If the parent wl_surface object is destroyed, the sub-surface is
 // unmapped.
+//
+// A sub-surface never has the keyboard focus of any seat.
+//
+// The wl_surface.offset request is ignored: clients must use set_position
+// instead to move the sub-surface.
 type Subsurface struct {
 	// Listener's methods are called by incoming messages from the
 	// remote end via Dispatch. If it is nil, messages are silently
@@ -6700,4 +7257,136 @@ func (enum SubsurfaceError) String() string {
 	}
 
 	return "<invalid SubsurfaceError>"
+}
+
+const (
+	FixesInterface = "wl_fixes"
+	FixesVersion   = 1
+)
+
+// FixesListener is a type that can respond to incoming
+// messages for a Fixes object.
+type FixesListener interface {
+	Destroy()
+
+	// This request destroys a wl_registry object.
+	//
+	// The client should no longer use the wl_registry after making this
+	// request.
+	//
+	// The compositor will emit a wl_display.delete_id event with the object ID
+	// of the registry and will no longer emit any events on the registry. The
+	// client should re-use the object ID once it receives the
+	// wl_display.delete_id event.
+	DestroyRegistry(registry *Registry)
+}
+
+// This global fixes problems with other core-protocol interfaces that
+// cannot be fixed in these interfaces themselves.
+type Fixes struct {
+	// Listener's methods are called by incoming messages from the
+	// remote end via Dispatch. If it is nil, messages are silently
+	// ignored.
+	Listener FixesListener
+
+	// OnDelete is called when the object is removed from the tracking
+	// system.
+	OnDelete func()
+
+	state wire.State
+	id    uint32
+}
+
+// NewFixes returns a newly instantiated Fixes. It is
+// primarily intended for use by generated code.
+func NewFixes(state wire.State) *Fixes {
+	return &Fixes{state: state}
+}
+
+func BindFixes(state wire.State, id wire.NewID) *Fixes {
+	obj := NewFixes(state)
+	obj.SetID(id.ID)
+	state.Add(obj)
+	return obj
+}
+
+func (obj *Fixes) State() wire.State {
+	return obj.state
+}
+
+func (obj *Fixes) Dispatch(msg *wire.MessageBuffer) error {
+	switch msg.Op() {
+	case 0:
+		if err := msg.Err(); err != nil {
+			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.Destroy()
+		return nil
+
+	case 1:
+
+		registry, _ := obj.state.Get(msg.ReadUint()).(*Registry)
+
+		obj.state.Add(registry)
+
+		if err := msg.Err(); err != nil {
+			return err
+		}
+
+		if obj.Listener == nil {
+			return nil
+		}
+		obj.Listener.DestroyRegistry(
+			registry,
+		)
+		return nil
+	}
+
+	return wire.UnknownOpError{
+		Interface: "wl_fixes",
+		Type:      "request",
+		Op:        msg.Op(),
+	}
+}
+
+func (obj *Fixes) ID() uint32 {
+	return obj.id
+}
+
+func (obj *Fixes) SetID(id uint32) {
+	obj.id = id
+}
+
+func (obj *Fixes) Delete() {
+	if obj.OnDelete != nil {
+		obj.OnDelete()
+	}
+}
+
+func (obj *Fixes) String() string {
+	return fmt.Sprintf("%v(%v)", "wl_fixes", obj.id)
+}
+
+func (obj *Fixes) MethodName(op uint16) string {
+	switch op {
+	case 0:
+		return "destroy"
+
+	case 1:
+		return "destroy_registry"
+	}
+
+	return "unknown method"
+}
+
+func (obj *Fixes) Interface() string {
+	return FixesInterface
+}
+
+func (obj *Fixes) Version() uint32 {
+	return FixesVersion
 }
