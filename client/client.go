@@ -156,7 +156,7 @@ func (client *Client) RoundTrip() error {
 
 	done := make(chan struct{})
 	get := client.queue.Pop()
-	defer func() { runtime.KeepAlive(client.queue) }()
+	defer func() { runtime.KeepAlive(&client.queue) }()
 	client.Display().Sync().Then(func(uint32) {
 		close(done)
 		get = nil
