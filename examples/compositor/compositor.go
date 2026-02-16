@@ -146,6 +146,10 @@ func (cs *compositorListener) CreateSurface(s *wl.Surface) {
 
 type shmListener clientState
 
+func (cs *shmListener) Release() {
+	// TODO
+}
+
 func (cs *shmListener) CreatePool(pool *wl.ShmPool, file *os.File, size int32) {
 	defer file.Close()
 	// TODO
