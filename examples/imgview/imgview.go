@@ -223,7 +223,7 @@ func (s *state) render(width, height int32) *wl.Buffer {
 	return s.buffer.Buffer()
 }
 
-func (s *state) draw(w, h int32) {
+func (s *state) draw() {
 	buf := s.render(0, 0)
 	s.surface.Attach(buf, 0, 0)
 	s.surface.Commit()
@@ -264,6 +264,12 @@ func (s *wmBaseListener) Ping(serial uint32) {
 }
 
 type pointerListener state
+
+func (s *pointerListener) AxisRelativeDirection(axis wl.PointerAxis, direction wl.PointerAxisRelativeDirection) {
+}
+
+// AxisValue120 implements [wl.PointerListener].
+func (s *pointerListener) AxisValue120(axis wl.PointerAxis, value120 int32) {}
 
 func (s *pointerListener) Enter(serial uint32, surface *wl.Surface, surfaceX wire.Fixed, surfaceY wire.Fixed) {
 	(*state)(s).pointer.SetCursor(serial, s.cursorSurface, int32(s.cursorHot.X), int32(s.cursorHot.Y))
@@ -319,7 +325,7 @@ type xdgSurfaceListener state
 func (s *xdgSurfaceListener) Configure(serial uint32) {
 	s.xsurface.AckConfigure(serial)
 
-	(*state)(s).draw(0, 0)
+	(*state)(s).draw()
 }
 
 type xdgToplevelListener state
