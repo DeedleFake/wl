@@ -3,7 +3,7 @@ module deedles.dev/wl
 go 1.25.7
 
 require (
-	deedles.dev/ximage v0.0.0-20250321223218-e433919886dd
+	deedles.dev/ximage v0.0.0-20260216031900-83cce02ab70f
 	deedles.dev/xsync v0.0.0-20250321154350-4e8049be7ced
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a
 	golang.org/x/image v0.36.0

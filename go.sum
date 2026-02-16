@@ -1,5 +1,5 @@
-deedles.dev/ximage v0.0.0-20250321223218-e433919886dd h1:idpMQR6xGdQEyl1QshL2TRF8dp9jBJ3ndcn5CdV/YhE=
-deedles.dev/ximage v0.0.0-20250321223218-e433919886dd/go.mod h1:YnxyYpjiUD7yhS14uOWihIJ+GaB6wZFeOk3RwR8p4SM=
+deedles.dev/ximage v0.0.0-20260216031900-83cce02ab70f h1:Nr3p3VitLKGFSGxA8gb1MCc+ECIbROYlJvVURLt2Sdg=
+deedles.dev/ximage v0.0.0-20260216031900-83cce02ab70f/go.mod h1:TuV4i9Rw7p4vd0kbQcc6WzCPXgBqQpdpQTXYh9b5zNY=
 deedles.dev/xiter v0.2.1 h1:yyyfo1sDwARp5lyMvILBJpEI28sIFN0TNYagAdBUa+s=
 deedles.dev/xiter v0.2.1/go.mod h1:59997UHUsKAy/8bHUClTfeXdyuLZ6z/+yF++vIpxfx8=
 deedles.dev/xsync v0.0.0-20250321154350-4e8049be7ced h1:d8dju50/pJ0FrlI1kV2vb3KsHs7WopamQtzqyU7m2UU=
@@ -8,8 +8,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
-github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a h1:ovFr6Z0MNmU7nH8VaX5xqw+05ST2uO1exVfZPVqRC5o=
 golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a/go.mod h1:K79w1Vqn7PoiZn+TkNpx3BUWUQksGO3JcVX6qIjytmA=
 golang.org/x/image v0.36.0 h1:Iknbfm1afbgtwPTmHnS2gTM/6PPZfH+z2EFuOkSbqwc=
