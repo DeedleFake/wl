@@ -10,7 +10,7 @@ import (
 
 const (
 	WmBaseInterface = "xdg_wm_base"
-	WmBaseVersion   = 5
+	WmBaseVersion   = 7
 )
 
 // WmBaseListener is a type that can respond to incoming
@@ -287,7 +287,7 @@ func (enum WmBaseError) String() string {
 
 const (
 	PositionerInterface = "xdg_positioner"
-	PositionerVersion   = 5
+	PositionerVersion   = 7
 )
 
 // PositionerListener is a type that can respond to incoming
@@ -345,7 +345,7 @@ type PositionerListener interface {
 	// are applied is specified in the corresponding adjustment descriptions.
 	//
 	// The default adjustment is none.
-	SetConstraintAdjustment(constraintAdjustment uint32)
+	SetConstraintAdjustment(constraintAdjustment PositionerConstraintAdjustment)
 
 	// Specify the surface position offset relative to the position of the
 	// anchor on the anchor rectangle and the anchor on the surface. For
@@ -518,7 +518,7 @@ func (obj *Positioner) Dispatch(msg *wire.MessageBuffer) error {
 
 	case 5:
 
-		constraintAdjustment := msg.ReadUint()
+		constraintAdjustment := PositionerConstraintAdjustment(msg.ReadUint())
 
 		if err := msg.Err(); err != nil {
 			return err
@@ -851,7 +851,7 @@ func (enum PositionerConstraintAdjustment) String() string {
 
 const (
 	SurfaceInterface = "xdg_surface"
-	SurfaceVersion   = 5
+	SurfaceVersion   = 7
 )
 
 // SurfaceListener is a type that can respond to incoming
@@ -882,10 +882,12 @@ type SurfaceListener interface {
 	// The window geometry of a surface is its "visible bounds" from the
 	// user's perspective. Client-side decorations often have invisible
 	// portions like drop-shadows which should be ignored for the
-	// purposes of aligning, placing and constraining windows.
+	// purposes of aligning, placing and constraining windows. Note that
+	// in some situations, compositors may clip rendering to the window
+	// geometry, so the client should avoid putting functional elements
+	// outside of it.
 	//
-	// The window geometry is double buffered, and will be applied at the
-	// time wl_surface.commit of the corresponding wl_surface is called.
+	// The window geometry is double-buffered state, see wl_surface.commit.
 	//
 	// When maintaining a position, the compositor should treat the (x, y)
 	// coordinate of the window geometry as the top left corner of the window.
@@ -901,13 +903,22 @@ type SurfaceListener interface {
 	// commit. This unset is meant for extremely simple clients.
 	//
 	// The arguments are given in the surface-local coordinate space of
-	// the wl_surface associated with this xdg_surface.
+	// the wl_surface associated with this xdg_surface, and may extend outside
+	// of the wl_surface itself to mark parts of the subsurface tree as part of
+	// the window geometry.
 	//
-	// The width and height must be greater than zero. Setting an invalid size
-	// will raise an invalid_size error. When applied, the effective window
-	// geometry will be the set window geometry clamped to the bounding
-	// rectangle of the combined geometry of the surface of the xdg_surface and
-	// the associated subsurfaces.
+	// When applied, the effective window geometry will be the set window
+	// geometry clamped to the bounding rectangle of the combined
+	// geometry of the surface of the xdg_surface and the associated
+	// subsurfaces.
+	//
+	// The effective geometry will not be recalculated unless a new call to
+	// set_window_geometry is done and the new pending surface state is
+	// subsequently applied.
+	//
+	// The width and height of the effective window geometry must be
+	// greater than zero. Setting an invalid size will raise an
+	// invalid_size error.
 	SetWindowGeometry(x int32, y int32, width int32, height int32)
 
 	// When a configure event is received, if a client commits the
@@ -970,10 +981,13 @@ type SurfaceListener interface {
 // manipulate a buffer prior to the first xdg_surface.configure call must
 // also be treated as errors.
 //
-// After creating a role-specific object and setting it up, the client must
+// After creating a role-specific object and setting it up (e.g. by sending
+// the title, app ID, size constraints, parent, etc), the client must
 // perform an initial commit without any buffer attached. The compositor
-// will reply with an xdg_surface.configure event. The client must
-// acknowledge it and is then allowed to attach a buffer to map the surface.
+// will reply with initial wl_surface state such as
+// wl_surface.preferred_buffer_scale followed by an xdg_surface.configure
+// event. The client must acknowledge it and is then allowed to attach a
+// buffer to map the surface.
 //
 // Mapping an xdg_surface-based role surface is defined as making it
 // possible for the surface to be shown by the compositor. Note that
@@ -1246,7 +1260,7 @@ func (enum SurfaceError) String() string {
 
 const (
 	ToplevelInterface = "xdg_toplevel"
-	ToplevelVersion   = 5
+	ToplevelVersion   = 7
 )
 
 // ToplevelListener is a type that can respond to incoming
@@ -1370,10 +1384,10 @@ type ToplevelListener interface {
 	//
 	// The edges parameter specifies how the surface should be resized, and
 	// is one of the values of the resize_edge enum. Values not matching
-	// a variant of the enum will cause a protocol error. The compositor
-	// may use this information to update the surface position for example
-	// when dragging the top left corner. The compositor may also use
-	// this information to adapt its behavior, e.g. choose an appropriate
+	// a variant of the enum will cause the invalid_resize_edge protocol error.
+	// The compositor may use this information to update the surface position
+	// for example when dragging the top left corner. The compositor may also
+	// use this information to adapt its behavior, e.g. choose an appropriate
 	// cursor image.
 	Resize(seat *wl.Seat, serial uint32, edges ToplevelResizeEdge)
 
@@ -1385,8 +1399,7 @@ type ToplevelListener interface {
 	// The width and height arguments are in window geometry coordinates.
 	// See xdg_surface.set_window_geometry.
 	//
-	// Values set in this way are double-buffered. They will get applied
-	// on the next commit.
+	// Values set in this way are double-buffered, see wl_surface.commit.
 	//
 	// The compositor can use this information to allow or disallow
 	// different states like maximize or fullscreen and draw accurate
@@ -1421,8 +1434,7 @@ type ToplevelListener interface {
 	// The width and height arguments are in window geometry coordinates.
 	// See xdg_surface.set_window_geometry.
 	//
-	// Values set in this way are double-buffered. They will get applied
-	// on the next commit.
+	// Values set in this way are double-buffered, see wl_surface.commit.
 	//
 	// The compositor can use this information to allow or disallow
 	// different states like maximize or fullscreen and draw accurate
@@ -1554,13 +1566,17 @@ type ToplevelListener interface {
 // id, and well as trigger user interactive operations such as interactive
 // resize and move.
 //
+// A xdg_toplevel by default is responsible for providing the full intended
+// visual representation of the toplevel, which depending on the window
+// state, may mean things like a title bar, window controls and drop shadow.
+//
 // Unmapping an xdg_toplevel means that the surface cannot be shown
 // by the compositor until it is explicitly mapped again.
 // All active operations (e.g., move, resize) are canceled and all
 // attributes (e.g. title, state, stacking, ...) are discarded for
 // an xdg_toplevel surface when it is unmapped. The xdg_toplevel returns to
 // the state it had right after xdg_surface.get_toplevel. The client
-// can re-map the toplevel by perfoming a commit without any buffer
+// can re-map the toplevel by performing a commit without any buffer
 // attached, waiting for a configure event and handling it as usual (see
 // xdg_surface description).
 //
@@ -2104,8 +2120,7 @@ func (enum ToplevelResizeEdge) String() string {
 // configure event to ensure that both the client and the compositor
 // setting the state can be synchronized.
 //
-// States set in this way are double-buffered. They will get applied on
-// the next commit.
+// States set in this way are double-buffered, see wl_surface.commit.
 type ToplevelState int64
 
 const (
@@ -2128,6 +2143,16 @@ const (
 	ToplevelStateTiledTop ToplevelState = 7
 
 	ToplevelStateTiledBottom ToplevelState = 8
+
+	ToplevelStateSuspended ToplevelState = 9
+
+	ToplevelStateConstrainedLeft ToplevelState = 10
+
+	ToplevelStateConstrainedRight ToplevelState = 11
+
+	ToplevelStateConstrainedTop ToplevelState = 12
+
+	ToplevelStateConstrainedBottom ToplevelState = 13
 )
 
 func (enum ToplevelState) String() string {
@@ -2155,6 +2180,21 @@ func (enum ToplevelState) String() string {
 
 	case 8:
 		return "ToplevelStateTiledBottom"
+
+	case 9:
+		return "ToplevelStateSuspended"
+
+	case 10:
+		return "ToplevelStateConstrainedLeft"
+
+	case 11:
+		return "ToplevelStateConstrainedRight"
+
+	case 12:
+		return "ToplevelStateConstrainedTop"
+
+	case 13:
+		return "ToplevelStateConstrainedBottom"
 	}
 
 	return "<invalid ToplevelState>"
@@ -2196,7 +2236,7 @@ func (enum ToplevelWmCapabilities) String() string {
 
 const (
 	PopupInterface = "xdg_popup"
-	PopupVersion   = 5
+	PopupVersion   = 7
 )
 
 // PopupListener is a type that can respond to incoming
@@ -2205,8 +2245,8 @@ type PopupListener interface {
 	// This destroys the popup. Explicitly destroying the xdg_popup
 	// object will also dismiss the popup, and unmap the surface.
 	//
-	// If this xdg_popup is not the "topmost" popup, a protocol error
-	// will be sent.
+	// If this xdg_popup is not the "topmost" popup, the
+	// xdg_wm_base.not_the_topmost_popup protocol error will be sent.
 	Destroy()
 
 	// This request makes the created popup take an explicit grab. An explicit
