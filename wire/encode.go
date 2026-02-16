@@ -99,7 +99,7 @@ func (mb *MessageBuilder) WriteString(v string) {
 	bin.Write(&mb.data, uint32(len(v)+1))
 	mb.data.WriteString(v)
 	mb.data.WriteByte(0)
-	for i := uint32(0); i < pad; i++ {
+	for range pad {
 		mb.data.WriteByte(0)
 	}
 }
@@ -112,7 +112,7 @@ func (mb *MessageBuilder) WriteArray(v []byte) {
 	pad := padding(uint32(len(v)))
 	bin.Write(&mb.data, uint32(len(v)))
 	mb.data.Write(v)
-	for i := uint32(0); i < pad; i++ {
+	for range pad {
 		mb.data.WriteByte(0)
 	}
 }

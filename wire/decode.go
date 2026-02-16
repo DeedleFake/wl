@@ -22,7 +22,6 @@ type MessageBuffer struct {
 	data   bytes.Reader
 	err    error
 	args   []any
-	method string
 }
 
 // ReadMessage reads message data from the socket into a buffer.
