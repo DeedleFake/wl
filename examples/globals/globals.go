@@ -51,11 +51,15 @@ func (lis *outputListener) Geometry(x, y, w, h int32, subpixel wl.OutputSubpixel
 	)
 }
 
-func (lis *outputListener) Mode(flags wl.OutputMode, w, h, refresh int32) {}
+func (lis *outputListener) Mode(flags wl.OutputMode, w, h, refresh int32) { /* TODO */ }
 
 func (lis *outputListener) Done() {}
 
-func (lis *outputListener) Scale(factor int32) {}
+func (lis *outputListener) Scale(factor int32) { /* TODO */ }
+
+func (lis *outputListener) Description(desc string) { /* TODO */ }
+
+func (lis *outputListener) Name(name string) { /* TODO */ }
 
 func main() {
 	s, err := wl.Dial()
